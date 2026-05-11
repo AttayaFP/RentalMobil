@@ -40,12 +40,9 @@ export default function Edit({ kategori }: Props) {
                         <form onSubmit={submit}>
                             <div className="form-group mb-4">
                                 <label className="font-weight-bold text-dark small text-uppercase">Kode Kategori (Tetap)</label>
-                                <input 
-                                    type="text" 
-                                    className="form-control bg-light"
-                                    value={kategori.kdkategori}
-                                    disabled
-                                />
+                                <div className="form-control bg-light d-flex align-items-center font-weight-bold" style={{ cursor: 'default', userSelect: 'none', minHeight: '50px' }}>
+                                    {kategori.kdkategori}
+                                </div>
                             </div>
                             
                             <div className="form-group mb-4">

@@ -10,10 +10,27 @@ use Inertia\Inertia;
 
 class PelangganController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        $query = User::query();
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('nama_lengkap', 'like', "%{$search}%")
+                    ->orWhere('username', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('nohp', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('date')) {
+            $query->whereDate('created_at', $request->date);
+        }
+
         return Inertia::render('pelanggan/index', [
-            'pelanggans' => User::all(),
+            'pelanggans' => $query->latest()->get(),
+            'filters' => $request->only(['search', 'date']),
         ]);
     }
 
@@ -71,8 +88,8 @@ class PelangganController extends Controller
 
         $request->validate([
             'nama_lengkap' => 'required|string|max:255',
-            'username' => 'required|string|max:255|unique:users,username,' . $id,
-            'email' => 'required|string|email|max:255|unique:users,email,' . $id,
+            'username' => 'required|string|max:255|unique:users,username,'.$id,
+            'email' => 'required|string|email|max:255|unique:users,email,'.$id,
             'jenis_kelamin' => 'required|in:L,P',
             'alamat' => 'required|string',
             'nohp' => 'required|string|max:15',

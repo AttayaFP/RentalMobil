@@ -9,11 +9,12 @@ interface Kategori {
 
 interface Props {
     kategoris: Kategori[];
+    next_kdmobil: string;
 }
 
-export default function Create({ kategoris }: Props) {
+export default function Create({ kategoris, next_kdmobil }: Props) {
     const { data, setData, post, processing, errors } = useForm({
-        kdmobil: '',
+        kdmobil: next_kdmobil,
         nama_mobil: '',
         thn_mobil: new Date().getFullYear(),
         plat_mobil: '',
@@ -90,14 +91,9 @@ export default function Create({ kategoris }: Props) {
                                     <div className="row">
                                         <div className="col-md-6 form-group mb-4">
                                             <label className="font-weight-bold text-dark small text-uppercase">Kode Mobil</label>
-                                            <input 
-                                                type="text" 
-                                                className={`form-control ${errors.kdmobil ? 'is-invalid' : ''}`}
-                                                placeholder="MBL001"
-                                                value={data.kdmobil}
-                                                onChange={e => setData('kdmobil', e.target.value)}
-                                                required
-                                            />
+                                            <div className="form-control bg-light d-flex align-items-center font-weight-bold" style={{ cursor: 'default', userSelect: 'none', minHeight: '50px' }}>
+                                                {data.kdmobil}
+                                            </div>
                                             {errors.kdmobil && <div className="invalid-feedback">{errors.kdmobil}</div>}
                                         </div>
                                         <div className="col-md-6 form-group mb-4">

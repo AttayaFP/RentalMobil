@@ -11,11 +11,12 @@ interface Booking {
 
 interface Props {
     bookings: Booking[];
+    next_kdpengembalian: string;
 }
 
-export default function Create({ bookings }: Props) {
+export default function Create({ bookings, next_kdpengembalian }: Props) {
     const { data, setData, post, processing } = useForm({
-        kdpengembalian: '',
+        kdpengembalian: next_kdpengembalian,
         kdbooking: '',
         iduser: '',
         tglmulai: '',
@@ -90,7 +91,9 @@ export default function Create({ bookings }: Props) {
                             <div className="row">
                                 <div className="col-md-6 form-group mb-4">
                                     <label className="font-weight-bold text-dark small text-uppercase">Kode Pengembalian</label>
-                                    <input type="text" className="form-control" placeholder="KB001" value={data.kdpengembalian} onChange={e => setData('kdpengembalian', e.target.value)} required />
+                                    <div className="form-control bg-light d-flex align-items-center font-weight-bold" style={{ cursor: 'default', userSelect: 'none', minHeight: '50px' }}>
+                                        {data.kdpengembalian}
+                                    </div>
                                 </div>
                                 <div className="col-md-6 form-group mb-4">
                                     <label className="font-weight-bold text-dark small text-uppercase">Referensi Booking</label>

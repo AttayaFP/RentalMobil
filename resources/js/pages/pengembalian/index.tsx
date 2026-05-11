@@ -1,5 +1,9 @@
 import AdminLayout from '@/layouts/AdminLayout';
 import { router } from '@inertiajs/react';
+import Swal from 'sweetalert2';
+import SearchFilter from '@/components/SearchFilter';
+import { motion } from 'framer-motion';
+import { RefreshCcw, Plus, Calendar, Receipt, User, AlertCircle, Edit, Trash2, CheckCircle2 } from 'lucide-react';
 
 interface Pengembalian {
     kdpengembalian: string;
@@ -8,17 +12,42 @@ interface Pengembalian {
     tglpengembalian: string;
     keterlambatan: number;
     denda: number;
+    user?: { nama_lengkap: string };
 }
 
 interface Props {
     pengembalians: Pengembalian[];
+    filters: {
+        search?: string;
+        date?: string;
+    };
 }
 
-export default function Index({ pengembalians }: Props) {
+export default function Index({ pengembalians, filters }: Props) {
     const handleDelete = (id: string) => {
-        if (confirm('Apakah Anda yakin ingin menghapus data pengembalian ini?')) {
-            router.delete(`/pengembalian/${id}`);
-        }
+        Swal.fire({
+            title: 'Hapus Data Pengembalian?',
+            text: "Status booking dan ketersediaan mobil akan dikembalikan otomatis!",
+            icon: 'info',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: '#3b82f6',
+            confirmButtonText: 'Ya, hapus!',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                router.delete(`/pengembalian/${id}`, {
+                    onSuccess: () => {
+                        Swal.fire({
+                            title: 'Data Dihapus!',
+                            text: 'Riwayat pengembalian berhasil dihapus dan status mobil telah diperbarui.',
+                            icon: 'success',
+                            confirmButtonColor: '#f96d00'
+                        });
+                    }
+                });
+            }
+        });
     };
 
     const forceNavigate = (path: string) => {
@@ -31,14 +60,27 @@ export default function Index({ pengembalians }: Props) {
 
     return (
         <AdminLayout title="Kelola Pengembalian">
-            <div className="card shadow-sm border-0 overflow-hidden" style={{ borderRadius: '15px' }}>
-                <div className="card-header bg-white border-0 py-4 px-4 d-flex justify-content-between align-items-center">
-                    <h5 className="font-weight-bold mb-0 text-dark">
-                        <i className="ion-ios-refresh-circle mr-2 text-primary"></i> Data Pengembalian Mobil
-                    </h5>
-                    <button onClick={() => forceNavigate('/pengembalian/create')} className="btn btn-primary px-4 py-2" style={{ borderRadius: '8px', fontWeight: 600 }}>
-                        <i className="ion-ios-add-circle mr-2"></i> Input Pengembalian
+            <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="card shadow-sm border-0 overflow-hidden" 
+                style={{ borderRadius: '15px' }}
+            >
+                <div className="card-header bg-white border-0 py-4 px-4 d-flex flex-wrap justify-content-between align-items-center">
+                    <div>
+                        <h5 className="font-weight-bold mb-1 text-dark">
+                            <RefreshCcw className="inline-block mr-2 text-primary" size={24} /> Data Pengembalian Mobil
+                        </h5>
+                        <p className="text-muted small mb-0">Kelola pengembalian unit dan denda</p>
+                    </div>
+                    <button onClick={() => forceNavigate('/pengembalian/create')} className="btn btn-primary px-4 py-2 mt-3 mt-md-0 d-flex align-items-center gap-2" style={{ borderRadius: '10px', fontWeight: 600 }}>
+                        <Plus size={18} /> Input Pengembalian
                     </button>
+                </div>
+
+                <div className="px-4 pb-2">
+                    <SearchFilter routeName="/pengembalian" placeholder="Cari kode kembali, booking, atau nama..." filters={filters} />
                 </div>
 
                 <div className="table-responsive">
@@ -56,44 +98,60 @@ export default function Index({ pengembalians }: Props) {
                         <tbody>
                             {pengembalians && pengembalians.length > 0 ? pengembalians.map((p) => (
                                 <tr key={p.kdpengembalian}>
-                                    <td className="px-4 py-4 font-weight-bold text-dark">{p.kdpengembalian}</td>
+                                    <td className="px-4 py-4 font-weight-bold text-dark">
+                                        <span className="flex items-center gap-2">
+                                            <Receipt size={16} className="text-muted" /> {p.kdpengembalian}
+                                        </span>
+                                    </td>
                                     <td className="py-4">
                                         <div className="font-weight-bold text-primary mb-0">{p.kdbooking}</div>
-                                        <small className="text-muted">User: #{p.iduser}</small>
+                                        <small className="text-muted flex items-center gap-1">
+                                            <User size={12} /> {p.user?.nama_lengkap || `ID: #${p.iduser}`}
+                                        </small>
                                     </td>
-                                    <td className="py-4 text-muted"><i className="ion-ios-calendar mr-1"></i> {p.tglpengembalian}</td>
+                                    <td className="py-4 text-muted">
+                                        <span className="flex items-center gap-1 text-sm">
+                                            <Calendar size={14} /> {p.tglpengembalian}
+                                        </span>
+                                    </td>
                                     <td className="py-4">
-                                        <span className={`badge px-3 py-2`} style={{ 
-                                            borderRadius: '20px', 
-                                            backgroundColor: p.keterlambatan > 0 ? '#ffe8e8' : '#e1f7ec',
-                                            color: p.keterlambatan > 0 ? '#e53e3e' : '#0d8a4f',
-                                            fontSize: '10px',
-                                            fontWeight: 800
+                                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider`} style={{ 
+                                            backgroundColor: p.keterlambatan > 0 ? '#fef2f2' : '#ecfdf5',
+                                            color: p.keterlambatan > 0 ? '#dc2626' : '#059669',
+                                            border: '1px solid currentColor'
                                         }}>
+                                            {p.keterlambatan > 0 ? <AlertCircle size={10} className="mr-1" /> : <CheckCircle2 size={10} className="mr-1" />}
                                             {p.keterlambatan} Hari
                                         </span>
                                     </td>
-                                    <td className="py-4 font-weight-bold text-danger" style={{ fontSize: '15px' }}>
-                                        {p.denda > 0 ? formatCurrency(p.denda) : 'Rp 0'}
+                                    <td className="py-4 font-weight-bold" style={{ fontSize: '15px', color: p.denda > 0 ? '#dc2626' : '#059669' }}>
+                                        {p.denda > 0 ? formatCurrency(p.denda) : 'Gratis / Tepat Waktu'}
                                     </td>
                                     <td className="px-4 py-4 text-right">
-                                        <button onClick={() => forceNavigate(`/pengembalian/${p.kdpengembalian}/edit`)} className="btn btn-sm btn-outline-info mr-2" style={{ borderRadius: '5px' }}>
-                                            Edit
-                                        </button>
-                                        <button onClick={() => handleDelete(p.kdpengembalian)} className="btn btn-sm btn-outline-danger" style={{ borderRadius: '5px' }}>
-                                            Hapus
-                                        </button>
+                                        <div className="flex justify-end gap-2">
+                                            <button onClick={() => forceNavigate(`/pengembalian/${p.kdpengembalian}/edit`)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Edit">
+                                                <Edit size={18} />
+                                            </button>
+                                            <button onClick={() => handleDelete(p.kdpengembalian)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Hapus">
+                                                <Trash2 size={18} />
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             )) : (
                                 <tr>
-                                    <td colSpan={6} className="text-center py-5 text-muted">Belum ada data pengembalian.</td>
+                                    <td colSpan={6} className="text-center py-5 text-muted">
+                                        <div className="flex flex-column items-center gap-2">
+                                            <RefreshCcw size={40} className="opacity-20" />
+                                            <span>Belum ada data pengembalian.</span>
+                                        </div>
+                                    </td>
                                 </tr>
                             )}
                         </tbody>
                     </table>
                 </div>
-            </div>
+            </motion.div>
         </AdminLayout>
     );
 }

@@ -5,7 +5,7 @@ export default function Services() {
     const services = [
         { title: 'Antar Jemput Bandara', icon: 'ion-ios-airplane', desc: 'Layanan penjemputan dan pengantaran ke bandara tepat waktu.' },
         { title: 'Sewa Mobil Harian', icon: 'ion-ios-car', desc: 'Pilihan sewa mobil harian dengan tarif yang sangat kompetitif.' },
-        { title: 'Sewa Mobil Pengantin', icon: 'ion-ios-heart', desc: 'Armada mobil mewah untuk momen spesial pernikahan Anda.' },
+        { title: 'Sewa Mobil Pengantin', icon: 'ion-ios-heart', desc: 'Pilihan mobil mewah untuk momen spesial pernikahan Anda.' },
         { title: 'City Tour', icon: 'ion-ios-map', desc: 'Paket perjalanan wisata keliling kota dengan driver profesional.' },
         { title: 'Sewa Jangka Panjang', icon: 'ion-ios-calendar', desc: 'Solusi transportasi untuk kebutuhan bulanan atau tahunan perusahaan.' },
         { title: 'Layanan Darurat 24/7', icon: 'ion-ios-help-buoy', desc: 'Bantuan darurat di jalan siap melayani Anda kapan saja.' },

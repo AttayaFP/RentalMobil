@@ -29,9 +29,9 @@ export default function About() {
                             <div className="heading-section">
                                 <span className="subheading" style={{ color: '#01d28e' }}>Selamat Datang di CarBook</span>
                                 <h2 className="mb-4">Perusahaan Rental Mobil Terpercaya</h2>
-                                <p>Kami adalah penyedia layanan transportasi terkemuka yang berkomitmen untuk memberikan pengalaman berkendara yang aman, nyaman, dan terjangkau bagi semua pelanggan kami. Dengan armada yang terawat dengan baik dan pelayanan pelanggan yang ramah, kami siap mendukung perjalanan Anda.</p>
+                                <p>Kami adalah penyedia layanan transportasi terkemuka yang berkomitmen untuk memberikan pengalaman berkendara yang aman, nyaman, dan terjangkau bagi semua pelanggan kami. Dengan mobil yang terawat dengan baik dan pelayanan pelanggan yang ramah, kami siap mendukung perjalanan Anda.</p>
                                 <p>Visi kami adalah menjadi pilihan utama dalam layanan penyewaan kendaraan dengan mengedepankan kualitas dan integritas.</p>
-                                <p><a href="/cars" className="btn btn-primary py-3 px-4">Lihat Armada Kami</a></p>
+                                <p><a href="/cars" className="btn btn-primary py-3 px-4">Lihat Mobil Kami</a></p>
                             </div>
                         </div>
                     </div>

@@ -1,5 +1,10 @@
 import AdminLayout from '@/layouts/AdminLayout';
 import { usePage } from '@inertiajs/react';
+import Swal from 'sweetalert2';
+import { useEffect } from 'react';
+import SearchFilter from '@/components/SearchFilter';
+import { motion } from 'framer-motion';
+import { ListChecks, Plus, Calendar, User, Car, ExternalLink, ReceiptText } from 'lucide-react';
 
 interface Booking {
     kdbooking: string;
@@ -8,14 +13,39 @@ interface Booking {
     kdmobil: string;
     total_bayar: number;
     status: string;
+    user?: { nama_lengkap: string };
+    mobil?: { nama_mobil: string };
 }
 
 interface Props {
     bookings: Booking[];
+    filters: {
+        search?: string;
+        date?: string;
+    };
 }
 
-export default function Index({ bookings }: Props) {
+export default function Index({ bookings, filters }: Props) {
     const { flash } = usePage<{ flash: { success?: string; error?: string } }>().props;
+
+    useEffect(() => {
+        if (flash?.success) {
+            Swal.fire({
+                title: 'Berhasil!',
+                text: flash.success,
+                icon: 'success',
+                confirmButtonColor: '#f96d00'
+            });
+        }
+        if (flash?.error) {
+            Swal.fire({
+                title: 'Gagal!',
+                text: flash.error,
+                icon: 'error',
+                confirmButtonColor: '#f96d00'
+            });
+        }
+    }, [flash]);
 
     const forceNavigate = (path: string) => {
         window.location.href = path;
@@ -27,29 +57,36 @@ export default function Index({ bookings }: Props) {
 
     const getStatusStyle = (status: string) => {
         const s = status?.toLowerCase() || '';
-        if (s.includes('selesai') || s.includes('sukses')) return { bg: '#e1f7ec', text: '#0d8a4f' };
-        if (s.includes('pending') || s.includes('proses')) return { bg: '#fff4e5', text: '#d69e2e' };
-        if (s.includes('gagal') || s.includes('batal')) return { bg: '#ffe8e8', text: '#e53e3e' };
-        return { bg: '#f0f2f5', text: '#4a5568' };
+        if (s.includes('selesai') || s.includes('sukses')) return { bg: '#ecfdf5', text: '#059669', border: '#10b98120' };
+        if (s.includes('pending') || s.includes('proses')) return { bg: '#fffbeb', text: '#d97706', border: '#f59e0b20' };
+        if (s.includes('gagal') || s.includes('batal')) return { bg: '#fef2f2', text: '#dc2626', border: '#ef444420' };
+        return { bg: '#f8fafc', text: '#64748b', border: '#94a3b820' };
     };
 
     return (
         <AdminLayout title="Kelola Pemesanan">
-            <div className="card shadow-sm border-0 overflow-hidden" style={{ borderRadius: '15px' }}>
-                <div className="card-header bg-white border-0 py-4 px-4 d-flex justify-content-between align-items-center">
-                    <h5 className="font-weight-bold mb-0 text-dark">
-                        <i className="ion-ios-list-box mr-2 text-primary"></i> Riwayat Pemesanan Mobil
-                    </h5>
-                    <button onClick={() => forceNavigate('/booking/create')} className="btn btn-primary px-4 py-2" style={{ borderRadius: '8px', fontWeight: 600 }}>
-                        <i className="ion-ios-add-circle mr-2"></i> Buat Booking
+            <motion.div 
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5 }}
+                className="card shadow-sm border-0 overflow-hidden" 
+                style={{ borderRadius: '15px' }}
+            >
+                <div className="card-header bg-white border-0 py-4 px-4 d-flex flex-wrap justify-content-between align-items-center">
+                    <div>
+                        <h5 className="font-weight-bold mb-1 text-dark">
+                            <ListChecks className="inline-block mr-2 text-primary" size={24} /> Riwayat Pemesanan Mobil
+                        </h5>
+                        <p className="text-muted small mb-0">Monitor semua transaksi penyewaan</p>
+                    </div>
+                    <button onClick={() => forceNavigate('/booking/create')} className="btn btn-primary px-4 py-2 mt-3 mt-md-0 d-flex align-items-center gap-2" style={{ borderRadius: '10px', fontWeight: 600 }}>
+                        <Plus size={18} /> Buat Booking
                     </button>
                 </div>
 
-                {flash?.success && (
-                    <div className="mx-4 alert alert-success border-0 shadow-sm mb-4" style={{ borderRadius: '10px' }}>
-                        <i className="ion-ios-checkmark-circle mr-2"></i> {flash.success}
-                    </div>
-                )}
+                <div className="px-4 pb-2">
+                    <SearchFilter routeName="/booking" placeholder="Cari kode booking, nama pelanggan, atau mobil..." filters={filters} />
+                </div>
 
                 <div className="table-responsive">
                     <table className="table table-hover mb-0">
@@ -68,45 +105,58 @@ export default function Index({ bookings }: Props) {
                                 return (
                                     <tr key={b.kdbooking}>
                                         <td className="px-4 py-4">
-                                            <div className="font-weight-bold text-primary mb-0">{b.kdbooking}</div>
-                                            <small className="text-muted"><i className="ion-ios-calendar mr-1"></i> {b.tglbooking}</small>
+                                            <div className="font-weight-bold text-primary mb-1 flex items-center gap-2">
+                                                <ReceiptText size={16} /> {b.kdbooking}
+                                            </div>
+                                            <small className="text-muted flex items-center gap-1">
+                                                <Calendar size={12} /> {b.tglbooking}
+                                            </small>
                                         </td>
                                         <td className="py-4">
-                                            <div className="d-flex flex-column">
-                                                <div className="text-dark font-weight-bold mb-0">Mobil: {b.kdmobil}</div>
-                                                <small className="text-muted">User ID: #{b.iduser}</small>
+                                            <div className="d-flex flex-column gap-1">
+                                                <div className="text-dark font-weight-bold mb-0 flex items-center gap-1">
+                                                    <Car size={14} className="text-muted" /> {b.mobil?.nama_mobil || b.kdmobil}
+                                                </div>
+                                                <small className="text-muted flex items-center gap-1">
+                                                    <User size={14} className="text-muted" /> {b.user?.nama_lengkap || `ID: #${b.iduser}`}
+                                                </small>
                                             </div>
                                         </td>
-                                        <td className="py-4 font-weight-bold" style={{ fontSize: '16px', color: '#2d3748' }}>
+                                        <td className="py-4 font-weight-bold" style={{ fontSize: '16px', color: '#1e293b' }}>
                                             {formatCurrency(b.total_bayar)}
                                         </td>
                                         <td className="py-4">
-                                            <span className={`badge px-3 py-2 text-uppercase`} style={{ 
-                                                borderRadius: '20px', 
+                                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider`} style={{ 
                                                 backgroundColor: style.bg,
                                                 color: style.text,
-                                                fontSize: '10px',
-                                                fontWeight: 800
+                                                border: `1px solid ${style.border}`
                                             }}>
+                                                <span className="w-1 h-1 rounded-full mr-1.5" style={{ backgroundColor: 'currentColor' }}></span>
                                                 {b.status || 'PROSES'}
                                             </span>
                                         </td>
                                         <td className="px-4 py-4 text-right">
-                                            <button onClick={() => forceNavigate(`/booking/${b.kdbooking}`)} className="btn btn-sm btn-info px-3" style={{ borderRadius: '5px' }}>
-                                                Detail
+                                            <button onClick={() => forceNavigate(`/booking/${b.kdbooking}/invoice`)} className="p-2 text-primary hover:bg-blue-50 rounded-lg transition-colors flex items-center gap-1 ml-auto" title="Detail">
+                                                <ExternalLink size={18} />
+                                                <span className="text-sm font-semibold">Invoice</span>
                                             </button>
                                         </td>
                                     </tr>
                                 );
                             }) : (
                                 <tr>
-                                    <td colSpan={5} className="text-center py-5 text-muted">Belum ada data pemesanan.</td>
+                                    <td colSpan={5} className="text-center py-5 text-muted">
+                                        <div className="flex flex-column items-center gap-2">
+                                            <ListChecks size={40} className="opacity-20" />
+                                            <span>Belum ada data pemesanan.</span>
+                                        </div>
+                                    </td>
                                 </tr>
                             )}
                         </tbody>
                     </table>
                 </div>
-            </div>
+            </motion.div>
         </AdminLayout>
     );
 }

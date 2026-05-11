@@ -1,5 +1,9 @@
 import AdminLayout from '@/layouts/AdminLayout';
 import { router } from '@inertiajs/react';
+import Swal from 'sweetalert2';
+import SearchFilter from '@/components/SearchFilter';
+import { motion } from 'framer-motion';
+import { Plus, Car, Tag, Calendar, Info, Edit, Trash2, Image as ImageIcon } from 'lucide-react';
 
 interface Mobil {
     kdmobil: string;
@@ -16,13 +20,37 @@ interface Mobil {
 
 interface Props {
     mobils: Mobil[];
+    filters: {
+        search?: string;
+        date?: string;
+    };
 }
 
-export default function Index({ mobils }: Props) {
+export default function Index({ mobils, filters }: Props) {
     const handleDelete = (id: string) => {
-        if (confirm('Apakah Anda yakin ingin menghapus mobil ini?')) {
-            router.delete(`/mobil/${id}`);
-        }
+        Swal.fire({
+            title: 'Apakah Anda yakin?',
+            text: "Data mobil ini akan dihapus permanen!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: '#3b82f6',
+            confirmButtonText: 'Ya, hapus!',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                router.delete(`/mobil/${id}`, {
+                    onSuccess: () => {
+                        Swal.fire({
+                            title: 'Terhapus!',
+                            text: 'Data mobil berhasil dihapus.',
+                            icon: 'success',
+                            confirmButtonColor: '#f96d00'
+                        });
+                    }
+                });
+            }
+        });
     };
 
     const forceNavigate = (path: string) => {
@@ -35,14 +63,27 @@ export default function Index({ mobils }: Props) {
 
     return (
         <AdminLayout title="Manajemen Mobil">
-            <div className="card shadow-sm border-0 overflow-hidden" style={{ borderRadius: '15px' }}>
-                <div className="card-header bg-white border-0 py-4 px-4 d-flex justify-content-between align-items-center">
-                    <h5 className="font-weight-bold mb-0 text-dark" style={{ letterSpacing: '-0.5px' }}>
-                        <i className="ion-ios-car mr-2 text-primary"></i> Daftar Mobil
-                    </h5>
-                    <button onClick={() => forceNavigate('/mobil/create')} className="btn btn-primary px-4 py-2" style={{ borderRadius: '8px', fontWeight: 600 }}>
-                        <i className="ion-ios-add-circle mr-2"></i> Tambah Mobil
+            <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="card shadow-sm border-0 overflow-hidden" 
+                style={{ borderRadius: '15px' }}
+            >
+                <div className="card-header bg-white border-0 py-4 px-4 d-flex flex-wrap justify-content-between align-items-center">
+                    <div>
+                        <h5 className="font-weight-bold mb-1 text-dark" style={{ letterSpacing: '-0.5px' }}>
+                            <Car className="inline-block mr-2 text-primary" size={24} /> Daftar Mobil
+                        </h5>
+                        <p className="text-muted small mb-0">Kelola armada rental mobil Anda</p>
+                    </div>
+                    <button onClick={() => forceNavigate('/mobil/create')} className="btn btn-primary px-4 py-2 mt-3 mt-md-0 d-flex align-items-center gap-2" style={{ borderRadius: '10px', fontWeight: 600 }}>
+                        <Plus size={18} /> Tambah Mobil
                     </button>
+                </div>
+
+                <div className="px-4 pb-2">
+                    <SearchFilter routeName="/mobil" placeholder="Cari kode, nama, atau plat..." filters={filters} showDate={false} />
                 </div>
 
                 <div className="table-responsive">
@@ -61,27 +102,31 @@ export default function Index({ mobils }: Props) {
                                 <tr key={mobil.kdmobil}>
                                     <td className="px-4 py-4">
                                         <div className="d-flex align-items-center">
-                                            <div className="mr-3" style={{ width: '80px', height: '50px', borderRadius: '8px', overflow: 'hidden', backgroundColor: '#eee' }}>
+                                            <div className="mr-3 shadow-sm border" style={{ width: '80px', height: '50px', borderRadius: '10px', overflow: 'hidden', backgroundColor: '#f8fafc' }}>
                                                 {mobil.foto ? (
                                                     <img src={`/storage/${mobil.foto}`} alt={mobil.nama_mobil} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                                 ) : (
-                                                    <div className="h-100 d-flex align-items-center justify-content-center">
-                                                        <i className="ion-ios-image text-muted"></i>
+                                                    <div className="h-100 d-flex align-items-center justify-content-center text-gray-300">
+                                                        <ImageIcon size={20} />
                                                     </div>
                                                 )}
                                             </div>
                                             <div>
                                                 <div className="font-weight-bold text-dark mb-0" style={{ fontSize: '15px' }}>{mobil.nama_mobil}</div>
-                                                <small className="text-muted">{mobil.kdmobil} • {mobil.kdkategori}</small>
+                                                <small className="text-muted flex items-center gap-1">
+                                                    <Info size={12} /> {mobil.kdmobil} • {mobil.kdkategori}
+                                                </small>
                                             </div>
                                         </div>
                                     </td>
                                     <td className="py-4">
                                         <div className="d-flex flex-column">
-                                            <span className="badge badge-light text-dark py-1 px-2 mb-1" style={{ width: 'fit-content', border: '1px solid #ddd' }}>
-                                                <i className="ion-ios-pricetag mr-1"></i> {mobil.plat_mobil}
+                                            <span className="badge badge-light text-dark py-1 px-2 mb-1 flex items-center gap-1" style={{ width: 'fit-content', border: '1px solid #e2e8f0', borderRadius: '6px' }}>
+                                                <Tag size={12} className="text-primary" /> {mobil.plat_mobil}
                                             </span>
-                                            <small className="text-muted">{mobil.warna_mobil} • {mobil.thn_mobil}</small>
+                                            <small className="text-muted flex items-center gap-1">
+                                                <Calendar size={12} /> {mobil.warna_mobil} • {mobil.thn_mobil}
+                                            </small>
                                         </div>
                                     </td>
                                     <td className="py-4 font-weight-bold text-primary" style={{ fontSize: '16px' }}>
@@ -89,31 +134,31 @@ export default function Index({ mobils }: Props) {
                                         <span className="text-muted small font-weight-normal"> /hari</span>
                                     </td>
                                     <td className="py-4">
-                                        <span className={`badge px-3 py-2`} style={{ 
-                                            borderRadius: '20px', 
-                                            backgroundColor: mobil.status === 'Tersedia' ? '#e1f7ec' : mobil.status === 'Disewa' ? '#ffe8e8' : '#fff4e5',
-                                            color: mobil.status === 'Tersedia' ? '#0d8a4f' : mobil.status === 'Disewa' ? '#e53e3e' : '#d69e2e',
-                                            fontSize: '11px',
-                                            fontWeight: 700,
-                                            textTransform: 'uppercase'
+                                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider`} style={{ 
+                                            backgroundColor: mobil.status === 'Tersedia' ? '#ecfdf5' : mobil.status === 'Disewa' ? '#fef2f2' : '#fffbeb',
+                                            color: mobil.status === 'Tersedia' ? '#059669' : mobil.status === 'Disewa' ? '#dc2626' : '#d97706',
+                                            border: `1px solid ${mobil.status === 'Tersedia' ? '#10b98120' : mobil.status === 'Disewa' ? '#ef444420' : '#f59e0b20'}`
                                         }}>
+                                            <span className="w-1.5 h-1.5 rounded-full mr-1.5" style={{ backgroundColor: 'currentColor' }}></span>
                                             {mobil.status || 'Tersedia'}
                                         </span>
                                     </td>
                                     <td className="px-4 py-4 text-right">
-                                        <button onClick={() => forceNavigate(`/mobil/${mobil.kdmobil}/edit`)} className="btn btn-sm btn-outline-info mr-2" style={{ borderRadius: '5px' }}>
-                                            <i className="ion-ios-create"></i> Edit
-                                        </button>
-                                        <button onClick={() => handleDelete(mobil.kdmobil)} className="btn btn-sm btn-outline-danger" style={{ borderRadius: '5px' }}>
-                                            <i className="ion-ios-trash"></i>
-                                        </button>
+                                        <div className="flex justify-end gap-2">
+                                            <button onClick={() => forceNavigate(`/mobil/${mobil.kdmobil}/edit`)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors border border-transparent hover:border-blue-100" title="Edit">
+                                                <Edit size={18} />
+                                            </button>
+                                            <button onClick={() => handleDelete(mobil.kdmobil)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-100" title="Hapus">
+                                                <Trash2 size={18} />
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
                         </tbody>
                     </table>
                 </div>
-            </div>
+            </motion.div>
         </AdminLayout>
     );
 }

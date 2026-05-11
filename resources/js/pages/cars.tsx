@@ -23,14 +23,14 @@ export default function Cars({ mobils }: Props) {
 
     return (
         <TemplateLayout showHero={false}>
-            <Head title="Armada Kami - CarBook" />
+            <Head title="Mobil Kami - CarBook" />
             
             <div className="hero-wrap ftco-degree-bg" style={{ backgroundImage: "url('/assets/template/images/bg_1.jpg')", height: '400px' }}>
                 <div className="overlay"></div>
                 <div className="container">
                     <div className="row no-gutters slider-text justify-content-start align-items-center justify-content-center" style={{ height: '400px' }}>
                         <div className="col-lg-8 text-center" data-aos="fade-up">
-                            <h1 className="mb-3 text-white font-weight-bold">Armada Kami</h1>
+                            <h1 className="mb-3 text-white font-weight-bold">Mobil Kami</h1>
                             <p className="breadcrumbs text-white">
                                 <span><a href="/" className="text-white">Beranda</a></span> / <span>Pilihan Mobil</span>
                             </p>

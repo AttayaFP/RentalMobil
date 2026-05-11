@@ -2,9 +2,13 @@ import AdminLayout from '@/layouts/AdminLayout';
 import { useForm } from '@inertiajs/react';
 import { FormEventHandler } from 'react';
 
-export default function Create() {
+interface Props {
+    next_kdkategori: string;
+}
+
+export default function Create({ next_kdkategori }: Props) {
     const { data, setData, post, processing, errors } = useForm({
-        kdkategori: '',
+        kdkategori: next_kdkategori,
         nama_kategori: '',
     });
 
@@ -32,14 +36,9 @@ export default function Create() {
                         <form onSubmit={submit}>
                             <div className="form-group mb-4">
                                 <label className="font-weight-bold text-dark small text-uppercase">Kode Kategori</label>
-                                <input 
-                                    type="text" 
-                                    className={`form-control ${errors.kdkategori ? 'is-invalid' : ''}`}
-                                    placeholder="CONTOH: SUV"
-                                    value={data.kdkategori}
-                                    onChange={e => setData('kdkategori', e.target.value)}
-                                    required
-                                />
+                                <div className="form-control bg-light d-flex align-items-center font-weight-bold" style={{ cursor: 'default', userSelect: 'none', minHeight: '50px' }}>
+                                    {data.kdkategori}
+                                </div>
                                 {errors.kdkategori && <div className="invalid-feedback">{errors.kdkategori}</div>}
                             </div>
                             

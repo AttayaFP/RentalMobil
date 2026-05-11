@@ -5,15 +5,15 @@ namespace App\Http\Controllers;
 use App\Models\BookingMobil;
 use App\Models\Mobil;
 use App\Models\User;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Midtrans\Config;
 use Midtrans\Snap;
 
 class BookingController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $query = BookingMobil::query();
 
@@ -22,8 +22,26 @@ class BookingController extends Controller
                 ->whereIn('status', ['Selesai', 'Success', 'Berhasil']);
         }
 
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('kdbooking', 'like', "%{$search}%")
+                    ->orWhereHas('user', function ($u) use ($search) {
+                        $u->where('nama_lengkap', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('mobil', function ($m) use ($search) {
+                        $m->where('nama_mobil', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        if ($request->filled('date')) {
+            $query->whereDate('tglbooking', $request->date);
+        }
+
         return Inertia::render('booking/index', [
-            'bookings' => $query->get(),
+            'bookings' => $query->with(['user', 'mobil'])->latest()->get(),
+            'filters' => $request->only(['search', 'date']),
         ]);
     }
 
@@ -39,9 +57,8 @@ class BookingController extends Controller
             $number = 1;
         }
 
-        return 'BO' . str_pad($number, 3, '0', STR_PAD_LEFT);
+        return 'BO'.str_pad($number, 3, '0', STR_PAD_LEFT);
     }
-
 
     public function create(Request $request)
     {
@@ -50,7 +67,7 @@ class BookingController extends Controller
 
         return Inertia::render('booking/create', [
             'users' => User::all(),
-            'mobils' => $mobils->map(fn($m) => [
+            'mobils' => $mobils->map(fn ($m) => [
                 'kdmobil' => $m->kdmobil,
                 'nama_mobil' => $m->nama_mobil,
                 'plat_mobil' => $m->plat_mobil,
@@ -62,7 +79,6 @@ class BookingController extends Controller
             'next_kdbooking' => $this->generateKdBooking(),
         ]);
     }
-
 
     public function store(Request $request)
     {
@@ -80,7 +96,7 @@ class BookingController extends Controller
         ]);
 
         $mobil = Mobil::find($request->kdmobil);
-        if (!$mobil || $mobil->status !== 'Tersedia') {
+        if (! $mobil || $mobil->status !== 'Tersedia') {
             return back()->withErrors(['kdmobil' => 'Maaf, mobil ini sudah tidak tersedia untuk disewa.']);
         }
 
@@ -88,7 +104,7 @@ class BookingController extends Controller
         $data['kdbooking'] = $this->generateKdBooking();
 
         if (! isset($data['transaction_id'])) {
-            $data['transaction_id'] = 'TRX-' . strtoupper(bin2hex(random_bytes(4)));
+            $data['transaction_id'] = 'TRX-'.strtoupper(bin2hex(random_bytes(4)));
             $data['transaction_time'] = now();
         }
 
@@ -110,7 +126,7 @@ class BookingController extends Controller
 
         $params = [
             'transaction_details' => [
-                'order_id' => $booking->kdbooking . '-' . time(),
+                'order_id' => $booking->kdbooking.'-'.time(),
                 'gross_amount' => (int) $booking->total_bayar,
             ],
             'customer_details' => [
@@ -123,7 +139,7 @@ class BookingController extends Controller
                     'id' => $mobil->kdmobil,
                     'price' => (int) $booking->harga,
                     'quantity' => (int) $booking->lama_sewa,
-                    'name' => 'Sewa Mobil ' . $mobil->nama_mobil,
+                    'name' => 'Sewa Mobil '.$mobil->nama_mobil,
                 ],
             ],
         ];
@@ -137,7 +153,7 @@ class BookingController extends Controller
                 'client_key' => trim(config('midtrans.client_key')),
             ]);
         } catch (\Exception $e) {
-            return redirect()->route('booking.index')->with('error', 'Gagal menghubungkan ke Midtrans: ' . $e->getMessage());
+            return redirect()->route('booking.index')->with('error', 'Gagal menghubungkan ke Midtrans: '.$e->getMessage());
         }
     }
 

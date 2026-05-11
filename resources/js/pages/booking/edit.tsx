@@ -75,7 +75,9 @@ export default function Edit({ booking, users, mobils }: Props) {
                                     <div className="row">
                                         <div className="col-md-6 form-group mb-4">
                                             <label className="small font-weight-bold text-uppercase">Kode Booking</label>
-                                            <input type="text" className="form-control bg-light font-weight-bold" value={booking.kdbooking} disabled />
+                                            <div className="form-control bg-light d-flex align-items-center font-weight-bold" style={{ cursor: 'default', userSelect: 'none', minHeight: '50px' }}>
+                                                {booking.kdbooking}
+                                            </div>
                                         </div>
                                         <div className="col-md-6 form-group mb-4">
                                             <label className="small font-weight-bold text-uppercase">Tanggal Transaksi</label>

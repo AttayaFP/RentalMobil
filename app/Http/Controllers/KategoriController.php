@@ -8,16 +8,48 @@ use Inertia\Inertia;
 
 class KategoriController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        $query = Kategori::query();
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('kdkategori', 'like', "%{$search}%")
+                    ->orWhere('nama_kategori', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('date')) {
+            $query->whereDate('created_at', $request->date);
+        }
+
         return Inertia::render('kategori/index', [
-            'kategoris' => Kategori::all(),
+            'kategoris' => $query->latest()->get(),
+            'filters' => $request->only(['search', 'date']),
         ]);
+    }
+
+    private function generateKdKategori(): string
+    {
+        $last = Kategori::orderByRaw('CAST(SUBSTRING(kdkategori, 5) AS UNSIGNED) DESC')
+            ->whereRaw('kdkategori REGEXP "^KTG-[0-9]+$"')
+            ->first();
+
+        if ($last) {
+            $number = (int) substr($last->kdkategori, 4) + 1;
+        } else {
+            $number = 1;
+        }
+
+        return 'KTG-'.str_pad($number, 3, '0', STR_PAD_LEFT);
     }
 
     public function create()
     {
-        return Inertia::render('kategori/create');
+        return Inertia::render('kategori/create', [
+            'next_kdkategori' => $this->generateKdKategori(),
+        ]);
     }
 
     public function store(Request $request)

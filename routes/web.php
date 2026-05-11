@@ -39,6 +39,7 @@ Route::get('/contact', function () {
 })->name('contact');
 
 use App\Http\Controllers\BookingController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\KategoriController;
 use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\MobilController;
@@ -46,12 +47,7 @@ use App\Http\Controllers\PelangganController;
 use App\Http\Controllers\PengembalianController;
 
 Route::middleware(['auth'])->group(function () {
-    Route::get('dashboard', function () {
-        if (auth()->user()->role === 'pelanggan') {
-            return redirect('/');
-        }
-        return Inertia::render('dashboard');
-    })->name('dashboard');
+    Route::get('dashboard', DashboardController::class)->name('dashboard');
 
     // Routes accessible by Admin and Pimpinan
     Route::middleware(['role:admin,pimpinan'])->group(function () {

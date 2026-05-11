@@ -10,17 +10,50 @@ use Inertia\Inertia;
 
 class MobilController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        $query = Mobil::query();
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('kdmobil', 'like', "%{$search}%")
+                    ->orWhere('nama_mobil', 'like', "%{$search}%")
+                    ->orWhere('plat_mobil', 'like', "%{$search}%")
+                    ->orWhere('thn_mobil', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('date')) {
+            $query->whereDate('created_at', $request->date);
+        }
+
         return Inertia::render('mobil/index', [
-            'mobils' => Mobil::all(),
+            'mobils' => $query->latest()->get(),
+            'filters' => $request->only(['search', 'date']),
         ]);
+    }
+
+    private function generateKdMobil(): string
+    {
+        $last = Mobil::orderByRaw('CAST(SUBSTRING(kdmobil, 5) AS UNSIGNED) DESC')
+            ->whereRaw('kdmobil REGEXP "^MBL-[0-9]+$"')
+            ->first();
+
+        if ($last) {
+            $number = (int) substr($last->kdmobil, 4) + 1;
+        } else {
+            $number = 1;
+        }
+
+        return 'MBL-'.str_pad($number, 3, '0', STR_PAD_LEFT);
     }
 
     public function create()
     {
         return Inertia::render('mobil/create', [
             'kategoris' => Kategori::all(),
+            'next_kdmobil' => $this->generateKdMobil(),
         ]);
     }
 

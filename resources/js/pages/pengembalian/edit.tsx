@@ -77,7 +77,9 @@ export default function Edit({ pengembalian, bookings }: Props) {
                             <div className="row">
                                 <div className="col-md-6 form-group mb-4">
                                     <label className="font-weight-bold text-dark small text-uppercase">Kode Pengembalian (Tetap)</label>
-                                    <input type="text" className="form-control bg-light" value={pengembalian.kdpengembalian} disabled />
+                                    <div className="form-control bg-light d-flex align-items-center font-weight-bold" style={{ cursor: 'default', userSelect: 'none', minHeight: '50px' }}>
+                                        {pengembalian.kdpengembalian}
+                                    </div>
                                 </div>
                                 <div className="col-md-6 form-group mb-4">
                                     <label className="font-weight-bold text-dark small text-uppercase">Referensi Booking</label>
