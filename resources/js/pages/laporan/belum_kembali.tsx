@@ -2,9 +2,13 @@ import AdminLayout from '@/layouts/AdminLayout';
 
 interface Booking {
     kdbooking: string;
+    koderental: string;
+    nama_pelanggan: string;
     nama_mobil: string;
     plat_mobil: string;
     tglmulai: string;
+    tglselesai: string;
+    waktu_order: string;
     status: string;
 }
 

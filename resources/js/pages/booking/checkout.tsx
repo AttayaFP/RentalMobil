@@ -1,7 +1,7 @@
 import AdminLayout from '@/layouts/AdminLayout';
 import TemplateLayout from '@/layouts/TemplateLayout';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 
 interface Booking {
@@ -18,12 +18,19 @@ interface Props {
 
 declare global {
     interface Window {
-        snap: any;
+        snap: {
+            pay: (token: string, options?: {
+                onSuccess?: (result: unknown) => void;
+                onPending?: (result: unknown) => void;
+                onError?: (result: unknown) => void;
+                onClose?: () => void;
+            }) => void;
+        };
     }
 }
 
 export default function Checkout({ booking, snap_token, client_key }: Props) {
-    const { auth } = usePage<any>().props;
+    const { auth } = usePage<{ auth: { user: { role: string } } }>().props;
     const user = auth?.user;
     const isPelanggan = user?.role === 'pelanggan';
 
@@ -39,24 +46,24 @@ export default function Checkout({ booking, snap_token, client_key }: Props) {
         return () => { document.body.removeChild(script); };
     }, [client_key]);
 
-    const handlePay = () => {
+    const handlePay = useCallback(() => {
         if (window.snap) {
             window.snap.pay(snap_token, {
-                onSuccess: function (result: any) {
+                onSuccess: function (result: unknown) {
                     setPaymentStatus('success');
                     axios.post(`/booking/${booking.kdbooking}/success`, result)
                         .then(() => { router.get(`/booking/${booking.kdbooking}/invoice`); });
                 },
-                onPending: function (result: any) { setPaymentStatus('pending'); },
-                onError: function (result: any) { setPaymentStatus('error'); },
+                onPending: function () { setPaymentStatus('pending'); },
+                onError: function () { setPaymentStatus('error'); },
             });
         }
-    };
+    }, [snap_token, booking.kdbooking]);
 
     useEffect(() => {
         const timer = setTimeout(() => { handlePay(); }, 1500);
         return () => clearTimeout(timer);
-    }, [snap_token]);
+    }, [snap_token, handlePay]);
 
     const content = (
         <div className="row justify-content-center">

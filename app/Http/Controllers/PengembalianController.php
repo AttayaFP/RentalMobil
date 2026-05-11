@@ -11,9 +11,6 @@ use Inertia\Inertia;
 
 class PengembalianController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
         return Inertia::render('pengembalian/index', [
@@ -21,9 +18,6 @@ class PengembalianController extends Controller
         ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
         return Inertia::render('pengembalian/create', [
@@ -32,9 +26,6 @@ class PengembalianController extends Controller
         ]);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
         $request->validate([
@@ -49,8 +40,6 @@ class PengembalianController extends Controller
         ]);
 
         KembaliMobil::create($request->all());
-
-        // Update Mobil status to 'Perawatan' and Booking status to 'Selesai'
         $booking = BookingMobil::find($request->kdbooking);
         if ($booking) {
             $mobil = Mobil::find($booking->kdmobil);
@@ -63,9 +52,6 @@ class PengembalianController extends Controller
         return redirect()->route('pengembalian.index')->with('success', 'Pengembalian berhasil ditambahkan.');
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(string $id)
     {
         $pengembalian = KembaliMobil::findOrFail($id);
@@ -77,9 +63,6 @@ class PengembalianController extends Controller
         ]);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, string $id)
     {
         $pengembalian = KembaliMobil::findOrFail($id);
@@ -99,9 +82,6 @@ class PengembalianController extends Controller
         return redirect()->route('pengembalian.index')->with('success', 'Pengembalian berhasil diperbarui.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(string $id)
     {
         $pengembalian = KembaliMobil::findOrFail($id);

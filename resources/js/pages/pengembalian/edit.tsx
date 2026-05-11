@@ -26,7 +26,7 @@ interface Props {
 }
 
 export default function Edit({ pengembalian, bookings }: Props) {
-    const { data, setData, put, processing, errors } = useForm({
+    const { data, setData, put, processing } = useForm({
         kdbooking: pengembalian.kdbooking,
         iduser: pengembalian.iduser.toString(),
         tglmulai: pengembalian.tglmulai,
@@ -57,8 +57,8 @@ export default function Edit({ pengembalian, bookings }: Props) {
         window.location.href = path;
     };
 
-    const formatCurrency = (amount: any) => {
-        return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount || 0);
+    const formatCurrency = (amount: number | string) => {
+        return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(Number(amount) || 0);
     };
 
     return (

@@ -11,7 +11,7 @@ export default function Login({ status, canResetPassword }: LoginProps) {
     const { data, setData, post, processing, errors, reset } = useForm({
         login: '',
         password: '',
-        remember: false,
+        remember: false as boolean,
     });
 
     const submit: FormEventHandler = (e) => {
@@ -54,8 +54,6 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                     <div className="row justify-content-center">
                         <div className="col-md-5 col-lg-4">
                             <div className="bg-white shadow-lg p-5" style={{ borderRadius: '20px' }}>
-
-                                {/* Header */}
                                 <div className="text-center mb-4">
                                     <div style={{ fontSize: '26px', fontWeight: 800, letterSpacing: '1.5px', color: '#222831' }}>
                                         Car<span style={{ color: '#f96d00' }}>Book</span>
@@ -67,15 +65,12 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                                     <div className="mx-auto mt-2" style={{ height: '3px', width: '36px', backgroundColor: '#f96d00', borderRadius: '2px' }} />
                                 </div>
 
-                                {/* Status */}
                                 {status && (
                                     <div className="alert alert-success small py-2 mb-3" style={{ borderRadius: '8px' }}>
                                         {status}
                                     </div>
                                 )}
-
                                 <form onSubmit={submit}>
-                                    {/* Username / Email */}
                                     <div className="form-group mb-3">
                                         <label className="font-weight-bold text-dark small text-uppercase mb-1">
                                             Username atau Email
@@ -107,8 +102,6 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                                             </div>
                                         )}
                                     </div>
-
-                                    {/* Password */}
                                     <div className="form-group mb-4">
                                         <label className="font-weight-bold text-dark small text-uppercase mb-1">
                                             Kata Sandi
@@ -139,8 +132,6 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                                             </div>
                                         )}
                                     </div>
-
-                                    {/* Remember + Forgot */}
                                     <div className="d-flex justify-content-between align-items-center mb-4">
                                         <div className="custom-control custom-checkbox">
                                             <input

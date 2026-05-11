@@ -11,9 +11,6 @@ use Inertia\Response;
 
 class LaporanController extends Controller
 {
-    /**
-     * Display the customer report.
-     */
     public function pelanggan(): Response
     {
         $pelanggans = User::where('role', 'pelanggan')->get();
@@ -23,9 +20,6 @@ class LaporanController extends Controller
         ]);
     }
 
-    /**
-     * Display the car report.
-     */
     public function mobil(): Response
     {
         $mobils = Mobil::with('kategori')->get()->map(function ($mobil) {
@@ -47,9 +41,6 @@ class LaporanController extends Controller
         ]);
     }
 
-    /**
-     * Display the booking report.
-     */
     public function booking(): Response
     {
         $bookings = BookingMobil::with(['user', 'mobil'])->get()->map(function ($booking) {
@@ -72,9 +63,6 @@ class LaporanController extends Controller
         ]);
     }
 
-    /**
-     * Display the return report.
-     */
     public function pengembalian(): Response
     {
         $pengembalians = KembaliMobil::with(['user', 'booking.mobil'])->get()->map(function ($kembali) {
@@ -96,9 +84,6 @@ class LaporanController extends Controller
         ]);
     }
 
-    /**
-     * Display the comprehensive rental report.
-     */
     public function rental(): Response
     {
         $rentals = KembaliMobil::with(['user', 'booking.mobil'])->get()->map(function ($kembali) {
@@ -127,9 +112,6 @@ class LaporanController extends Controller
         ]);
     }
 
-    /**
-     * Display the report of cars not yet returned.
-     */
     public function belumKembali(): Response
     {
         $belumKembali = BookingMobil::whereNotIn('kdbooking', KembaliMobil::pluck('kdbooking'))

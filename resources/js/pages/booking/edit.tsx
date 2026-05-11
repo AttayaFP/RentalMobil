@@ -32,7 +32,7 @@ interface Props {
 }
 
 export default function Edit({ booking, users, mobils }: Props) {
-    const { data, setData, put, processing, errors } = useForm({
+    const { data, setData, put, processing } = useForm({
         tglbooking: booking.tglbooking,
         iduser: booking.iduser.toString(),
         kdmobil: booking.kdmobil,
@@ -53,8 +53,8 @@ export default function Edit({ booking, users, mobils }: Props) {
         window.location.href = path;
     };
 
-    const formatCurrency = (amount: any) => {
-        return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount || 0);
+    const formatCurrency = (amount: number | string) => {
+        return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(Number(amount) || 0);
     };
 
     return (

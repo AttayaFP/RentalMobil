@@ -39,9 +39,9 @@ export default function Index({ kategoris }: Props) {
                             <table className="table table-hover mb-0">
                                 <thead style={{ backgroundColor: '#f8f9fa' }}>
                                     <tr>
-                                        <th className="border-0 px-4 py-3 text-muted small text-uppercase font-weight-bold" width="150">Kode</th>
+                                        <th className="border-0 px-4 py-3 text-muted small text-uppercase font-weight-bold" style={{ width: '150px' }}>Kode</th>
                                         <th className="border-0 py-3 text-muted small text-uppercase font-weight-bold">Nama Kategori</th>
-                                        <th className="border-0 px-4 py-3 text-muted small text-uppercase font-weight-bold text-right" width="150">Aksi</th>
+                                        <th className="border-0 px-4 py-3 text-muted small text-uppercase font-weight-bold text-right" style={{ width: '150px' }}>Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody>

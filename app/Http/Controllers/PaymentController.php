@@ -11,13 +11,10 @@ class PaymentController extends Controller
 {
     public function notificationHandler(Request $request)
     {
-        // Set konfigurasi midtrans
         Config::$serverKey = config('midtrans.server_key');
         Config::$isProduction = config('midtrans.is_production');
         Config::$isSanitized = config('midtrans.is_sanitized');
         Config::$is3ds = config('midtrans.is_3ds');
-
-        // Instance midtrans notification
         try {
             $notification = new Notification;
         } catch (\Exception $e) {
@@ -26,7 +23,7 @@ class PaymentController extends Controller
 
         $transaction = $notification->transaction_status;
         $type = $notification->payment_type;
-        $orderId = $notification->order_id; // ini adalah kdbooking
+        $orderId = $notification->order_id;
         $fraud = $notification->fraud_status;
 
         $booking = BookingMobil::where('kdbooking', $orderId)->first();
@@ -36,7 +33,6 @@ class PaymentController extends Controller
         }
 
         if ($transaction == 'capture') {
-            // For credit card transaction, we need to check whether transaction is challenge by FDS or not
             if ($type == 'credit_card') {
                 if ($fraud == 'challenge') {
                     $booking->status = 'challenge';
@@ -56,7 +52,6 @@ class PaymentController extends Controller
             $booking->status = 'cancel';
         }
 
-        // Simpan transaction details dari midtrans
         $booking->transaction_id = $notification->transaction_id;
         $booking->transaction_time = $notification->transaction_time;
         $booking->payment_type = $type;

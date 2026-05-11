@@ -37,7 +37,7 @@ const DARK = '#222831';
 const GRAY = '#6c757d';
 
 export default function Invoice({ booking, user, mobil }: Props) {
-    const { auth } = usePage<any>().props;
+    const { auth } = usePage<{ auth: { user: { role: string } } }>().props;
     const authUser = auth?.user;
     const isPelanggan = authUser?.role === 'pelanggan';
 
@@ -73,7 +73,6 @@ export default function Invoice({ booking, user, mobil }: Props) {
 
     const content = (
         <>
-            {/* ── Toolbar – ditandai .inv-toolbar agar mudah disembunyikan saat print ── */}
             <div className="inv-toolbar row justify-content-center mb-3 no-print">
                 <div className="col-xl-10 d-flex justify-content-between align-items-center">
                     <Link href={isPelanggan ? "/" : "/booking"} className="btn btn-link text-muted p-0" style={{ fontWeight: 500 }}>
@@ -89,7 +88,6 @@ export default function Invoice({ booking, user, mobil }: Props) {
                 </div>
             </div>
 
-            {/* ── Invoice wrapper – #inv ── */}
             <div className="row justify-content-center">
                 <div className="col-xl-10">
                     <div
@@ -102,7 +100,6 @@ export default function Invoice({ booking, user, mobil }: Props) {
                             fontFamily: "'Poppins','Segoe UI',sans-serif",
                         }}
                     >
-                        {/* ═══ HEADER ═══ */}
                         <div style={{
                             background: `linear-gradient(135deg, ${DARK} 0%, #393e46 55%, ${ORANGE} 100%)`,
                             padding: '18px 28px',
@@ -143,12 +140,8 @@ export default function Invoice({ booking, user, mobil }: Props) {
                             </div>
                         </div>
 
-                        {/* ═══ BODY ═══ */}
                         <div style={{ padding: '18px 28px' }}>
-
-                            {/* ── Info side-by-side ── */}
                             <div style={{ display: 'flex', gap: '12px', marginBottom: '14px' }}>
-                                {/* Pelanggan */}
                                 <div style={{ flex: 1, background: '#f8f9fa', borderRadius: '8px', padding: '11px 14px', borderLeft: `3px solid ${ORANGE}` }}>
                                     <div style={{ fontSize: '9px', fontWeight: 700, color: ORANGE, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '7px' }}>
                                         <i className="ion-ios-person mr-1" />Informasi Pelanggan
@@ -158,7 +151,6 @@ export default function Invoice({ booking, user, mobil }: Props) {
                                     <Row label="No. HP" value={user.nohp || '-'} />
                                 </div>
 
-                                {/* Transaksi */}
                                 <div style={{ flex: 1, background: '#f8f9fa', borderRadius: '8px', padding: '11px 14px', borderLeft: `3px solid ${DARK}` }}>
                                     <div style={{ fontSize: '9px', fontWeight: 700, color: DARK, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '7px' }}>
                                         <i className="ion-ios-time mr-1" />Detail Transaksi
@@ -169,15 +161,12 @@ export default function Invoice({ booking, user, mobil }: Props) {
                                 </div>
                             </div>
 
-                            {/* divider */}
                             <div style={{ borderTop: '1.5px dashed #dee2e6', margin: '2px 0 12px' }} />
 
-                            {/* label tabel */}
                             <div style={{ fontSize: '9px', fontWeight: 700, color: GRAY, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '7px' }}>
                                 <i className="ion-ios-car mr-1" />Detail Kendaraan &amp; Sewa
                             </div>
 
-                            {/* ── Tabel kendaraan ── */}
                             <div style={{ borderRadius: '8px', overflow: 'hidden', border: '1.5px solid #e9ecef', marginBottom: '12px' }}>
                                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                                     <thead>
@@ -205,7 +194,6 @@ export default function Invoice({ booking, user, mobil }: Props) {
                                 </table>
                             </div>
 
-                            {/* ── Payment summary ── */}
                             <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '14px' }}>
                                 <div style={{ minWidth: '290px', borderRadius: '8px', overflow: 'hidden', border: '1.5px solid #e9ecef' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 14px', borderBottom: '1px solid #e9ecef' }}>
@@ -221,7 +209,6 @@ export default function Invoice({ booking, user, mobil }: Props) {
                                 </div>
                             </div>
 
-                            {/* ── Signature ── */}
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px' }}>
                                 <Sig top="Mengetahui," role="Pelanggan" name={user.nama_lengkap} />
                                 <Sig
@@ -231,7 +218,6 @@ export default function Invoice({ booking, user, mobil }: Props) {
                                 />
                             </div>
 
-                            {/* ── Footer note ── */}
                             <div style={{ marginTop: '12px', padding: '9px 14px', borderRadius: '7px', background: '#fff8f3', border: '1px solid #fde8d8', textAlign: 'center' }}>
                                 <p style={{ margin: 0, fontSize: '10px', color: '#9a6033', fontWeight: 500 }}>
                                     <i className="ion-ios-information-circle mr-1" />
@@ -309,7 +295,6 @@ export default function Invoice({ booking, user, mobil }: Props) {
     );
 }
 
-/* ── Sub-components ── */
 function Row({ label, value }: { label: string; value: string }) {
     return (
         <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: '4px' }}>

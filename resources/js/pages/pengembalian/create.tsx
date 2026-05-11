@@ -14,7 +14,7 @@ interface Props {
 }
 
 export default function Create({ bookings }: Props) {
-    const { data, setData, post, processing, errors } = useForm({
+    const { data, setData, post, processing } = useForm({
         kdpengembalian: '',
         kdbooking: '',
         iduser: '',
@@ -70,8 +70,8 @@ export default function Create({ bookings }: Props) {
         window.location.href = path;
     };
 
-    const formatCurrency = (amount: any) => {
-        return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount || 0);
+    const formatCurrency = (amount: number | string) => {
+        return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(Number(amount) || 0);
     };
 
     return (

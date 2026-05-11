@@ -40,13 +40,13 @@ export default function PelangganReport({ pelanggans }: Props) {
                         <table className="table table-striped table-hover table-sm w-100" style={{ fontSize: '11px' }}>
                             <thead style={{ backgroundColor: '#222831', color: '#fff' }}>
                                 <tr>
-                                    <th className="py-2 px-1 border-0 text-center" width="40">NO</th>
+                                    <th className="py-2 px-1 border-0 text-center" style={{ width: '40px' }}>NO</th>
                                     <th className="py-2 border-0">NAMA LENGKAP</th>
                                     <th className="py-2 border-0">USERNAME</th>
                                     <th className="py-2 border-0">EMAIL</th>
-                                    <th className="py-2 border-0 text-center" width="80">GENDER</th>
+                                    <th className="py-2 border-0 text-center" style={{ width: '80px' }}>GENDER</th>
                                     <th className="py-2 border-0">ALAMAT</th>
-                                    <th className="py-2 px-1 border-0" width="110">NO. WA</th>
+                                    <th className="py-2 px-1 border-0" style={{ width: '110px' }}>NO. WA</th>
                                 </tr>
                             </thead>
                             <tbody>

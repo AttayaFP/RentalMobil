@@ -1,4 +1,5 @@
 import { Head, useForm } from '@inertiajs/react';
+import { route } from 'ziggy-js';
 import { LoaderCircle } from 'lucide-react';
 import { FormEventHandler } from 'react';
 
@@ -14,6 +15,7 @@ interface ResetPasswordProps {
 }
 
 interface ResetPasswordForm {
+    [key: string]: string;
     token: string;
     email: string;
     password: string;
@@ -55,7 +57,6 @@ export default function ResetPassword({ token, email }: ResetPasswordProps) {
                         />
                         <InputError message={errors.email} className="mt-2" />
                     </div>
-
                     <div className="grid gap-2">
                         <Label htmlFor="password">Password</Label>
                         <Input
@@ -71,7 +72,6 @@ export default function ResetPassword({ token, email }: ResetPasswordProps) {
                         />
                         <InputError message={errors.password} />
                     </div>
-
                     <div className="grid gap-2">
                         <Label htmlFor="password_confirmation">Confirm password</Label>
                         <Input
@@ -86,7 +86,6 @@ export default function ResetPassword({ token, email }: ResetPasswordProps) {
                         />
                         <InputError message={errors.password_confirmation} className="mt-2" />
                     </div>
-
                     <Button type="submit" className="mt-4 w-full" disabled={processing}>
                         {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
                         Reset password

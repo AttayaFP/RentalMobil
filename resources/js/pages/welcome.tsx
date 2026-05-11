@@ -18,13 +18,13 @@ interface Props {
 }
 
 export default function Welcome({ mobils = [] }: Props) {
-    const { auth, url } = usePage<any>().props;
+    const { auth } = usePage<{ auth: { user: { id: number; role: string; nama_lengkap?: string; name?: string } } }>().props;
     const user = auth?.user;
 
     const formatCurrency = (amount: number) => {
         try {
             return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
-        } catch (e) {
+        } catch {
             return amount;
         }
     };
@@ -48,15 +48,12 @@ export default function Welcome({ mobils = [] }: Props) {
         router.post('/logout');
     };
 
-    const isActive = (path: string) => url === path;
+
 
     return (
         <TemplateLayout showHero={false}>
-            {/* 1. HERO SECTION */}
             <div className="hero-wrap ftco-degree-bg" style={{ backgroundImage: "url('/assets/template/images/bg_1.jpg')", opacity: 1, position: 'relative', minHeight: '100vh' }}>
                 <div className="overlay"></div>
-
-                {/* PREMIUM NAVIGATION HUB (TOP RIGHT FEATURE) */}
                 <div style={{
                     position: 'absolute',
                     top: '30px',
@@ -67,7 +64,6 @@ export default function Welcome({ mobils = [] }: Props) {
                     alignItems: 'flex-end',
                     gap: '10px'
                 }} className="no-print">
-                    {/* Navigation Menu Links */}
                     <div style={{
                         background: 'rgba(255,255,255,0.08)',
                         backdropFilter: 'blur(15px)',
@@ -87,7 +83,6 @@ export default function Welcome({ mobils = [] }: Props) {
                         <Link href="/contact" className="nav-link-custom">Kontak</Link>
                     </div>
 
-                    {/* Auth Status & Actions */}
                     <div className="d-flex align-items-center gap-3">
                         {!user ? (
                             <div className="d-flex gap-2">
@@ -187,7 +182,6 @@ export default function Welcome({ mobils = [] }: Props) {
                 </div>
             </div>
 
-            {/* Styles for the new floating menu */}
             <style dangerouslySetInnerHTML={{ __html: `
                 .nav-link-custom {
                     color: rgba(255,255,255,0.8);
@@ -204,7 +198,6 @@ export default function Welcome({ mobils = [] }: Props) {
                 }
             `}} />
 
-            {/* 2. FEATURED TOP */}
             <section className="ftco-section ftco-no-pt bg-light">
                 <div className="container">
                     <div className="row no-gutters">
@@ -249,8 +242,6 @@ export default function Welcome({ mobils = [] }: Props) {
                     </div>
                 </div>
             </section>
-
-            {/* 3. FLEET SECTION */}
             <section className="ftco-section bg-light">
                 <div className="container">
                     <div className="row justify-content-center">

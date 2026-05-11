@@ -15,9 +15,7 @@ use Inertia\Response;
 
 class RegisteredUserController extends Controller
 {
-    /**
-     * Show the registration page.
-     */
+
     public function create(): Response
     {
         return Inertia::render('auth/register');
@@ -31,8 +29,8 @@ class RegisteredUserController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
-            'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
-            'username' => 'required|string|max:255|unique:'.User::class,
+            'email' => 'required|string|lowercase|email|max:255|unique:' . User::class,
+            'username' => 'required|string|max:255|unique:' . User::class,
             'nama_lengkap' => 'required|string|max:255',
             'jenis_kelamin' => 'required|in:L,P',
             'alamat' => 'required|string|max:255',
@@ -50,7 +48,7 @@ class RegisteredUserController extends Controller
             'jenis_kelamin' => $request->jenis_kelamin,
             'alamat' => $request->alamat,
             'nohp' => $request->nohp,
-            'password' => $request->password, // auto-hashed by model cast
+            'password' => $request->password,
             'foto' => $fotoPath,
             'role' => 'pelanggan',
         ]);

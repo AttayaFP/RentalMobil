@@ -83,8 +83,6 @@ export default function Register() {
                     <div className="row justify-content-center">
                         <div className="col-md-9 col-lg-8">
                             <div className="bg-white shadow-lg p-5" style={{ borderRadius: '20px' }}>
-
-                                {/* Header */}
                                 <div className="text-center mb-4">
                                     <div style={{ fontSize: '26px', fontWeight: 800, letterSpacing: '1.5px', color: '#222831' }}>
                                         Car<span style={{ color: '#f96d00' }}>Book</span>
@@ -98,8 +96,6 @@ export default function Register() {
 
                                 <form onSubmit={submit} encType="multipart/form-data">
                                     <div className="row">
-
-                                        {/* ── Email ── */}
                                         <div className="col-md-6 form-group mb-3">
                                             <label className="font-weight-bold text-dark small text-uppercase mb-1">
                                                 Email <span className="text-danger">*</span>
@@ -120,8 +116,6 @@ export default function Register() {
                                             </div>
                                             {errors.email && <div className="invalid-feedback d-block small font-weight-bold">{errors.email}</div>}
                                         </div>
-
-                                        {/* ── Username ── */}
                                         <div className="col-md-6 form-group mb-3">
                                             <label className="font-weight-bold text-dark small text-uppercase mb-1">
                                                 Username <span className="text-danger">*</span>
@@ -142,8 +136,6 @@ export default function Register() {
                                             </div>
                                             {errors.username && <div className="invalid-feedback d-block small font-weight-bold">{errors.username}</div>}
                                         </div>
-
-                                        {/* ── Nama Lengkap ── */}
                                         <div className="col-md-6 form-group mb-3">
                                             <label className="font-weight-bold text-dark small text-uppercase mb-1">
                                                 Nama Lengkap <span className="text-danger">*</span>
@@ -163,8 +155,6 @@ export default function Register() {
                                             </div>
                                             {errors.nama_lengkap && <div className="invalid-feedback d-block small font-weight-bold">{errors.nama_lengkap}</div>}
                                         </div>
-
-                                        {/* ── Jenis Kelamin ── */}
                                         <div className="col-md-6 form-group mb-3">
                                             <label className="font-weight-bold text-dark small text-uppercase mb-1">
                                                 Jenis Kelamin <span className="text-danger">*</span>
@@ -200,8 +190,6 @@ export default function Register() {
                                             </div>
                                             {errors.jenis_kelamin && <div className="text-danger small font-weight-bold mt-1">{errors.jenis_kelamin}</div>}
                                         </div>
-
-                                        {/* ── Alamat ── */}
                                         <div className="col-md-6 form-group mb-3">
                                             <label className="font-weight-bold text-dark small text-uppercase mb-1">
                                                 Alamat <span className="text-danger">*</span>
@@ -221,8 +209,6 @@ export default function Register() {
                                             </div>
                                             {errors.alamat && <div className="invalid-feedback d-block small font-weight-bold">{errors.alamat}</div>}
                                         </div>
-
-                                        {/* ── No. HP ── */}
                                         <div className="col-md-6 form-group mb-3">
                                             <label className="font-weight-bold text-dark small text-uppercase mb-1">
                                                 No. HP <span className="text-danger">*</span>
@@ -243,8 +229,6 @@ export default function Register() {
                                             </div>
                                             {errors.nohp && <div className="invalid-feedback d-block small font-weight-bold">{errors.nohp}</div>}
                                         </div>
-
-                                        {/* ── Password ── */}
                                         <div className="col-md-6 form-group mb-3">
                                             <label className="font-weight-bold text-dark small text-uppercase mb-1">
                                                 Kata Sandi <span className="text-danger">*</span>
@@ -265,8 +249,6 @@ export default function Register() {
                                             </div>
                                             {errors.password && <div className="invalid-feedback d-block small font-weight-bold">{errors.password}</div>}
                                         </div>
-
-                                        {/* ── Konfirmasi Password ── */}
                                         <div className="col-md-6 form-group mb-3">
                                             <label className="font-weight-bold text-dark small text-uppercase mb-1">
                                                 Konfirmasi Sandi <span className="text-danger">*</span>
@@ -286,8 +268,6 @@ export default function Register() {
                                                 />
                                             </div>
                                         </div>
-
-                                        {/* ── Foto Profil (required) ── */}
                                         <div className="col-12 form-group mb-4">
                                             <label className="font-weight-bold text-dark small text-uppercase mb-1">
                                                 Foto Profil <span className="text-danger">*</span>

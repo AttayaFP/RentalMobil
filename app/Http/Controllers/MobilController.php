@@ -10,9 +10,6 @@ use Inertia\Inertia;
 
 class MobilController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
         return Inertia::render('mobil/index', [
@@ -20,9 +17,6 @@ class MobilController extends Controller
         ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
         return Inertia::render('mobil/create', [
@@ -30,9 +24,6 @@ class MobilController extends Controller
         ]);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
         $request->validate([
@@ -58,9 +49,6 @@ class MobilController extends Controller
         return redirect()->route('mobil.index')->with('success', 'Mobil berhasil ditambahkan.');
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(string $id)
     {
         $mobil = Mobil::findOrFail($id);
@@ -71,9 +59,6 @@ class MobilController extends Controller
         ]);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, string $id)
     {
         $mobil = Mobil::findOrFail($id);
@@ -92,7 +77,6 @@ class MobilController extends Controller
 
         $data = $request->all();
         if ($request->hasFile('foto')) {
-            // Delete old photo if exists
             if ($mobil->foto) {
                 Storage::disk('public')->delete($mobil->foto);
             }
@@ -104,9 +88,6 @@ class MobilController extends Controller
         return redirect()->route('mobil.index')->with('success', 'Mobil berhasil diperbarui.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(string $id)
     {
         $mobil = Mobil::findOrFail($id);

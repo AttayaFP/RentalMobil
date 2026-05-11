@@ -1,5 +1,5 @@
-// Components
 import { Head, useForm } from '@inertiajs/react';
+import { route } from 'ziggy-js';
 import { LoaderCircle } from 'lucide-react';
 import { FormEventHandler } from 'react';
 

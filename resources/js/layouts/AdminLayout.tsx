@@ -1,4 +1,4 @@
-import { Link, usePage, router } from '@inertiajs/react';
+import { usePage, router } from '@inertiajs/react';
 import { ReactNode, useState } from 'react';
 import { Head } from '@inertiajs/react';
 
@@ -8,9 +8,10 @@ interface Props {
 }
 
 export default function AdminLayout({ children, title }: Props) {
-    const props = usePage().props as any;
-    const url = props.url || '';
-    const auth = props.auth || { user: null };
+    const { auth, flash } = usePage<{ 
+        auth: { user: { role: string; nama_lengkap: string } | null }; 
+        flash: { success?: string; error?: string };
+    }>().props;
     
     const [isSidebarOpen, setSidebarOpen] = useState(true);
     const [openMenus, setOpenMenus] = useState<string[]>([]);
@@ -38,7 +39,6 @@ export default function AdminLayout({ children, title }: Props) {
         <div className="admin-wrapper" style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#f8f9fa', fontFamily: "'Poppins', sans-serif" }}>
             <Head title={title ? `${title} - Admin CarBook` : 'Admin Dashboard'} />
 
-            {/* SIDEBAR */}
             <aside className={`admin-sidebar ${isSidebarOpen ? 'open' : 'closed'}`} style={{
                 width: isSidebarOpen ? '260px' : '0',
                 backgroundColor: '#222831',
@@ -126,14 +126,12 @@ export default function AdminLayout({ children, title }: Props) {
                 </div>
             </aside>
 
-            {/* MAIN CONTENT AREA */}
             <div className="main-panel" style={{
                 flex: 1,
                 marginLeft: isSidebarOpen ? '260px' : '0',
                 transition: 'all 0.3s',
                 width: isSidebarOpen ? 'calc(100% - 260px)' : '100%'
             }}>
-                {/* TOPBAR */}
                 <nav className="navbar navbar-expand-lg navbar-light bg-white shadow-sm px-4 py-3 d-flex justify-content-between sticky-top">
                     <button className="btn btn-link text-dark p-0" onClick={() => setSidebarOpen(!isSidebarOpen)}>
                         <i className="ion-ios-menu" style={{ fontSize: '28px' }}></i>
@@ -170,18 +168,17 @@ export default function AdminLayout({ children, title }: Props) {
                 </nav>
 
                 <div className="content-body p-4 p-md-5">
-                    {/* Flash Messages */}
-                    {props.flash?.success && (
+                    {flash?.success && (
                         <div className="alert alert-success alert-dismissible fade show mb-4 shadow-sm" role="alert" style={{ borderRadius: '10px', borderLeft: '5px solid #28a745' }}>
-                            <i className="ion-ios-checkmark-circle mr-2"></i> {props.flash.success}
+                            <i className="ion-ios-checkmark-circle mr-2"></i> {flash.success}
                             <button type="button" className="close" data-dismiss="alert" aria-label="Close">
                                 <span aria-hidden="true">&times;</span>
                             </button>
                         </div>
                     )}
-                    {props.flash?.error && (
+                    {flash?.error && (
                         <div className="alert alert-danger alert-dismissible fade show mb-4 shadow-sm" role="alert" style={{ borderRadius: '10px', borderLeft: '5px solid #dc3545' }}>
-                            <i className="ion-ios-alert mr-2"></i> {props.flash.error}
+                            <i className="ion-ios-alert mr-2"></i> {flash.error}
                             <button type="button" className="close" data-dismiss="alert" aria-label="Close">
                                 <span aria-hidden="true">&times;</span>
                             </button>

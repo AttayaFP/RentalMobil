@@ -31,7 +31,7 @@ interface Props {
 }
 
 export default function Create({ users, mobils, selected_kdmobil, next_kdbooking }: Props) {
-    const { auth } = usePage<any>().props;
+    const { auth } = usePage<{ auth: { user: AuthUser } }>().props;
     const user: AuthUser = auth.user;
     const isPelanggan = user.role === 'pelanggan';
 
@@ -48,17 +48,11 @@ export default function Create({ users, mobils, selected_kdmobil, next_kdbooking
         payment_method: 'Midtrans',
         status:         'Pending',
     });
-
-    // Derived — selalu sinkron tanpa perlu state/useEffect tambahan
     const selectedMobil: MobilItem | null = mobils.find(m => m.kdmobil?.toString().trim() === data.kdmobil?.toString().trim()) ?? null;
-
-    // Sync harga when car changes
     useEffect(() => {
         const m = mobils.find(x => x.kdmobil?.toString().trim() === data.kdmobil?.toString().trim()) ?? null;
         setData('harga', m ? m.harga.toString() : '');
-    }, [data.kdmobil]);
-
-    // Auto-calculate lama_sewa & total
+    }, [data.kdmobil, mobils, setData]);
     useEffect(() => {
         if (data.tglmulai && data.tglselesai && data.harga) {
             const start = new Date(data.tglmulai);
@@ -71,22 +65,17 @@ export default function Create({ users, mobils, selected_kdmobil, next_kdbooking
                 setData(prev => ({ ...prev, lama_sewa: '', total_bayar: '' }));
             }
         }
-    }, [data.tglmulai, data.tglselesai, data.harga]);
+    }, [data.tglmulai, data.tglselesai, data.harga, setData]);
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
         post('/booking');
     };
 
-    const formatCurrency = (v: any) =>
-        new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(v || 0);
+    const formatCurrency = (v: string | number | undefined) =>
+        new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(Number(v) || 0);
 
     const today = new Date().toISOString().split('T')[0];
-
-    /* ─────────────────────────────────────────────────────
-       TAMPILAN PELANGGAN — menggunakan TemplateLayout
-       Desain Checkout / E-Commerce Style
-    ───────────────────────────────────────────────────── */
     if (isPelanggan) {
         return (
             <TemplateLayout showHero={false}>
@@ -102,7 +91,6 @@ export default function Create({ users, mobils, selected_kdmobil, next_kdbooking
 
                         <form onSubmit={submit}>
                             <div className="row">
-                                {/* ── LEFT: Form Input ── */}
                                 <div className="col-lg-7" data-aos="fade-right">
                                     <div className="bg-white p-4 p-md-5 shadow-sm mb-4" style={{ borderRadius: '20px' }}>
                                         <h4 className="mb-4 font-weight-bold" style={{ color: '#222831', borderLeft: '5px solid #f96d00', paddingLeft: '15px' }}>Data Perjalanan</h4>
@@ -184,10 +172,8 @@ export default function Create({ users, mobils, selected_kdmobil, next_kdbooking
                                     </div>
                                 </div>
 
-                                {/* ── RIGHT: Summary & Preview ── */}
                                 <div className="col-lg-5" data-aos="fade-left">
                                     <div className="bg-white shadow-sm overflow-hidden" style={{ borderRadius: '20px', position: 'sticky', top: '20px' }}>
-                                        {/* Image Preview */}
                                         <div style={{ height: '240px', background: '#eee', position: 'relative' }}>
                                             {selectedMobil?.foto ? (
                                                 <img 
@@ -208,7 +194,6 @@ export default function Create({ users, mobils, selected_kdmobil, next_kdbooking
                                             )}
                                         </div>
 
-                                        {/* Summary Content */}
                                         <div className="p-4 p-md-5">
                                             <h5 className="font-weight-bold mb-1" style={{ color: '#222831' }}>{selectedMobil?.nama_mobil || 'Belum Memilih Mobil'}</h5>
                                             <p className="text-primary small font-weight-bold mb-4">{selectedMobil ? formatCurrency(selectedMobil.harga) + ' / hari' : '-'}</p>
@@ -256,9 +241,6 @@ export default function Create({ users, mobils, selected_kdmobil, next_kdbooking
         );
     }
 
-    /* ─────────────────────────────────────────────────────
-       TAMPILAN ADMIN / PIMPINAN — Seperti Semula
-    ───────────────────────────────────────────────────── */
     return (
         <AdminLayout title="Buat Pesanan Baru">
             <div className="row justify-content-center">
@@ -353,7 +335,7 @@ export default function Create({ users, mobils, selected_kdmobil, next_kdbooking
     );
 }
 
-/* ── Shared style constants ── */
+
 const inputSt: React.CSSProperties = {
     borderRadius: '12px', padding: '11px 14px 11px 40px',
     height: 'auto', border: '1px solid #eee', fontSize: '14px',
@@ -366,7 +348,7 @@ const iconSt: React.CSSProperties = {
     transform: 'translateY(-50%)', color: '#f96d00', fontSize: '17px', zIndex: 1,
 };
 
-/* ── Pelanggan sub-components ── */
+
 function FormField({ label, children }: { label: string; children: React.ReactNode }) {
     return (
         <div className="form-group mb-0">

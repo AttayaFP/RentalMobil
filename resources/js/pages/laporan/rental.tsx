@@ -47,7 +47,6 @@ export default function RentalReport({ rentals }: Props) {
                         <div className="mx-auto" style={{ height: '3px', width: '60px', backgroundColor: '#f96d00' }}></div>
                     </div>
 
-                    {/* Ringkasan Statistik */}
                     <div className="row mb-4 print:hidden">
                         <div className="col-md-4">
                             <div className="p-3 border rounded text-center" style={{ backgroundColor: '#f8f9fa' }}>

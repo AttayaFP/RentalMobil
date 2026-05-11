@@ -7,6 +7,7 @@ interface Mobil {
     thn_mobil: number;
     plat_mobil: string;
     warna_mobil: string;
+    stnk_mobil: string;
     harga: number;
     kdkategori: string;
     status: string;

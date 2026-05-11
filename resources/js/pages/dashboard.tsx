@@ -2,9 +2,8 @@ import AdminLayout from '@/layouts/AdminLayout';
 import { usePage } from '@inertiajs/react';
 
 export default function Dashboard() {
-    const { auth } = usePage<any>().props;
+    const { auth } = usePage<{ auth: { user: { role: string; nama_lengkap?: string; name?: string } } }>().props;
     const user = auth.user;
-    const isAdmin = user?.role === 'admin' || user?.role === 'pimpinan';
     const userName = user?.nama_lengkap || user?.name || 'User';
 
     return (

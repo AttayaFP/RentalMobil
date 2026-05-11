@@ -18,6 +18,7 @@ export default function Create({ kategoris }: Props) {
         thn_mobil: new Date().getFullYear(),
         plat_mobil: '',
         warna_mobil: '',
+        stnk_mobil: '',
         harga: 0,
         kdkategori: '',
         status: 'Tersedia',

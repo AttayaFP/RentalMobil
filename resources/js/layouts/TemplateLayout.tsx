@@ -8,10 +8,10 @@ interface Props {
 }
 
 export default function TemplateLayout({ children, showHero = true }: Props) {
-    // Memastikan skrip template diinisialisasi ulang saat navigasi Inertia
     useEffect(() => {
-        if (typeof (window as any).AOS !== 'undefined') {
-            (window as any).AOS.init();
+        const win = window as unknown as Window & { AOS?: { init: () => void } };
+        if (typeof win.AOS !== 'undefined') {
+            win.AOS.init();
         }
     }, []);
 

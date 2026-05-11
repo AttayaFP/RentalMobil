@@ -13,6 +13,7 @@ interface Mobil {
     thn_mobil: number;
     plat_mobil: string;
     warna_mobil: string;
+    stnk_mobil: string;
     harga: number;
     kdkategori: string;
     status: string;
@@ -31,6 +32,7 @@ export default function Edit({ mobil, kategoris }: Props) {
         thn_mobil: mobil.thn_mobil,
         plat_mobil: mobil.plat_mobil,
         warna_mobil: mobil.warna_mobil,
+        stnk_mobil: mobil.stnk_mobil,
         harga: mobil.harga,
         kdkategori: mobil.kdkategori,
         status: mobil.status,
@@ -49,7 +51,6 @@ export default function Edit({ mobil, kategoris }: Props) {
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
-        // Menggunakan POST dengan _method PUT karena Laravel/Inertia membutuhkan ini untuk upload file di mode Update
         post(`/mobil/${mobil.kdmobil}`);
     };
 

@@ -7,6 +7,7 @@ interface Mobil {
     plat_mobil: string;
     harga: number;
     foto: string | null;
+    status?: string;
 }
 
 interface Props {

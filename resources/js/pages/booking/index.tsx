@@ -15,7 +15,7 @@ interface Props {
 }
 
 export default function Index({ bookings }: Props) {
-    const { flash } = usePage<any>().props;
+    const { flash } = usePage<{ flash: { success?: string; error?: string } }>().props;
 
     const forceNavigate = (path: string) => {
         window.location.href = path;

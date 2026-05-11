@@ -2,8 +2,8 @@ import AdminLayout from '@/layouts/AdminLayout';
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { FormEventHandler } from 'react';
 
-export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: boolean; status?: string }) {
-    const { auth } = usePage<any>().props;
+export default function Profile() {
+    const { auth } = usePage<{ auth: { user: { nama_lengkap: string; email: string } } }>().props;
 
     const { data, setData, patch, errors, processing, recentlySuccessful } = useForm({
         nama_lengkap: auth.user.nama_lengkap,
