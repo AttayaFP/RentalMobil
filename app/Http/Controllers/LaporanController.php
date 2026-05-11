@@ -1,0 +1,153 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\BookingMobil;
+use App\Models\KembaliMobil;
+use App\Models\Mobil;
+use App\Models\User;
+use Inertia\Inertia;
+use Inertia\Response;
+
+class LaporanController extends Controller
+{
+    /**
+     * Display the customer report.
+     */
+    public function pelanggan(): Response
+    {
+        $pelanggans = User::where('role', 'pelanggan')->get();
+
+        return Inertia::render('laporan/pelanggan', [
+            'pelanggans' => $pelanggans,
+        ]);
+    }
+
+    /**
+     * Display the car report.
+     */
+    public function mobil(): Response
+    {
+        $mobils = Mobil::with('kategori')->get()->map(function ($mobil) {
+            return [
+                'kdmobil' => $mobil->kdmobil,
+                'nama_mobil' => $mobil->nama_mobil,
+                'thn_mobil' => $mobil->thn_mobil,
+                'plat_mobil' => $mobil->plat_mobil,
+                'warna_mobil' => $mobil->warna_mobil,
+                'stnk_mobil' => $mobil->stnk_mobil,
+                'harga' => $mobil->harga,
+                'nama_kategori' => $mobil->kategori->nama_kategori ?? 'N/A',
+                'status' => $mobil->status,
+            ];
+        });
+
+        return Inertia::render('laporan/mobil', [
+            'mobils' => $mobils,
+        ]);
+    }
+
+    /**
+     * Display the booking report.
+     */
+    public function booking(): Response
+    {
+        $bookings = BookingMobil::with(['user', 'mobil'])->get()->map(function ($booking) {
+            return [
+                'kdbooking' => $booking->kdbooking,
+                'nama_pelanggan' => $booking->user->nama_lengkap ?? 'N/A',
+                'nama_mobil' => $booking->mobil->nama_mobil ?? 'N/A',
+                'plat_mobil' => $booking->mobil->plat_mobil ?? 'N/A',
+                'waktu_order' => $booking->lama_sewa . ' Hari',
+                'tglmulai' => $booking->tglmulai,
+                'tglselesai' => $booking->tglselesai,
+                'status' => $booking->status,
+                'payment_type' => $booking->payment_type,
+                'total_bayar' => $booking->total_bayar,
+            ];
+        });
+
+        return Inertia::render('laporan/booking', [
+            'bookings' => $bookings,
+        ]);
+    }
+
+    /**
+     * Display the return report.
+     */
+    public function pengembalian(): Response
+    {
+        $pengembalians = KembaliMobil::with(['user', 'booking.mobil'])->get()->map(function ($kembali) {
+            return [
+                'kdpengembalian' => $kembali->kdpengembalian,
+                'nama_pelanggan' => $kembali->user->nama_lengkap ?? 'N/A',
+                'nama_mobil' => $kembali->booking->mobil->nama_mobil ?? 'N/A',
+                'plat_mobil' => $kembali->booking->mobil->plat_mobil ?? 'N/A',
+                'tglmulai' => $kembali->tglmulai,
+                'tglselesai' => $kembali->tglselesai,
+                'tglpengembalian' => $kembali->tglpengembalian,
+                'keterlambatan' => $kembali->keterlambatan . ' Hari',
+                'denda' => $kembali->denda,
+            ];
+        });
+
+        return Inertia::render('laporan/pengembalian', [
+            'pengembalians' => $pengembalians,
+        ]);
+    }
+
+    /**
+     * Display the comprehensive rental report.
+     */
+    public function rental(): Response
+    {
+        $rentals = KembaliMobil::with(['user', 'booking.mobil'])->get()->map(function ($kembali) {
+            $totalSewa = $kembali->booking->total_bayar ?? 0;
+            $denda = $kembali->denda ?? 0;
+
+            return [
+                'koderental' => $kembali->kdpengembalian,
+                'kdbooking' => $kembali->kdbooking,
+                'nama_pelanggan' => $kembali->user->nama_lengkap ?? 'N/A',
+                'nama_mobil' => $kembali->booking->mobil->nama_mobil ?? 'N/A',
+                'plat_mobil' => $kembali->booking->mobil->plat_mobil ?? 'N/A',
+                'tglmulai' => $kembali->tglmulai,
+                'tglselesai' => $kembali->tglselesai,
+                'tglpengembalian' => $kembali->tglpengembalian,
+                'keterlambatan' => $kembali->keterlambatan . ' Hari',
+                'denda' => $denda,
+                'totalsewa' => $totalSewa,
+                'total_seluruh' => $totalSewa + $denda,
+                'status' => $kembali->booking->status ?? 'N/A',
+            ];
+        });
+
+        return Inertia::render('laporan/rental', [
+            'rentals' => $rentals,
+        ]);
+    }
+
+    /**
+     * Display the report of cars not yet returned.
+     */
+    public function belumKembali(): Response
+    {
+        $belumKembali = BookingMobil::whereNotIn('kdbooking', KembaliMobil::pluck('kdbooking'))
+            ->where('status', 'Paid')
+            ->with('mobil')
+            ->get()
+            ->map(function ($booking) {
+                return [
+                    'kdbooking' => $booking->kdbooking,
+                    'nama_mobil' => $booking->mobil->nama_mobil ?? 'N/A',
+                    'plat_mobil' => $booking->mobil->plat_mobil ?? 'N/A',
+                    'tglmulai' => $booking->tglmulai,
+                    'status' => $booking->status,
+                ];
+            });
+
+        return Inertia::render('laporan/belum_kembali', [
+            'bookings' => $belumKembali,
+        ]);
+    }
+}
