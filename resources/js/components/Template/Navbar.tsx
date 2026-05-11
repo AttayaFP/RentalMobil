@@ -2,7 +2,7 @@ import { Link, usePage, router } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 
 export default function Navbar() {
-    const { auth, url } = usePage<any>().props;
+    const { auth, url } = usePage<{ auth: { user: { role: string } | null }; url: string }>().props;
     const user = auth?.user;
     const [scrolled, setScrolled] = useState(false);
 
@@ -14,9 +14,7 @@ export default function Navbar() {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
-    const forceNavigate = (path: string) => {
-        window.location.href = path;
-    };
+
 
     const handleLogout = (e: React.FormEvent) => {
         e.preventDefault();
