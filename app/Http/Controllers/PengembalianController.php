@@ -8,6 +8,8 @@ use App\Models\Mobil;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Midtrans\Config;
+use Midtrans\Snap;
 
 class PengembalianController extends Controller
 {
@@ -73,7 +75,7 @@ class PengembalianController extends Controller
             'denda' => 'required|numeric',
         ]);
 
-        KembaliMobil::create($request->all());
+        $pengembalian = KembaliMobil::create($request->all());
         $booking = BookingMobil::find($request->kdbooking);
         if ($booking) {
             $mobil = Mobil::find($booking->kdmobil);
@@ -81,6 +83,10 @@ class PengembalianController extends Controller
                 $mobil->update(['status' => 'Perawatan']);
             }
             $booking->update(['status' => 'Selesai']);
+        }
+
+        if ($request->input('payment_type') === 'transfer' && $pengembalian->denda > 0) {
+            return redirect()->route('pengembalian.checkout', $pengembalian->kdpengembalian);
         }
 
         return redirect()->route('pengembalian.index')->with('success', 'Pengembalian berhasil ditambahkan.');
@@ -115,6 +121,10 @@ class PengembalianController extends Controller
 
         $pengembalian->update($request->all());
 
+        if ($request->input('payment_type') === 'transfer' && $pengembalian->denda > 0) {
+            return redirect()->route('pengembalian.checkout', $pengembalian->kdpengembalian);
+        }
+
         return redirect()->route('pengembalian.index')->with('success', 'Pengembalian berhasil diperbarui.');
     }
 
@@ -135,5 +145,58 @@ class PengembalianController extends Controller
         $pengembalian->delete();
 
         return redirect()->route('pengembalian.index')->with('success', 'Pengembalian berhasil dihapus.');
+    }
+
+    public function checkout(string $kdpengembalian)
+    {
+        $pengembalian = KembaliMobil::findOrFail($kdpengembalian);
+        $user = User::findOrFail($pengembalian->iduser);
+        $booking = BookingMobil::findOrFail($pengembalian->kdbooking);
+        $mobil = Mobil::findOrFail($booking->kdmobil);
+
+        Config::$serverKey = trim(config('midtrans.server_key'));
+        Config::$isProduction = config('midtrans.is_production');
+        Config::$isSanitized = config('midtrans.is_sanitized');
+        Config::$is3ds = config('midtrans.is_3ds');
+
+        $params = [
+            'transaction_details' => [
+                'order_id' => $pengembalian->kdpengembalian.'-'.time(),
+                'gross_amount' => (int) $pengembalian->denda,
+            ],
+            'customer_details' => [
+                'first_name' => $user->nama_lengkap,
+                'email' => $user->email,
+                'phone' => $user->nohp,
+            ],
+            'item_details' => [
+                [
+                    'id' => $pengembalian->kdpengembalian,
+                    'price' => (int) $pengembalian->denda,
+                    'quantity' => 1,
+                    'name' => 'Denda Pengembalian '.$mobil->nama_mobil,
+                ],
+            ],
+        ];
+
+        try {
+            $snapToken = Snap::getSnapToken($params);
+
+            return Inertia::render('pengembalian/checkout', [
+                'pengembalian' => $pengembalian,
+                'snap_token' => $snapToken,
+                'client_key' => trim(config('midtrans.client_key')),
+            ]);
+        } catch (\Exception $e) {
+            return redirect()->route('pengembalian.index')->with('error', 'Gagal menghubungkan ke Midtrans: '.$e->getMessage());
+        }
+    }
+
+    public function success(Request $request, string $kdpengembalian)
+    {
+        $pengembalian = KembaliMobil::findOrFail($kdpengembalian);
+        // We can log the payment details or update a local status if we have it,
+        // but for now we simply return a JSON success response.
+        return response()->json(['message' => 'Denda payment recorded successfully']);
     }
 }

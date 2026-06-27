@@ -30,6 +30,7 @@ export default function Dashboard({ stats, recent_bookings }: Props) {
     const { auth } = usePage<{ auth: { user: { role: string; nama_lengkap?: string; name?: string } } }>().props;
     const user = auth.user;
     const userName = user?.nama_lengkap || user?.name || 'User';
+    const isPimpinan = user?.role === 'pimpinan';
 
     const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
@@ -90,7 +91,9 @@ export default function Dashboard({ stats, recent_bookings }: Props) {
                     <div className="card shadow-sm border-0 p-4" style={{ borderRadius: '15px', minHeight: '400px' }}>
                         <div className="d-flex justify-content-between align-items-center mb-4">
                             <h5 className="font-weight-bold mb-0">Pemesanan Terbaru</h5>
-                            <button onClick={() => window.location.href = '/booking'} className="btn btn-link btn-sm text-primary p-0">Lihat Semua</button>
+                            {!isPimpinan && (
+                                <button onClick={() => window.location.href = '/booking'} className="btn btn-link btn-sm text-primary p-0">Lihat Semua</button>
+                            )}
                         </div>
                         <div className="table-responsive">
                             <table className="table table-borderless">
@@ -156,11 +159,13 @@ export default function Dashboard({ stats, recent_bookings }: Props) {
                             <i className="ion-ios-build" style={{ fontSize: '24px' }}></i>
                         </div>
 
-                        <div className="mt-auto pt-4">
-                            <button onClick={() => window.location.href = '/mobil'} className="btn btn-white btn-block font-weight-bold text-primary py-2" style={{ borderRadius: '10px', backgroundColor: '#fff' }}>
-                                Kelola Mobil
-                            </button>
-                        </div>
+                        {!isPimpinan && (
+                            <div className="mt-auto pt-4">
+                                <button onClick={() => window.location.href = '/mobil'} className="btn btn-white btn-block font-weight-bold text-primary py-2" style={{ borderRadius: '10px', backgroundColor: '#fff' }}>
+                                    Kelola Mobil
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

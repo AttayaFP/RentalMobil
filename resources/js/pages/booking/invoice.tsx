@@ -73,15 +73,16 @@ export default function Invoice({ booking, user, mobil }: Props) {
 
     const content = (
         <>
-            <div className="inv-toolbar row justify-content-center mb-3 no-print">
+            <div className="inv-toolbar row justify-content-center mb-3 no-print" style={{ position: 'relative', zIndex: 10 }}>
                 <div className="col-xl-10 d-flex justify-content-between align-items-center">
-                    <Link href={isPelanggan ? "/" : "/booking"} className="btn btn-link text-muted p-0" style={{ fontWeight: 500 }}>
+                    <Link href={isPelanggan ? "/" : "/booking"} className="btn btn-link text-muted p-0" style={{ fontWeight: 500, position: 'relative', zIndex: 11 }}>
                         <i className="ion-ios-arrow-back mr-2" />Kembali
                     </Link>
                     <button
+                        type="button"
                         onClick={() => window.print()}
                         className="btn px-4"
-                        style={{ borderRadius: '8px', background: DARK, color: '#fff', fontWeight: 600, fontSize: '13px' }}
+                        style={{ borderRadius: '8px', background: DARK, color: '#fff', fontWeight: 600, fontSize: '13px', position: 'relative', zIndex: 11, cursor: 'pointer' }}
                     >
                         <i className="ion-ios-printer mr-2" />Cetak Faktur
                     </button>
@@ -114,8 +115,8 @@ export default function Invoice({ booking, user, mobil }: Props) {
                             <div style={{ position: 'absolute', bottom: '-18px', right: '80px', width: '65px', height: '65px', borderRadius: '50%', background: 'rgba(255,255,255,0.06)' }} />
 
                             <div style={{ position: 'relative', zIndex: 1 }}>
-                                <div style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '2px', lineHeight: 1 }}>
-                                    Car<span style={{ color: ORANGE }}>Book</span>
+                                <div style={{ fontSize: '15px', fontWeight: 800, letterSpacing: '0.5px', lineHeight: 1 }}>
+                                    Rental Mobil <span style={{ color: ORANGE }}>Nabil Padang</span>
                                 </div>
                                 <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.6)', marginTop: '3px' }}>
                                     PT. Nabil Rental Mobil Padang
@@ -278,7 +279,7 @@ export default function Invoice({ booking, user, mobil }: Props) {
         return (
             <TemplateLayout showHero={false}>
                 <Head title={`Faktur #${booking.kdbooking}`} />
-                <section className="ftco-section bg-light py-5">
+                <section className="ftco-section bg-light" style={{ paddingTop: '120px', paddingBottom: '60px' }}>
                     <div className="container">
                         {content}
                     </div>

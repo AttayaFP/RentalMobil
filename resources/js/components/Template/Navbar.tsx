@@ -36,8 +36,8 @@ export default function Navbar() {
                 transition: 'all 0.3s'
             }}>
             <div className="container">
-                <Link className="navbar-brand" href="/" style={{ fontSize: '24px', fontWeight: 800, letterSpacing: '1px' }}>
-                    CAR<span style={{ color: '#01d28e' }}>BOOK</span>
+                <Link className="navbar-brand" href="/" style={{ fontSize: '18px', fontWeight: 800, letterSpacing: '0.5px' }}>
+                    Rental Mobil <span style={{ color: '#01d28e' }}>Nabil Padang</span>
                 </Link>
                 <button className="navbar-toggler" type="button" data-toggle="collapse" data-target="#ftco-nav" aria-controls="ftco-nav" aria-expanded="false" aria-label="Toggle navigation">
                     <span className="oi oi-menu"></span> Menu

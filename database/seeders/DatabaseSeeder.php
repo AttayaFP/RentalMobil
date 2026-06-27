@@ -14,20 +14,27 @@ class DatabaseSeeder extends Seeder
     {
 
         User::factory()->create([
-            'nama_lengkap' => 'Test User',
+            'nama_lengkap' => 'admin',
             'username' => 'testuser',
-            'email' => 'test@example.com',
+            'email' => 'admin@gmail.com',
             'role' => 'admin',
+        ]);
+
+        User::factory()->create([
+            'nama_lengkap' => 'Pimpinan',
+            'username' => 'testuser',
+            'email' => 'pimpinan@gmail.com',
+            'role' => 'pimpinan',
         ]);
 
         $suv = Kategori::create([
             'kdkategori' => 'K001',
-            'nama_kategori' => 'SUV',
+            'nama_kategori' => 'Matic',
         ]);
 
         $sedan = Kategori::create([
             'kdkategori' => 'K002',
-            'nama_kategori' => 'Sedan',
+            'nama_kategori' => 'Manual',
         ]);
 
         Mobil::create([
@@ -38,7 +45,7 @@ class DatabaseSeeder extends Seeder
             'warna_mobil' => 'Hitam',
             'stnk_mobil' => '12345678',
             'harga' => 500000,
-            'kdkategori' => 'K001',
+            'kdkategori' => 'K002',
         ]);
 
         Mobil::create([
@@ -49,12 +56,12 @@ class DatabaseSeeder extends Seeder
             'warna_mobil' => 'Putih',
             'stnk_mobil' => '87654321',
             'harga' => 450000,
-            'kdkategori' => 'K002',
+            'kdkategori' => 'K001',
         ]);
 
         Mobil::create([
             'kdmobil' => 'M003',
-            'nama_mobil' => 'Mitsubishi Pajero',
+            'nama_mobil' => 'Mitsubishi Pajero Sport',
             'thn_mobil' => 2023,
             'plat_mobil' => 'B 9012 GHI',
             'warna_mobil' => 'Silver',

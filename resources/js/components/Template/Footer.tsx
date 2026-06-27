@@ -9,7 +9,7 @@ export default function Footer() {
                 <div className="row mb-5">
                     <div className="col-md">
                         <div className="ftco-footer-widget mb-4">
-                            <h2 className="ftco-heading-2"><Link href="/" className="logo">Car<span>Book</span></Link></h2>
+                            <h2 className="ftco-heading-2"><Link href="/" className="logo">Rental Mobil <span>Nabil Padang</span></Link></h2>
                             <p>Solusi transportasi terbaik untuk kebutuhan perjalanan Anda. Kami menyediakan berbagai pilihan mobil berkualitas dengan harga yang sangat bersaing.</p>
                             <ul className="ftco-footer-social list-unstyled float-md-left float-lft mt-5">
                                 <li><a href="#"><span className="icon-twitter"></span></a></li>
@@ -44,9 +44,9 @@ export default function Footer() {
                             <h2 className="ftco-heading-2">Hubungi Kami</h2>
                             <div className="block-23 mb-3">
                                 <ul>
-                                    <li><span className="icon icon-map-marker"></span><span className="text">Jl. Raya Rental No. 123, Jakarta Selatan</span></li>
+                                    <li><span className="icon icon-map-marker"></span><span className="text">Komplek Perumdam III/4, Tunggul Hitam, Kota Padang</span></li>
                                     <li><a href="#"><span className="icon icon-phone"></span><span className="text">+62 812 3456 7890</span></a></li>
-                                    <li><a href="#"><span className="icon icon-envelope"></span><span className="text">info@carbook.com</span></a></li>
+                                    <li><a href="#"><span className="icon icon-envelope"></span><span className="text">info@rentalmobilnabilpadang.com</span></a></li>
                                 </ul>
                             </div>
                         </div>
@@ -55,7 +55,7 @@ export default function Footer() {
                 <div className="row">
                     <div className="col-md-12 text-center">
                         <p>
-                            Copyright &copy; {currentYear} All rights reserved | CarBook Rental Management System
+                            Copyright &copy; {currentYear} All rights reserved | Rental Mobil Nabil Padang
                         </p>
                     </div>
                 </div>

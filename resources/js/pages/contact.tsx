@@ -4,7 +4,7 @@ import { Head } from '@inertiajs/react';
 export default function Contact() {
     return (
         <TemplateLayout showHero={false}>
-            <Head title="Kontak - CarBook" />
+            <Head title="Kontak - Rental Mobil Nabil Padang" />
             
             <div className="hero-wrap ftco-degree-bg" style={{ backgroundImage: "url('/assets/template/images/bg_1.jpg')", height: '400px' }}>
                 <div className="overlay"></div>
@@ -72,7 +72,7 @@ export default function Contact() {
                                     <p className="w-100 text-muted">Peta lokasi kantor rental mobil akan ditampilkan di sini.</p>
                                 </div>
                                 <div className="mt-4">
-                                    <p>Jl. Jenderal Sudirman No. 123, Kota Padang, Sumatera Barat</p>
+                                    <p>Komplek Perumdam III/4, Tunggul Hitam, Kota Padang</p>
                                 </div>
                             </div>
                         </div>

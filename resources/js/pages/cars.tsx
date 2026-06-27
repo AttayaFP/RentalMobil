@@ -23,7 +23,7 @@ export default function Cars({ mobils }: Props) {
 
     return (
         <TemplateLayout showHero={false}>
-            <Head title="Mobil Kami - CarBook" />
+            <Head title="Mobil Kami - Rental Mobil Nabil Padang" />
             
             <div className="hero-wrap ftco-degree-bg" style={{ backgroundImage: "url('/assets/template/images/bg_1.jpg')", height: '400px' }}>
                 <div className="overlay"></div>

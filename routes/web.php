@@ -49,14 +49,17 @@ use App\Http\Controllers\PengembalianController;
 Route::middleware(['auth'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
 
-    // Routes accessible by Admin and Pimpinan
-    Route::middleware(['role:admin,pimpinan'])->group(function () {
+    // Routes accessible by Admin only
+    Route::middleware(['role:admin'])->group(function () {
         Route::resource('kategori', KategoriController::class);
         Route::resource('mobil', MobilController::class);
         Route::patch('mobil/{mobil}/status', [MobilController::class, 'updateStatus'])->name('mobil.update-status');
         Route::resource('pelanggan', PelangganController::class);
         Route::resource('pengembalian', PengembalianController::class);
+    });
 
+    // Routes accessible by Admin and Pimpinan
+    Route::middleware(['role:admin,pimpinan'])->group(function () {
         // Laporan routes
         Route::get('laporan/pelanggan', [LaporanController::class, 'pelanggan'])->name('laporan.pelanggan');
         Route::get('laporan/mobil', [LaporanController::class, 'mobil'])->name('laporan.mobil');
@@ -66,11 +69,16 @@ Route::middleware(['auth'])->group(function () {
         Route::get('laporan/belum-kembali', [LaporanController::class, 'belumKembali'])->name('laporan.belum-kembali');
     });
 
-    // Routes accessible by All (including Pelanggan)
-    Route::get('booking/{booking}/checkout', [BookingController::class, 'checkout'])->name('booking.checkout');
-    Route::get('booking/{booking}/invoice', [BookingController::class, 'invoice'])->name('booking.invoice');
-    Route::post('booking/{booking}/success', [BookingController::class, 'success'])->name('booking.success');
-    Route::resource('booking', BookingController::class)->except(['destroy']);
+    // Routes accessible by Admin and Pelanggan
+    Route::middleware(['role:admin,pelanggan'])->group(function () {
+        Route::get('booking/{booking}/checkout', [BookingController::class, 'checkout'])->name('booking.checkout');
+        Route::get('booking/{booking}/invoice', [BookingController::class, 'invoice'])->name('booking.invoice');
+        Route::post('booking/{booking}/success', [BookingController::class, 'success'])->name('booking.success');
+        Route::resource('booking', BookingController::class)->except(['destroy']);
+        
+        Route::get('pengembalian/{pengembalian}/checkout', [PengembalianController::class, 'checkout'])->name('pengembalian.checkout');
+        Route::post('pengembalian/{pengembalian}/success', [PengembalianController::class, 'success'])->name('pengembalian.success');
+    });
 });
 
 require __DIR__.'/settings.php';

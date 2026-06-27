@@ -1,5 +1,6 @@
 import AdminLayout from '@/layouts/AdminLayout';
-import { useForm } from '@inertiajs/react';
+import { useForm, router } from '@inertiajs/react';
+import Swal from 'sweetalert2';
 
 interface Booking {
     kdbooking: string;
@@ -26,7 +27,7 @@ interface Props {
 }
 
 export default function Edit({ pengembalian, bookings }: Props) {
-    const { data, setData, put, processing } = useForm({
+    const { data, setData, processing } = useForm({
         kdbooking: pengembalian.kdbooking,
         iduser: pengembalian.iduser.toString(),
         tglmulai: pengembalian.tglmulai,
@@ -44,13 +45,48 @@ export default function Edit({ pengembalian, bookings }: Props) {
         const riil = new Date(tglKembali);
         selesai.setHours(0, 0, 0, 0);
         riil.setHours(0, 0, 0, 0);
-        const diffDays = Math.ceil((riil.getTime() - selesai.getTime()) / (1000 * 60 * 60 * 24));
+        const diffDays = Math.round((riil.getTime() - selesai.getTime()) / (1000 * 60 * 60 * 24));
         return diffDays > 0 ? { keterlambatan: diffDays.toString(), denda: (diffDays * harga).toString() } : { keterlambatan: '0', denda: '0' };
     };
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
-        put(`/pengembalian/${pengembalian.kdpengembalian}`);
+        
+        const fineAmount = Number(data.denda) || 0;
+        if (fineAmount > 0) {
+            Swal.fire({
+                title: 'Konfirmasi Denda',
+                text: `Terdeteksi denda sebesar ${formatCurrency(fineAmount)}. Pilih metode pembayaran denda:`,
+                icon: 'warning',
+                showCancelButton: true,
+                showDenyButton: true,
+                confirmButtonText: 'Bayar di Tempat (Cash)',
+                denyButtonText: 'Transfer (Online)',
+                cancelButtonText: 'Batal',
+                confirmButtonColor: '#28a745',
+                denyButtonColor: '#f96d00',
+                cancelButtonColor: '#6c757d',
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    router.post(`/pengembalian/${pengembalian.kdpengembalian}`, {
+                        _method: 'PUT',
+                        ...data,
+                        payment_type: 'bayar_di_tempat'
+                    });
+                } else if (result.isDenied) {
+                    router.post(`/pengembalian/${pengembalian.kdpengembalian}`, {
+                        _method: 'PUT',
+                        ...data,
+                        payment_type: 'transfer'
+                    });
+                }
+            });
+        } else {
+            router.post(`/pengembalian/${pengembalian.kdpengembalian}`, {
+                _method: 'PUT',
+                ...data
+            });
+        }
     };
 
     const forceNavigate = (path: string) => {

@@ -18,7 +18,8 @@ export default function AdminLayout({ children, title }: Props) {
     const [showProfileDropdown, setShowProfileDropdown] = useState(false);
 
     const user = auth?.user || { nama_lengkap: 'Admin', role: 'guest' };
-    const isAdmin = user.role === 'admin' || user.role === 'pimpinan';
+    const isAdmin = user.role === 'admin';
+    const isPimpinan = user.role === 'pimpinan';
 
     const handleLogout = (e: React.FormEvent) => {
         e.preventDefault();
@@ -37,7 +38,7 @@ export default function AdminLayout({ children, title }: Props) {
 
     return (
         <div className="admin-wrapper" style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#f8f9fa', fontFamily: "'Poppins', sans-serif" }}>
-            <Head title={title ? `${title} - Admin CarBook` : 'Admin Dashboard'} />
+            <Head title={title ? `${title} - Admin Rental Mobil Nabil Padang` : 'Admin Dashboard'} />
 
             <aside className={`admin-sidebar ${isSidebarOpen ? 'open' : 'closed'}`} style={{
                 width: isSidebarOpen ? '260px' : '0',
@@ -51,8 +52,8 @@ export default function AdminLayout({ children, title }: Props) {
                 boxShadow: '4px 0 10px rgba(0,0,0,0.1)'
             }}>
                 <div className="sidebar-header p-4 text-center" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                    <button onClick={() => forceNavigate('/')} className="navbar-brand text-white border-0 bg-transparent p-0" style={{ fontSize: '24px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '2px', cursor: 'pointer' }}>
-                        Car<span style={{ color: '#f96d00' }}>Book</span>
+                    <button onClick={() => forceNavigate('/')} className="navbar-brand text-white border-0 bg-transparent p-0" style={{ fontSize: '16px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', cursor: 'pointer' }}>
+                        Rental Mobil <span style={{ color: '#f96d00' }}>Nabil Padang</span>
                     </button>
                 </div>
 
@@ -81,22 +82,24 @@ export default function AdminLayout({ children, title }: Props) {
                             </li>
                         )}
 
-                        <li className="nav-item-admin">
-                            <div className="nav-link-admin px-4 py-3 d-flex justify-content-between align-items-center cursor-pointer text-white" 
-                                 onClick={() => toggleMenu('transaksi')}
-                                 style={{ cursor: 'pointer' }}>
-                                <span><i className="ion-ios-cart mr-3" style={{ fontSize: '20px' }}></i> Transaksi</span>
-                                <i className={`ion-ios-arrow-${openMenus.includes('transaksi') ? 'down' : 'forward'}`}></i>
-                            </div>
-                            <ul className={`list-unstyled bg-dark ${openMenus.includes('transaksi') ? 'd-block' : 'd-none'}`}>
-                                <li><button onClick={() => forceNavigate('/booking')} className="nav-link-admin pl-5 py-2 d-block text-white-50 small border-0 bg-transparent w-100 text-left">{isAdmin ? 'Semua Booking' : 'Booking Saya'}</button></li>
-                                {isAdmin && (
-                                    <li><button onClick={() => forceNavigate('/pengembalian')} className="nav-link-admin pl-5 py-2 d-block text-white-50 small border-0 bg-transparent w-100 text-left">Pengembalian</button></li>
-                                )}
-                            </ul>
-                        </li>
+                        {!isPimpinan && (
+                            <li className="nav-item-admin">
+                                <div className="nav-link-admin px-4 py-3 d-flex justify-content-between align-items-center cursor-pointer text-white" 
+                                     onClick={() => toggleMenu('transaksi')}
+                                     style={{ cursor: 'pointer' }}>
+                                    <span><i className="ion-ios-cart mr-3" style={{ fontSize: '20px' }}></i> Transaksi</span>
+                                    <i className={`ion-ios-arrow-${openMenus.includes('transaksi') ? 'down' : 'forward'}`}></i>
+                                </div>
+                                <ul className={`list-unstyled bg-dark ${openMenus.includes('transaksi') ? 'd-block' : 'd-none'}`}>
+                                    <li><button onClick={() => forceNavigate('/booking')} className="nav-link-admin pl-5 py-2 d-block text-white-50 small border-0 bg-transparent w-100 text-left">{isAdmin ? 'Semua Booking' : 'Booking Saya'}</button></li>
+                                    {isAdmin && (
+                                        <li><button onClick={() => forceNavigate('/pengembalian')} className="nav-link-admin pl-5 py-2 d-block text-white-50 small border-0 bg-transparent w-100 text-left">Pengembalian</button></li>
+                                    )}
+                                </ul>
+                            </li>
+                        )}
 
-                        {isAdmin && (
+                        {(isAdmin || isPimpinan) && (
                             <li className="nav-item-admin">
                                 <div className="nav-link-admin px-4 py-3 d-flex justify-content-between align-items-center cursor-pointer text-white" 
                                      onClick={() => toggleMenu('laporan')}
@@ -142,7 +145,7 @@ export default function AdminLayout({ children, title }: Props) {
                             <div className="d-flex align-items-center" onClick={() => setShowProfileDropdown(!showProfileDropdown)} style={{ cursor: 'pointer' }}>
                                 <div className="text-right mr-3 d-none d-md-block">
                                     <div className="font-weight-bold mb-0 text-dark" style={{ lineHeight: 1.2 }}>{user.nama_lengkap}</div>
-                                    <small className="text-muted">{user.role === 'admin' ? 'Administrator' : 'Pelanggan'}</small>
+                                    <small className="text-muted">{user.role === 'admin' ? 'Administrator' : (user.role === 'pimpinan' ? 'Pimpinan' : 'Pelanggan')}</small>
                                 </div>
                                 <div className="rounded-circle d-flex align-items-center justify-content-center text-white" 
                                      style={{ width: '40px', height: '40px', backgroundColor: '#f96d00', fontWeight: 600, fontSize: '18px' }}>

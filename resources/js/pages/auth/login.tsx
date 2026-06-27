@@ -55,8 +55,8 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                         <div className="col-md-5 col-lg-4">
                             <div className="bg-white shadow-lg p-5" style={{ borderRadius: '20px' }}>
                                 <div className="text-center mb-4">
-                                    <div style={{ fontSize: '26px', fontWeight: 800, letterSpacing: '1.5px', color: '#222831' }}>
-                                        Car<span style={{ color: '#f96d00' }}>Book</span>
+                                    <div style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '0.5px', color: '#222831' }}>
+                                        Rental Mobil <span style={{ color: '#f96d00' }}>Nabil Padang</span>
                                     </div>
                                     <h5 className="font-weight-bold mt-2 mb-1" style={{ color: '#222831' }}>
                                         Selamat Datang

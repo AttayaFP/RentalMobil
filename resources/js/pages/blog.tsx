@@ -10,7 +10,7 @@ export default function Blog() {
 
     return (
         <TemplateLayout showHero={false}>
-            <Head title="Blog - CarBook" />
+            <Head title="Blog - Rental Mobil Nabil Padang" />
             
             <div className="hero-wrap ftco-degree-bg" style={{ backgroundImage: "url('/assets/template/images/bg_1.jpg')", height: '400px' }}>
                 <div className="overlay"></div>

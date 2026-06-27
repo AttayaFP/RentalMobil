@@ -3,7 +3,7 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem, type SharedData } from '@/types';
 import { Link } from '@inertiajs/react';
-import { LayoutGrid, Users, Car, Tag, Calendar, RotateCcw, Database, ArrowRightLeft, FileText } from 'lucide-react';
+import { ArrowRightLeft, Database, FileText, LayoutGrid } from 'lucide-react';
 import AppLogo from './app-logo';
 
 import { usePage } from '@inertiajs/react';
@@ -86,7 +86,7 @@ export function AppSidebar() {
     ];
 
     // Filter items based on role
-    const filteredItems = mainNavItems.filter(item => {
+    const filteredItems = mainNavItems.filter((item) => {
         if (userRole === 'pelanggan') {
             // Pelanggan only sees Dashboard
             return ['Dashboard'].includes(item.title);

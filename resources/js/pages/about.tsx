@@ -4,7 +4,7 @@ import { Head } from '@inertiajs/react';
 export default function About() {
     return (
         <TemplateLayout showHero={false}>
-            <Head title="Tentang Kami - CarBook" />
+            <Head title="Tentang Kami - Rental Mobil Nabil Padang" />
             
             <div className="hero-wrap ftco-degree-bg" style={{ backgroundImage: "url('/assets/template/images/bg_1.jpg')", height: '400px' }}>
                 <div className="overlay"></div>
@@ -27,7 +27,7 @@ export default function About() {
                         </div>
                         <div className="col-md-6 wrap-about p-4 p-md-5" data-aos="fade-left">
                             <div className="heading-section">
-                                <span className="subheading" style={{ color: '#01d28e' }}>Selamat Datang di CarBook</span>
+                                <span className="subheading" style={{ color: '#01d28e' }}>Selamat Datang di Rental Mobil Nabil Padang</span>
                                 <h2 className="mb-4">Perusahaan Rental Mobil Terpercaya</h2>
                                 <p>Kami adalah penyedia layanan transportasi terkemuka yang berkomitmen untuk memberikan pengalaman berkendara yang aman, nyaman, dan terjangkau bagi semua pelanggan kami. Dengan mobil yang terawat dengan baik dan pelayanan pelanggan yang ramah, kami siap mendukung perjalanan Anda.</p>
                                 <p>Visi kami adalah menjadi pilihan utama dalam layanan penyewaan kendaraan dengan mengedepankan kualitas dan integritas.</p>

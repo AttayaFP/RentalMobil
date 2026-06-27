@@ -4,32 +4,18 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 
-interface Booking {
-    kdbooking: string;
-    total_bayar: number;
-    status: string;
+interface Pengembalian {
+    kdpengembalian: string;
+    denda: number;
 }
 
 interface Props {
-    booking: Booking;
+    pengembalian: Pengembalian;
     snap_token: string;
     client_key: string;
 }
 
-declare global {
-    interface Window {
-        snap: {
-            pay: (token: string, options?: {
-                onSuccess?: (result: unknown) => void;
-                onPending?: (result: unknown) => void;
-                onError?: (result: unknown) => void;
-                onClose?: () => void;
-            }) => void;
-        };
-    }
-}
-
-export default function Checkout({ booking, snap_token, client_key }: Props) {
+export default function Checkout({ pengembalian, snap_token, client_key }: Props) {
     const { auth } = usePage<{ auth: { user: { role: string } } }>().props;
     const user = auth?.user;
     const isPelanggan = user?.role === 'pelanggan';
@@ -51,14 +37,16 @@ export default function Checkout({ booking, snap_token, client_key }: Props) {
             window.snap.pay(snap_token, {
                 onSuccess: function (result: unknown) {
                     setPaymentStatus('success');
-                    axios.post(`/booking/${booking.kdbooking}/success`, result)
-                        .then(() => { router.get(`/booking/${booking.kdbooking}/invoice`); });
+                    axios.post(`/pengembalian/${pengembalian.kdpengembalian}/success`, result)
+                        .then(() => { 
+                            router.get(isPelanggan ? "/" : "/pengembalian"); 
+                        });
                 },
                 onPending: function () { setPaymentStatus('pending'); },
                 onError: function () { setPaymentStatus('error'); },
             });
         }
-    }, [snap_token, booking.kdbooking]);
+    }, [snap_token, pengembalian.kdpengembalian, isPelanggan]);
 
     useEffect(() => {
         const timer = setTimeout(() => { handlePay(); }, 1500);
@@ -71,17 +59,17 @@ export default function Checkout({ booking, snap_token, client_key }: Props) {
                 <div className="card shadow-lg border-0 text-center overflow-hidden" style={{ borderRadius: '20px' }}>
                     <div className="p-5 bg-dark text-white">
                         <div className="mx-auto mb-4 d-flex align-items-center justify-content-center" style={{ width: '80px', height: '80px', borderRadius: '50%', backgroundColor: 'rgba(249, 109, 0, 0.1)', border: '2px solid #f96d00' }}>
-                            <i className="ion-ios-card" style={{ fontSize: '40px', color: '#f96d00' }}></i>
+                            <i className="ion-ios-cash" style={{ fontSize: '40px', color: '#f96d00' }}></i>
                         </div>
-                        <h3 className="font-weight-bold mb-1">Konfirmasi Pembayaran</h3>
-                        <p className="opacity-75 small">Kode Transaksi: <span className="font-weight-bold" style={{ color: '#f96d00' }}>{booking.kdbooking}</span></p>
+                        <h3 className="font-weight-bold mb-1">Pembayaran Denda</h3>
+                        <p className="opacity-75 small">Kode Pengembalian: <span className="font-weight-bold" style={{ color: '#f96d00' }}>{pengembalian.kdpengembalian}</span></p>
                     </div>
                     
                     <div className="card-body p-5 bg-white">
                         <div className="p-4 mb-5 rounded-xl" style={{ backgroundColor: '#f8f9fa', border: '1px dashed #ddd' }}>
-                            <p className="text-muted small text-uppercase font-weight-bold mb-2">Total yang Harus Dibayar</p>
+                            <p className="text-muted small text-uppercase font-weight-bold mb-2">Total Denda yang Harus Dibayar</p>
                             <h2 className="font-weight-bold mb-0" style={{ color: '#222831' }}>
-                                {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(booking.total_bayar)}
+                                {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(pengembalian.denda)}
                             </h2>
                         </div>
 
@@ -105,13 +93,21 @@ export default function Checkout({ booking, snap_token, client_key }: Props) {
                         {paymentStatus === 'success' && (
                             <div className="text-success">
                                 <i className="ion-ios-checkmark-circle mb-3 d-block" style={{ fontSize: '60px' }}></i>
-                                <h4 className="font-weight-bold">Pembayaran Berhasil!</h4>
-                                <p className="small text-muted">Mohon tunggu, Anda akan diarahkan ke halaman invoice...</p>
+                                <h4 className="font-weight-bold">Pembayaran Denda Berhasil!</h4>
+                                <p className="small text-muted">Mohon tunggu, Anda akan diarahkan...</p>
+                            </div>
+                        )}
+
+                        {paymentStatus === 'error' && (
+                            <div className="text-danger">
+                                <i className="ion-ios-close-circle mb-3 d-block" style={{ fontSize: '60px', color: '#dc3545' }}></i>
+                                <h4 className="font-weight-bold">Pembayaran Gagal</h4>
+                                <p className="small text-muted">Terjadi kesalahan saat memproses pembayaran. Silakan coba kembali.</p>
                             </div>
                         )}
 
                         <div className="mt-5 pt-4 border-top">
-                            <Link href={isPelanggan ? "/" : "/booking"} className="btn btn-link text-muted small">
+                            <Link href={isPelanggan ? "/" : "/pengembalian"} className="btn btn-link text-muted small">
                                 <i className="ion-ios-arrow-back mr-2"></i> Kembali
                             </Link>
                         </div>
@@ -134,8 +130,8 @@ export default function Checkout({ booking, snap_token, client_key }: Props) {
     }
 
     return (
-        <AdminLayout title="Penyelesaian Pembayaran">
-            <Head title="Checkout Pembayaran" />
+        <AdminLayout title="Penyelesaian Pembayaran Denda">
+            <Head title="Checkout Pembayaran Denda" />
             {content}
         </AdminLayout>
     );

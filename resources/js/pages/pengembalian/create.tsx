@@ -1,5 +1,6 @@
 import AdminLayout from '@/layouts/AdminLayout';
-import { useForm } from '@inertiajs/react';
+import { useForm, router } from '@inertiajs/react';
+import Swal from 'sweetalert2';
 
 interface Booking {
     kdbooking: string;
@@ -15,7 +16,7 @@ interface Props {
 }
 
 export default function Create({ bookings, next_kdpengembalian }: Props) {
-    const { data, setData, post, processing } = useForm({
+    const { data, setData, processing } = useForm({
         kdpengembalian: next_kdpengembalian,
         kdbooking: '',
         iduser: '',
@@ -38,7 +39,7 @@ export default function Create({ bookings, next_kdpengembalian }: Props) {
         riil.setHours(0, 0, 0, 0);
 
         const diffTime = riil.getTime() - selesai.getTime();
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
         
         if (diffDays > 0) {
             return { keterlambatan: diffDays.toString(), denda: (diffDays * harga).toString() };
@@ -64,7 +65,37 @@ export default function Create({ bookings, next_kdpengembalian }: Props) {
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
-        post('/pengembalian');
+        
+        const fineAmount = Number(data.denda) || 0;
+        if (fineAmount > 0) {
+            Swal.fire({
+                title: 'Konfirmasi Denda',
+                text: `Terdeteksi denda sebesar ${formatCurrency(fineAmount)}. Pilih metode pembayaran denda:`,
+                icon: 'warning',
+                showCancelButton: true,
+                showDenyButton: true,
+                confirmButtonText: 'Bayar di Tempat (Cash)',
+                denyButtonText: 'Transfer (Online)',
+                cancelButtonText: 'Batal',
+                confirmButtonColor: '#28a745',
+                denyButtonColor: '#f96d00',
+                cancelButtonColor: '#6c757d',
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    router.post('/pengembalian', {
+                        ...data,
+                        payment_type: 'bayar_di_tempat'
+                    });
+                } else if (result.isDenied) {
+                    router.post('/pengembalian', {
+                        ...data,
+                        payment_type: 'transfer'
+                    });
+                }
+            });
+        } else {
+            router.post('/pengembalian', data);
+        }
     };
 
     const forceNavigate = (path: string) => {
