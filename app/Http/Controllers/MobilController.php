@@ -140,4 +140,16 @@ class MobilController extends Controller
 
         return redirect()->back()->with('success', 'Status mobil berhasil diperbarui.');
     }
+
+    public function setTersedia(string $id)
+    {
+        $mobil = Mobil::findOrFail($id);
+        $mobil->update([
+            'status' => 'Tersedia',
+        ]);
+
+        return redirect()->back()->with('success', 'Status mobil ' . $mobil->plat_mobil . ' berhasil diubah menjadi Tersedia.');
+    }
 }
+
+

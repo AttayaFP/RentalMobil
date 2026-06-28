@@ -48,10 +48,25 @@ export default function PelangganReport({ pelanggans, filters }: Props) {
                 </div>
 
                 <div className="card-body p-3 p-md-5 bg-white">
-                    <div className="text-center mb-5">
-                        <h2 className="font-weight-bold mb-1" style={{ color: '#222831' }}>RentalMobil</h2>
-                        <p className="mb-4 text-muted">Laporan Seluruh Data Pelanggan Terdaftar</p>
-                        <div className="mx-auto" style={{ height: '3px', width: '60px', backgroundColor: '#f96d00' }}></div>
+                    <div className="position-relative mb-4 pb-3 border-bottom" style={{ borderColor: '#222831', minHeight: '115px' }}>
+                        <div className="position-absolute" style={{ top: 0, left: 0 }}>
+                            <img 
+                                src="/storage/logo/logo.jpg" 
+                                alt="Logo" 
+                                style={{ height: '110px', width: 'auto', objectFit: 'contain', borderRadius: '8px' }} 
+                            />
+                        </div>
+                        <div className="text-center" style={{ paddingLeft: '130px', paddingRight: '130px' }}>
+                            <h2 className="font-weight-bold mb-1" style={{ color: '#222831', fontSize: '24px', letterSpacing: '0.5px' }}>
+                                PT. NABIL RENTAL MOBIL PADANG
+                            </h2>
+                            <p className="mb-2 text-muted small font-weight-bold">
+                                Kompek Perumdam/III/4, Tunggul Hitam, Kota Padang
+                            </p>
+                            <span className="badge px-3 py-2 text-uppercase" style={{ backgroundColor: '#fff4e5', color: '#f96d00', border: '1px solid #fde8d8', fontSize: '12px', fontWeight: 700 }}>
+                                LAPORAN PELANGGAN - SELURUH DATA PELANGGAN TERDAFTAR
+                            </span>
+                        </div>
                     </div>
 
                     <div className="table-responsive shadow-none overflow-visible">

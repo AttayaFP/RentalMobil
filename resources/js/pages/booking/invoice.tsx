@@ -114,12 +114,27 @@ export default function Invoice({ booking, user, mobil }: Props) {
                             <div style={{ position: 'absolute', top: '-28px', right: '-28px', width: '110px', height: '110px', borderRadius: '50%', background: 'rgba(249,109,0,0.18)' }} />
                             <div style={{ position: 'absolute', bottom: '-18px', right: '80px', width: '65px', height: '65px', borderRadius: '50%', background: 'rgba(255,255,255,0.06)' }} />
 
-                            <div style={{ position: 'relative', zIndex: 1 }}>
-                                <div style={{ fontSize: '15px', fontWeight: 800, letterSpacing: '0.5px', lineHeight: 1 }}>
-                                    Rental Mobil <span style={{ color: ORANGE }}>Nabil Padang</span>
-                                </div>
-                                <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.6)', marginTop: '3px' }}>
-                                    PT. Nabil Rental Mobil Padang
+                            <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: '20px' }}>
+                                <img 
+                                    src="/storage/logo/logo.jpg" 
+                                    alt="Logo" 
+                                    style={{ 
+                                        height: '90px', 
+                                        width: 'auto', 
+                                        borderRadius: '10px', 
+                                        objectFit: 'contain',
+                                        background: '#fff',
+                                        padding: '5px',
+                                        boxShadow: '0 4px 14px rgba(0,0,0,0.25)'
+                                    }} 
+                                />
+                                <div>
+                                    <div style={{ fontSize: '17px', fontWeight: 800, letterSpacing: '0.5px', lineHeight: 1.2 }}>
+                                        PT. NABIL RENTAL MOBIL PADANG
+                                    </div>
+                                    <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.85)', marginTop: '4px', fontWeight: 500 }}>
+                                        Kompek Perumdam/III/4, Tunggul Hitam, Kota Padang
+                                    </div>
                                 </div>
                             </div>
 

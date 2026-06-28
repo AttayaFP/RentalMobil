@@ -54,6 +54,8 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('kategori', KategoriController::class);
         Route::resource('mobil', MobilController::class);
         Route::patch('mobil/{mobil}/status', [MobilController::class, 'updateStatus'])->name('mobil.update-status');
+        Route::post('mobil/{mobil}/set-tersedia', [MobilController::class, 'setTersedia'])->name('mobil.set-tersedia');
+        Route::post('mobil/{id}/set-tersedia', [MobilController::class, 'setTersedia']);
         Route::resource('pelanggan', PelangganController::class);
         Route::resource('pengembalian', PengembalianController::class);
     });

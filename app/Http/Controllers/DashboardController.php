@@ -16,6 +16,25 @@ class DashboardController extends Controller
             return redirect('/');
         }
 
+        $mobilSelesaiRawat = Mobil::whereRaw('LOWER(status) = ?', ['perawatan'])
+            ->get()
+            ->filter(function ($mobil) {
+                $latestKembali = \App\Models\KembaliMobil::whereHas('booking', function ($q) use ($mobil) {
+                    $q->where('kdmobil', $mobil->kdmobil);
+                })->orderBy('tglpengembalian', 'desc')->first();
+
+                if ($latestKembali && $latestKembali->tglpengembalian) {
+                    $tglPengembalian = \Carbon\Carbon::parse($latestKembali->tglpengembalian)->startOfDay();
+                } else {
+                    $tglPengembalian = \Carbon\Carbon::parse($mobil->updated_at)->startOfDay();
+                }
+
+                $hariIni = \Carbon\Carbon::now()->startOfDay();
+
+                return $tglPengembalian->diffInDays($hariIni, false) >= 2;
+            })
+            ->values();
+
         return Inertia::render('dashboard', [
             'stats' => [
                 'total_mobil' => Mobil::count(),
@@ -30,6 +49,7 @@ class DashboardController extends Controller
                 ->latest()
                 ->take(5)
                 ->get(),
+            'mobil_selesai_rawat' => $mobilSelesaiRawat,
         ]);
     }
 }

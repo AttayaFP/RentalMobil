@@ -1,5 +1,7 @@
 import AdminLayout from '@/layouts/AdminLayout';
-import { usePage } from '@inertiajs/react';
+import { usePage, router } from '@inertiajs/react';
+import { useEffect } from 'react';
+import Swal from 'sweetalert2';
 
 interface StatProps {
     total_mobil: number;
@@ -21,16 +23,44 @@ interface Booking {
     mobil: { nama_mobil: string };
 }
 
+interface MobilSelesaiRawat {
+    kdmobil: string;
+    nama_mobil: string;
+    plat_mobil: string;
+}
+
 interface Props {
     stats: StatProps;
     recent_bookings: Booking[];
+    mobil_selesai_rawat?: MobilSelesaiRawat[];
 }
 
-export default function Dashboard({ stats, recent_bookings }: Props) {
+export default function Dashboard({ stats, recent_bookings, mobil_selesai_rawat = [] }: Props) {
     const { auth } = usePage<{ auth: { user: { role: string; nama_lengkap?: string; name?: string } } }>().props;
     const user = auth.user;
     const userName = user?.nama_lengkap || user?.name || 'User';
     const isPimpinan = user?.role === 'pimpinan';
+
+    useEffect(() => {
+        if (!isPimpinan && mobil_selesai_rawat && mobil_selesai_rawat.length > 0) {
+            mobil_selesai_rawat.forEach((mobil) => {
+                Swal.fire({
+                    title: 'Pengingat Status Mobil',
+                    html: `Mobil <strong>[${mobil.plat_mobil}]</strong> telah selesai perawatan 2 hari lalu.<br><br>Ubah status menjadi tersedia?`,
+                    icon: 'info',
+                    showCancelButton: true,
+                    confirmButtonColor: '#2ecc71',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Ubah ke Tersedia',
+                    cancelButtonText: 'Batal',
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        router.post(`/mobil/${mobil.kdmobil}/set-tersedia`);
+                    }
+                });
+            });
+        }
+    }, [mobil_selesai_rawat, isPimpinan]);
 
     const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
