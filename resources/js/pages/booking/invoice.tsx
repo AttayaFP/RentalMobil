@@ -173,7 +173,6 @@ export default function Invoice({ booking, user, mobil }: Props) {
                                     </div>
                                     <Row label="Waktu" value={formatDate(txTime)} />
                                     <Row label="Status" value={booking.status} />
-                                    <Row label="Metode" value={booking.payment_method || '-'} />
                                 </div>
                             </div>
 

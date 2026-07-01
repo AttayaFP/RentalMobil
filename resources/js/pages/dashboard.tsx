@@ -41,26 +41,7 @@ export default function Dashboard({ stats, recent_bookings, mobil_selesai_rawat 
     const userName = user?.nama_lengkap || user?.name || 'User';
     const isPimpinan = user?.role === 'pimpinan';
 
-    useEffect(() => {
-        if (!isPimpinan && mobil_selesai_rawat && mobil_selesai_rawat.length > 0) {
-            mobil_selesai_rawat.forEach((mobil) => {
-                Swal.fire({
-                    title: 'Pengingat Status Mobil',
-                    html: `Mobil <strong>[${mobil.plat_mobil}]</strong> telah selesai perawatan 2 hari lalu.<br><br>Ubah status menjadi tersedia?`,
-                    icon: 'info',
-                    showCancelButton: true,
-                    confirmButtonColor: '#2ecc71',
-                    cancelButtonColor: '#6c757d',
-                    confirmButtonText: 'Ubah ke Tersedia',
-                    cancelButtonText: 'Batal',
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        router.post(`/mobil/${mobil.kdmobil}/set-tersedia`);
-                    }
-                });
-            });
-        }
-    }, [mobil_selesai_rawat, isPimpinan]);
+    // Swalled popup removed here and moved to AdminLayout.tsx to show on all admin pages
 
     const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);

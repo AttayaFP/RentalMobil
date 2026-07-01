@@ -1,6 +1,13 @@
 import { usePage, router } from '@inertiajs/react';
-import { ReactNode, useState } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
 import { Head } from '@inertiajs/react';
+import Swal from 'sweetalert2';
+
+interface MobilSelesaiRawat {
+    kdmobil: string;
+    nama_mobil: string;
+    plat_mobil: string;
+}
 
 interface Props {
     children: ReactNode;
@@ -9,7 +16,10 @@ interface Props {
 
 export default function AdminLayout({ children, title }: Props) {
     const { auth, flash } = usePage<{ 
-        auth: { user: { role: string; nama_lengkap: string } | null }; 
+        auth: { 
+            user: { role: string; nama_lengkap: string } | null;
+            mobil_selesai_rawat?: MobilSelesaiRawat[];
+        } | null; 
         flash: { success?: string; error?: string };
     }>().props;
     
@@ -20,6 +30,28 @@ export default function AdminLayout({ children, title }: Props) {
     const user = auth?.user || { nama_lengkap: 'Admin', role: 'guest' };
     const isAdmin = user.role === 'admin';
     const isPimpinan = user.role === 'pimpinan';
+    const mobil_selesai_rawat = auth?.mobil_selesai_rawat || [];
+
+    useEffect(() => {
+        if (isAdmin && mobil_selesai_rawat.length > 0) {
+            mobil_selesai_rawat.forEach((mobil) => {
+                Swal.fire({
+                    title: 'Pengingat Status Mobil',
+                    html: `Mobil <strong>[${mobil.plat_mobil}]</strong> telah selesai perawatan 2 hari lalu.<br><br>Ubah status menjadi tersedia?`,
+                    icon: 'info',
+                    showCancelButton: true,
+                    confirmButtonColor: '#2ecc71',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Ubah ke Tersedia',
+                    cancelButtonText: 'Batal',
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        router.post(`/mobil/${mobil.kdmobil}/set-tersedia`);
+                    }
+                });
+            });
+        }
+    }, [mobil_selesai_rawat, isAdmin]);
 
     const handleLogout = (e: React.FormEvent) => {
         e.preventDefault();

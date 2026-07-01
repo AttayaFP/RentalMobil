@@ -30,6 +30,13 @@ export default function PengembalianReport({ pengembalians, filters }: Props) {
         return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
     };
 
+    const totalDenda = pengembalians.reduce((acc, curr) => acc + (curr.denda || 0), 0);
+    const totalKembali = pengembalians.length;
+    const totalTelat = pengembalians.filter((p) => {
+        const days = parseInt(p.keterlambatan);
+        return !isNaN(days) ? days > 0 : p.denda > 0;
+    }).length;
+
     return (
         <AdminLayout title="Laporan Pengembalian">
             <motion.div 
@@ -84,10 +91,12 @@ export default function PengembalianReport({ pengembalians, filters }: Props) {
                                     <th className="py-3 px-1 border-0 text-center">NO</th>
                                     <th className="py-3 px-1 border-0">KODE KEMBALI</th>
                                     <th className="py-3 px-1 border-0">PELANGGAN</th>
-                                    <th className="py-3 px-1 border-0">UNIT MOBIL</th>
-                                    <th className="py-3 px-1 border-0 text-center">TGL SEWA</th>
+                                    <th className="py-3 px-1 border-0">NAMA MOBIL</th>
+                                    <th className="py-3 px-1 border-0 text-center">PLAT MOBIL</th>
+                                    <th className="py-3 px-1 border-0 text-center">TANGGAL MULAI</th>
+                                    <th className="py-3 px-1 border-0 text-center">TANGGAL SELESAI</th>
                                     <th className="py-3 px-1 border-0 text-center">TGL KEMBALI</th>
-                                    <th className="py-3 px-1 border-0 text-center">LAMBAT</th>
+                                    <th className="py-3 px-1 border-0 text-center">TELAT</th>
                                     <th className="py-3 px-1 border-0 text-right">DENDA</th>
                                 </tr>
                             </thead>
@@ -97,8 +106,10 @@ export default function PengembalianReport({ pengembalians, filters }: Props) {
                                         <td className="py-3 px-1 text-center text-muted font-weight-bold">{index + 1}</td>
                                         <td className="py-3 px-1 font-weight-bold text-primary">{p.kdpengembalian}</td>
                                         <td className="py-3 px-1 font-weight-bold text-dark">{p.nama_pelanggan}</td>
-                                        <td className="py-3 px-1">{p.nama_mobil} (<code>{p.plat_mobil}</code>)</td>
-                                        <td className="py-3 px-1 text-center text-muted">{p.tglmulai} s/d {p.tglselesai}</td>
+                                        <td className="py-3 px-1">{p.nama_mobil}</td>
+                                        <td className="py-3 px-1 text-center"><code>{p.plat_mobil}</code></td>
+                                        <td className="py-3 px-1 text-center text-muted">{p.tglmulai}</td>
+                                        <td className="py-3 px-1 text-center text-muted">{p.tglselesai}</td>
                                         <td className="py-3 px-1 text-center font-weight-bold">{p.tglpengembalian}</td>
                                         <td className="py-3 px-1 text-center">
                                             <span className={`badge ${p.denda > 0 ? 'badge-danger' : 'badge-success'}`}>
@@ -109,11 +120,34 @@ export default function PengembalianReport({ pengembalians, filters }: Props) {
                                     </tr>
                                 )) : (
                                     <tr>
-                                        <td colSpan={8} className="text-center py-5 text-muted">Data pengembalian tidak ditemukan.</td>
+                                        <td colSpan={10} className="text-center py-5 text-muted">Data pengembalian tidak ditemukan.</td>
                                     </tr>
                                 )}
                             </tbody>
+                            <tfoot className="bg-light">
+                                <tr className="font-weight-bold" style={{ fontSize: '11px' }}>
+                                    <td colSpan={9} className="text-right py-3 text-uppercase">TOTAL SELURUH DENDA PENGEMBALIAN</td>
+                                    <td className="text-right py-3 text-danger font-weight-bold">{formatCurrency(totalDenda)}</td>
+                                </tr>
+                            </tfoot>
                         </table>
+                    </div>
+
+                    <div className="mt-3 p-3 border rounded bg-light d-flex flex-wrap justify-content-between align-items-center gap-3">
+                        <div className="d-flex flex-wrap gap-4">
+                            <div>
+                                <span className="font-weight-bold text-uppercase small text-muted d-block">Mobil Sudah Kembali:</span>
+                                <span className="badge badge-success px-3 py-2 mt-1" style={{ fontSize: '13px' }}>{totalKembali} Unit Mobil</span>
+                            </div>
+                            <div>
+                                <span className="font-weight-bold text-uppercase small text-muted d-block">Mobil Terlambat (≥ 1 Hari):</span>
+                                <span className="badge badge-danger px-3 py-2 mt-1" style={{ fontSize: '13px' }}>{totalTelat} Unit Mobil</span>
+                            </div>
+                        </div>
+                        <div className="text-right">
+                            <span className="font-weight-bold text-uppercase small text-muted d-block">Total Denda Keseluruhan:</span>
+                            <span className="h5 font-weight-bold mb-0 text-danger">{formatCurrency(totalDenda)}</span>
+                        </div>
                     </div>
 
                     <div className="mt-5 text-right opacity-75 small italic print:block d-none">

@@ -14,6 +14,7 @@ interface Props {
     booking: Booking;
     snap_token: string;
     client_key: string;
+    is_production?: boolean;
 }
 
 declare global {
@@ -29,22 +30,32 @@ declare global {
     }
 }
 
-export default function Checkout({ booking, snap_token, client_key }: Props) {
+export default function Checkout({ booking, snap_token, client_key, is_production }: Props) {
     const { auth } = usePage<{ auth: { user: { role: string } } }>().props;
     const user = auth?.user;
     const isPelanggan = user?.role === 'pelanggan';
 
     const [paymentStatus, setPaymentStatus] = useState<'pending' | 'success' | 'error' | 'none'>('none');
+    const [isScriptLoaded, setIsScriptLoaded] = useState<boolean>(false);
 
     useEffect(() => {
-        const midtransScriptUrl = 'https://app.sandbox.midtrans.com/snap/snap.js';
-        const script = document.createElement('script');
-        script.src = midtransScriptUrl;
-        script.setAttribute('data-client-key', client_key);
-        script.async = true;
-        document.body.appendChild(script);
-        return () => { document.body.removeChild(script); };
-    }, [client_key]);
+        const midtransScriptUrl = is_production
+            ? 'https://app.midtrans.com/snap/snap.js'
+            : 'https://app.sandbox.midtrans.com/snap/snap.js';
+
+        let script = document.querySelector(`script[id="midtrans-script"]`) as HTMLScriptElement;
+        if (!script) {
+            script = document.createElement('script');
+            script.id = 'midtrans-script';
+            script.src = midtransScriptUrl;
+            script.setAttribute('data-client-key', client_key);
+            script.async = true;
+            script.onload = () => setIsScriptLoaded(true);
+            document.body.appendChild(script);
+        } else {
+            setIsScriptLoaded(true);
+        }
+    }, [client_key, is_production]);
 
     const handlePay = useCallback(() => {
         if (window.snap) {
@@ -56,14 +67,19 @@ export default function Checkout({ booking, snap_token, client_key }: Props) {
                 },
                 onPending: function () { setPaymentStatus('pending'); },
                 onError: function () { setPaymentStatus('error'); },
+                onClose: function () { setPaymentStatus('none'); },
             });
+        } else {
+            alert('Gerbang pembayaran Midtrans belum siap. Silakan tunggu sebentar dan coba lagi.');
         }
     }, [snap_token, booking.kdbooking]);
 
     useEffect(() => {
-        const timer = setTimeout(() => { handlePay(); }, 1500);
-        return () => clearTimeout(timer);
-    }, [snap_token, handlePay]);
+        if (isScriptLoaded) {
+            const timer = setTimeout(() => { handlePay(); }, 800);
+            return () => clearTimeout(timer);
+        }
+    }, [isScriptLoaded, handlePay]);
 
     const content = (
         <div className="row justify-content-center">
@@ -87,7 +103,9 @@ export default function Checkout({ booking, snap_token, client_key }: Props) {
 
                         {paymentStatus === 'none' && (
                             <div className="animate__animated animate__fadeIn">
-                                <p className="text-muted small mb-4">Gerbang pembayaran Midtrans sedang disiapkan...</p>
+                                <p className="text-muted small mb-4">
+                                    {isScriptLoaded ? 'Gerbang pembayaran Midtrans siap.' : 'Memuat gerbang pembayaran Midtrans...'}
+                                </p>
                                 <button onClick={handlePay} className="btn btn-primary btn-block py-3 font-weight-bold shadow-sm" style={{ backgroundColor: '#f96d00', borderColor: '#f96d00', borderRadius: '10px' }}>
                                     BAYAR SEKARANG
                                 </button>
@@ -109,6 +127,16 @@ export default function Checkout({ booking, snap_token, client_key }: Props) {
                                 <p className="small text-muted">Mohon tunggu, Anda akan diarahkan ke halaman invoice...</p>
                             </div>
                         )}
+
+                        {paymentStatus === 'error' && (
+                            <div className="text-danger">
+                                <i className="ion-ios-close-circle mb-3 d-block" style={{ fontSize: '60px', color: '#dc3545' }}></i>
+                                <h4 className="font-weight-bold">Pembayaran Gagal</h4>
+                                <p className="small text-muted">Terjadi kesalahan saat memproses pembayaran. Silakan coba kembali.</p>
+                                <button onClick={handlePay} className="btn btn-outline-danger mt-3">Coba Lagi</button>
+                            </div>
+                        )}
+
 
                         <div className="mt-5 pt-4 border-top">
                             <Link href={isPelanggan ? "/" : "/booking"} className="btn btn-link text-muted small">

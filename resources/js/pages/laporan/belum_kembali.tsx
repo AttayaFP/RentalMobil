@@ -76,7 +76,7 @@ export default function BelumKembaliReport({ bookings, filters }: Props) {
                                 <tr>
                                     <th className="py-3 px-3 border-0 text-center">NO</th>
                                     <th className="py-3 px-3 border-0">KODE BOOKING</th>
-                                    <th className="py-3 px-3 border-0">UNIT MOBIL</th>
+                                    <th className="py-3 px-3 border-0">NAMA MOBIL</th>
                                     <th className="py-3 px-3 border-0 text-center">PLAT NOMOR</th>
                                     <th className="py-3 px-3 border-0 text-center">TGL MULAI SEWA</th>
                                     <th className="py-3 px-3 border-0 text-center">STATUS</th>
@@ -100,7 +100,20 @@ export default function BelumKembaliReport({ bookings, filters }: Props) {
                                     </tr>
                                 )}
                             </tbody>
+                            <tfoot className="bg-light">
+                                <tr className="font-weight-bold" style={{ fontSize: '11px' }}>
+                                    <td colSpan={5} className="text-right py-3 text-uppercase">TOTAL MOBIL BELUM KEMBALI</td>
+                                    <td className="text-center py-3 text-warning font-weight-bold">
+                                        {bookings.length} Unit
+                                    </td>
+                                </tr>
+                            </tfoot>
                         </table>
+                    </div>
+
+                    <div className="mt-3 p-3 border rounded bg-light d-flex justify-content-between align-items-center">
+                        <span className="font-weight-bold text-uppercase small text-muted">Total Mobil Belum Kembali:</span>
+                        <span className="badge badge-warning px-3 py-2 text-dark" style={{ fontSize: '14px' }}>{bookings.length} Unit Mobil</span>
                     </div>
 
                     <div className="mt-5 text-right opacity-75 small italic print:block d-none">

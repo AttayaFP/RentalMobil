@@ -15,6 +15,7 @@ class PaymentController extends Controller
         Config::$isProduction = config('midtrans.is_production');
         Config::$isSanitized = config('midtrans.is_sanitized');
         Config::$is3ds = config('midtrans.is_3ds');
+        Config::$curlOptions = config('midtrans.curl_options', []);
         try {
             $notification = new Notification;
         } catch (\Exception $e) {
@@ -56,6 +57,10 @@ class PaymentController extends Controller
         $booking->transaction_time = $notification->transaction_time;
         $booking->payment_type = $type;
         $booking->save();
+
+        if (in_array($booking->status, ['deny', 'expire', 'cancel'])) {
+            BookingMobil::notifyOtherInterestedCustomers($booking->kdmobil, $booking->tglmulai, $booking->tglselesai, $booking->kdbooking);
+        }
 
         return response()->json(['message' => 'Notification processed successfully']);
     }

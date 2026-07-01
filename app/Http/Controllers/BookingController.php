@@ -10,11 +10,15 @@ use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Midtrans\Config;
 use Midtrans\Snap;
+use Illuminate\Support\Facades\DB;
 
 class BookingController extends Controller
 {
+    private const PENDING_LOCK_MINUTES = 1;
+
     public function index(Request $request)
     {
+        BookingMobil::autoExpirePendingBookings(self::PENDING_LOCK_MINUTES);
         $query = BookingMobil::query();
 
         if (Auth::user() && Auth::user()->role === 'pelanggan') {
@@ -45,6 +49,45 @@ class BookingController extends Controller
         ]);
     }
 
+    public function getAvailableCars(Request $request)
+    {
+        BookingMobil::autoExpirePendingBookings(self::PENDING_LOCK_MINUTES);
+        $request->validate([
+            'tglmulai' => 'required|date',
+            'tglselesai' => 'required|date|after_or_equal:tglmulai',
+        ]);
+
+        $tglmulai = $request->tglmulai;
+        $tglselesai = $request->tglselesai;
+
+        $bookedMobilIds = BookingMobil::where(function ($q) {
+            $q->whereIn('status', ['Sukses', 'success', 'Success', 'Berhasil', 'Selesai', 'challenge'])
+                ->orWhere(function ($qp) {
+                    $qp->whereIn('status', ['Pending', 'pending'])
+                        ->where('created_at', '>=', now()->subMinutes(self::PENDING_LOCK_MINUTES));
+                });
+        })
+            ->where(function ($q) use ($tglmulai, $tglselesai) {
+                $q->where('tglmulai', '<=', $tglselesai)
+                    ->where('tglselesai', '>=', $tglmulai);
+            })
+            ->pluck('kdmobil')
+            ->unique();
+
+        $mobils = Mobil::where('status', 'Tersedia')
+            ->whereNotIn('kdmobil', $bookedMobilIds)
+            ->get();
+
+        return response()->json($mobils->map(fn($m) => [
+            'kdmobil' => $m->kdmobil,
+            'nama_mobil' => $m->nama_mobil,
+            'plat_mobil' => $m->plat_mobil,
+            'harga' => $m->harga,
+            'foto' => $m->foto,
+            'status' => $m->status,
+        ]));
+    }
+
     private function generateKdBooking(): string
     {
         $last = BookingMobil::orderByRaw('CAST(SUBSTRING(kdbooking, 3) AS UNSIGNED) DESC')
@@ -57,7 +100,7 @@ class BookingController extends Controller
             $number = 1;
         }
 
-        return 'BO'.str_pad($number, 3, '0', STR_PAD_LEFT);
+        return 'BO' . str_pad($number, 3, '0', STR_PAD_LEFT);
     }
 
     public function create(Request $request)
@@ -67,7 +110,7 @@ class BookingController extends Controller
 
         return Inertia::render('booking/create', [
             'users' => User::all(),
-            'mobils' => $mobils->map(fn ($m) => [
+            'mobils' => $mobils->map(fn($m) => [
                 'kdmobil' => $m->kdmobil,
                 'nama_mobil' => $m->nama_mobil,
                 'plat_mobil' => $m->plat_mobil,
@@ -82,6 +125,7 @@ class BookingController extends Controller
 
     public function store(Request $request)
     {
+        BookingMobil::autoExpirePendingBookings(self::PENDING_LOCK_MINUTES);
         $request->validate([
             'tglbooking' => 'required|date',
             'iduser' => 'required',
@@ -95,16 +139,47 @@ class BookingController extends Controller
             'status' => 'required|string',
         ]);
 
-        $mobil = Mobil::find($request->kdmobil);
-        if (! $mobil || $mobil->status !== 'Tersedia') {
+        $overlapResult = DB::transaction(function () use ($request) {
+            $mobil = Mobil::where('kdmobil', $request->kdmobil)->lockForUpdate()->first();
+
+            if (!$mobil || $mobil->status !== 'Tersedia') {
+                return 'not_available';
+            }
+
+            $overlapExists = BookingMobil::where('kdmobil', $request->kdmobil)
+                ->where(function ($q) {
+                    $q->whereIn('status', ['Sukses', 'success', 'Success', 'Berhasil', 'Selesai', 'challenge'])
+                        ->orWhere(function ($qp) {
+                            $qp->whereIn('status', ['Pending', 'pending'])
+                                ->where('created_at', '>=', now()->subMinutes(self::PENDING_LOCK_MINUTES));
+                        });
+                })
+                ->where(function ($q) use ($request) {
+                    $q->where('tglmulai', '<=', $request->tglselesai)
+                        ->where('tglselesai', '>=', $request->tglmulai);
+                })
+                ->exists();
+
+            if ($overlapExists) {
+                return 'overlap';
+            }
+
+            return 'ok';
+        });
+
+        if ($overlapResult === 'not_available') {
             return back()->withErrors(['kdmobil' => 'Maaf, mobil ini sudah tidak tersedia untuk disewa.']);
+        }
+
+        if ($overlapResult === 'overlap') {
+            return back()->withErrors(['kdmobil' => 'Maaf, mobil ini sudah dibooking oleh pelanggan lain pada rentang tanggal tersebut. Silakan pilih tanggal atau mobil lain.']);
         }
 
         $data = $request->all();
         $data['kdbooking'] = $this->generateKdBooking();
 
         if (! isset($data['transaction_id'])) {
-            $data['transaction_id'] = 'TRX-'.strtoupper(bin2hex(random_bytes(4)));
+            $data['transaction_id'] = 'TRX-' . strtoupper(bin2hex(random_bytes(4)));
             $data['transaction_time'] = now();
         }
 
@@ -123,10 +198,11 @@ class BookingController extends Controller
         Config::$isProduction = config('midtrans.is_production');
         Config::$isSanitized = config('midtrans.is_sanitized');
         Config::$is3ds = config('midtrans.is_3ds');
+        Config::$curlOptions = config('midtrans.curl_options', []);
 
         $params = [
             'transaction_details' => [
-                'order_id' => $booking->kdbooking.'-'.time(),
+                'order_id' => $booking->kdbooking . '-' . time(),
                 'gross_amount' => (int) $booking->total_bayar,
             ],
             'customer_details' => [
@@ -139,8 +215,13 @@ class BookingController extends Controller
                     'id' => $mobil->kdmobil,
                     'price' => (int) $booking->harga,
                     'quantity' => (int) $booking->lama_sewa,
-                    'name' => 'Sewa Mobil '.$mobil->nama_mobil,
+                    'name' => 'Sewa Mobil ' . $mobil->nama_mobil,
                 ],
+            ],
+            'expiry' => [
+                'start_time' => date("Y-m-d H:i:s O", time()),
+                'unit' => 'minute',
+                'duration' => self::PENDING_LOCK_MINUTES,
             ],
         ];
 
@@ -151,9 +232,10 @@ class BookingController extends Controller
                 'booking' => $booking,
                 'snap_token' => $snapToken,
                 'client_key' => trim(config('midtrans.client_key')),
+                'is_production' => (bool) config('midtrans.is_production'),
             ]);
         } catch (\Exception $e) {
-            return redirect()->route('booking.index')->with('error', 'Gagal menghubungkan ke Midtrans: '.$e->getMessage());
+            return redirect()->route('booking.index')->with('error', 'Gagal menghubungkan ke Midtrans: ' . $e->getMessage());
         }
     }
 
@@ -202,6 +284,7 @@ class BookingController extends Controller
 
     public function update(Request $request, string $id)
     {
+        BookingMobil::autoExpirePendingBookings(self::PENDING_LOCK_MINUTES);
         $booking = BookingMobil::findOrFail($id);
 
         $request->validate([
@@ -216,8 +299,85 @@ class BookingController extends Controller
             'status' => 'required|string',
         ]);
 
+        $overlapResult = DB::transaction(function () use ($request, $id) {
+            $mobil = Mobil::where('kdmobil', $request->kdmobil)->lockForUpdate()->first();
+
+            if (!$mobil) {
+                return 'not_found';
+            }
+
+            $overlapExists = BookingMobil::where('kdmobil', $request->kdmobil)
+                ->where('kdbooking', '!=', $id)
+                ->where(function ($q) {
+                    $q->whereIn('status', ['Sukses', 'success', 'Success', 'Berhasil', 'Selesai', 'challenge'])
+                        ->orWhere(function ($qp) {
+                            $qp->whereIn('status', ['Pending', 'pending'])
+                                ->where('created_at', '>=', now()->subMinutes(self::PENDING_LOCK_MINUTES));
+                        });
+                })
+                ->where(function ($q) use ($request) {
+                    $q->where('tglmulai', '<=', $request->tglselesai)
+                        ->where('tglselesai', '>=', $request->tglmulai);
+                })
+                ->exists();
+
+            if ($overlapExists) {
+                return 'overlap';
+            }
+
+            return 'ok';
+        });
+
+        if ($overlapResult === 'not_found') {
+            return back()->withErrors(['kdmobil' => 'Maaf, data mobil tidak ditemukan.']);
+        }
+
+        if ($overlapResult === 'overlap') {
+            return back()->withErrors(['kdmobil' => 'Maaf, mobil ini sudah dibooking oleh pelanggan lain pada rentang tanggal tersebut. Silakan pilih tanggal atau mobil lain.']);
+        }
+
         $booking->update($request->all());
 
+        if (in_array($request->status, ['Batal', 'Gagal', 'Expired', 'expire', 'cancel', 'deny'])) {
+            BookingMobil::notifyOtherInterestedCustomers($booking->kdmobil, $booking->tglmulai, $booking->tglselesai, $booking->kdbooking);
+        }
+
         return redirect()->route('booking.index')->with('success', 'Booking berhasil diperbarui.');
+    }
+
+    public function requestReminder(Request $request)
+    {
+        $request->validate([
+            'kdmobil' => 'required|exists:mobil,kdmobil',
+            'tglmulai' => 'required|date',
+            'tglselesai' => 'required|date|after_or_equal:tglmulai',
+        ]);
+
+        $exists = BookingMobil::where('iduser', Auth::id())
+            ->where('kdmobil', $request->kdmobil)
+            ->where('tglmulai', $request->tglmulai)
+            ->where('tglselesai', $request->tglselesai)
+            ->exists();
+
+        if (!$exists) {
+            BookingMobil::create([
+                'kdbooking' => 'RM-' . strtoupper(bin2hex(random_bytes(3))),
+                'tglbooking' => now()->format('Y-m-d'),
+                'iduser' => Auth::id(),
+                'kdmobil' => $request->kdmobil,
+                'harga' => 0,
+                'payment_type' => 'reminder',
+                'payment_method' => 'reminder',
+                'tglmulai' => $request->tglmulai,
+                'tglselesai' => $request->tglselesai,
+                'lama_sewa' => 1,
+                'total_bayar' => 0,
+                'transaction_id' => 'REM-' . time(),
+                'transaction_time' => now(),
+                'status' => 'Expired',
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Pengingat berhasil diaktifkan. Kami akan memberi tahu Anda jika mobil ini sudah tersedia kembali!');
     }
 }

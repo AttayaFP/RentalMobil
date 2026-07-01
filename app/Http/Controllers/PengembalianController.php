@@ -158,6 +158,7 @@ class PengembalianController extends Controller
         Config::$isProduction = config('midtrans.is_production');
         Config::$isSanitized = config('midtrans.is_sanitized');
         Config::$is3ds = config('midtrans.is_3ds');
+        Config::$curlOptions = config('midtrans.curl_options', []);
 
         $params = [
             'transaction_details' => [
@@ -186,6 +187,7 @@ class PengembalianController extends Controller
                 'pengembalian' => $pengembalian,
                 'snap_token' => $snapToken,
                 'client_key' => trim(config('midtrans.client_key')),
+                'is_production' => (bool) config('midtrans.is_production'),
             ]);
         } catch (\Exception $e) {
             return redirect()->route('pengembalian.index')->with('error', 'Gagal menghubungkan ke Midtrans: '.$e->getMessage());

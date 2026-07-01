@@ -136,7 +136,12 @@ class MobilController extends Controller
             'status' => 'required|string|in:Tersedia,Disewa,Perawatan',
         ]);
 
+        $oldStatus = $mobil->status;
         $mobil->update(['status' => $request->status]);
+
+        if ($request->status === 'Tersedia' && $oldStatus !== 'Tersedia') {
+            \App\Models\BookingMobil::notifyFutureInterestedCustomers($mobil->kdmobil);
+        }
 
         return redirect()->back()->with('success', 'Status mobil berhasil diperbarui.');
     }
@@ -144,9 +149,14 @@ class MobilController extends Controller
     public function setTersedia(string $id)
     {
         $mobil = Mobil::findOrFail($id);
+        $oldStatus = $mobil->status;
         $mobil->update([
             'status' => 'Tersedia',
         ]);
+
+        if ($oldStatus !== 'Tersedia') {
+            \App\Models\BookingMobil::notifyFutureInterestedCustomers($mobil->kdmobil);
+        }
 
         return redirect()->back()->with('success', 'Status mobil ' . $mobil->plat_mobil . ' berhasil diubah menjadi Tersedia.');
     }

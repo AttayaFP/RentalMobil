@@ -17,6 +17,7 @@ interface Rental {
     totalsewa: number;
     total_seluruh: number;
     status: string;
+    status_mobil?: string;
 }
 
 interface Props {
@@ -35,6 +36,9 @@ export default function RentalReport({ rentals, filters }: Props) {
     };
 
     const grandTotal = rentals.reduce((acc, curr) => acc + curr.total_seluruh, 0);
+    const mobilDisewaCount = rentals.filter(r => (r.status_mobil || '').toLowerCase() === 'disewa').length;
+    const mobilKembaliCount = rentals.filter(r => (r.status_mobil || '').toLowerCase() === 'tersedia').length;
+    const mobilPerawatanCount = rentals.filter(r => (r.status_mobil || '').toLowerCase() === 'perawatan').length;
 
     return (
         <AdminLayout title="Laporan Pendapatan">
@@ -82,14 +86,6 @@ export default function RentalReport({ rentals, filters }: Props) {
                             </span>
                         </div>
                     </div>
-                    <div className="row mb-4 print:hidden">
-                        <div className="col-md-12">
-                            <div className="p-3 border rounded text-center shadow-sm" style={{ backgroundColor: '#fff4e5' }}>
-                                <small className="text-muted text-uppercase font-weight-bold d-block mb-1 text-primary">Total Pendapatan (Sewa + Denda)</small>
-                                <h4 className="font-weight-bold mb-0" style={{ color: '#f96d00' }}>{formatCurrency(grandTotal)}</h4>
-                            </div>
-                        </div>
-                    </div>
 
                     <div className="table-responsive shadow-none overflow-visible">
                         <table className="table table-striped table-hover table-sm w-100" style={{ fontSize: '8px' }}>
@@ -101,11 +97,13 @@ export default function RentalReport({ rentals, filters }: Props) {
                                     <th className="py-2 px-1 border-0">MOBIL</th>
                                     <th className="py-2 px-1 border-0 text-center">PLAT</th>
                                     <th className="py-2 px-1 border-0 text-center">TGL MULAI</th>
+                                    <th className="py-2 px-1 border-0 text-center">TGL SELESAI</th>
                                     <th className="py-2 px-1 border-0 text-center">TGL KEMBALI</th>
                                     <th className="py-2 px-1 border-0 text-center">TELAT</th>
                                     <th className="py-2 px-1 border-0 text-right">BIAYA SEWA</th>
                                     <th className="py-2 px-1 border-0 text-right">DENDA</th>
-                                    <th className="py-2 px-1 border-0 text-right">TOTAL</th>
+                                    <th className="py-2 px-2 border-0 text-right">TOTAL</th>
+                                    <th className="py-2 px-1 border-0 text-center">STATUS MOBIL</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -117,25 +115,68 @@ export default function RentalReport({ rentals, filters }: Props) {
                                         <td className="py-2 px-1" style={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>{r.nama_mobil}</td>
                                         <td className="py-2 px-1 text-center"><code>{r.plat_mobil}</code></td>
                                         <td className="py-2 px-1 text-center text-muted" style={{ whiteSpace: 'normal' }}>{r.tglmulai}</td>
+                                        <td className="py-2 px-1 text-center text-muted" style={{ whiteSpace: 'normal' }}>{r.tglselesai}</td>
                                         <td className="py-2 px-1 text-center text-muted" style={{ whiteSpace: 'normal' }}>{r.tglpengembalian || '-'}</td>
-                                        <td className="py-2 px-1 text-center font-weight-bold">{r.keterlambatan || 0}H</td>
+                                        <td className="py-2 px-1 text-center font-weight-bold">{r.keterlambatan || 0}</td>
                                         <td className="py-2 px-1 text-right">{new Intl.NumberFormat('id-ID').format(r.totalsewa)}</td>
                                         <td className="py-2 px-1 text-right text-danger">{new Intl.NumberFormat('id-ID').format(r.denda)}</td>
-                                        <td className="py-2 px-1 text-right font-weight-bold text-primary">{new Intl.NumberFormat('id-ID').format(r.total_seluruh)}</td>
+                                        <td className="py-2 px-2 text-right font-weight-bold text-primary">{new Intl.NumberFormat('id-ID').format(r.total_seluruh)}</td>
+                                        <td className="py-2 px-1 text-center">
+                                            <span className={`badge ${
+                                                (r.status_mobil || '').toLowerCase() === 'tersedia' ? 'badge-success' :
+                                                (r.status_mobil || '').toLowerCase() === 'disewa' ? 'badge-warning' :
+                                                'badge-danger'
+                                            }`}>
+                                                {r.status_mobil || 'Tersedia'}
+                                            </span>
+                                        </td>
                                     </tr>
                                 )) : (
                                     <tr>
-                                        <td colSpan={11} className="text-center py-4">Data tidak ditemukan.</td>
+                                        <td colSpan={13} className="text-center py-4">Data tidak ditemukan.</td>
                                     </tr>
                                 )}
                             </tbody>
                             <tfoot className="bg-light">
                                 <tr className="font-weight-bold" style={{ fontSize: '11px' }}>
-                                    <td colSpan={10} className="text-right py-3">GRAND TOTAL PENDAPATAN</td>
+                                    <td colSpan={11} className="text-right py-3">GRAND TOTAL PENDAPATAN</td>
                                     <td className="text-right py-3 text-primary">{formatCurrency(grandTotal)}</td>
+                                    <td></td>
                                 </tr>
                             </tfoot>
                         </table>
+                    </div>
+
+                    <div className="mt-4 p-4 border rounded bg-light">
+                        <h6 className="font-weight-bold text-dark mb-3 border-bottom pb-2">
+                            Rangkuman Status Armada & Total Pendapatan
+                        </h6>
+                        <div className="row g-3">
+                            <div className="col-md-3 mb-2">
+                                <div className="p-3 bg-white border rounded text-center shadow-sm">
+                                    <span className="font-weight-bold text-uppercase small text-muted d-block mb-1">Total Pendapatan Keseluruhan</span>
+                                    <span className="h5 font-weight-bold mb-0 text-primary">{formatCurrency(grandTotal)}</span>
+                                </div>
+                            </div>
+                            <div className="col-md-3 mb-2">
+                                <div className="p-3 bg-white border rounded text-center shadow-sm">
+                                    <span className="font-weight-bold text-uppercase small text-muted d-block mb-1">Total Mobil Disewa</span>
+                                    <span className="badge badge-warning px-3 py-2 text-dark mt-1" style={{ fontSize: '13px' }}>{mobilDisewaCount} Unit Mobil</span>
+                                </div>
+                            </div>
+                            <div className="col-md-3 mb-2">
+                                <div className="p-3 bg-white border rounded text-center shadow-sm">
+                                    <span className="font-weight-bold text-uppercase small text-muted d-block mb-1">Total Mobil Sudah Dikembalikan</span>
+                                    <span className="badge badge-success px-3 py-2 mt-1" style={{ fontSize: '13px' }}>{mobilKembaliCount} Unit Mobil</span>
+                                </div>
+                            </div>
+                            <div className="col-md-3 mb-2">
+                                <div className="p-3 bg-white border rounded text-center shadow-sm">
+                                    <span className="font-weight-bold text-uppercase small text-muted d-block mb-1">Total Mobil Dalam Perawatan</span>
+                                    <span className="badge badge-danger px-3 py-2 mt-1" style={{ fontSize: '13px' }}>{mobilPerawatanCount} Unit Mobil</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div className="mt-5 text-right opacity-75 small italic print:block d-none">

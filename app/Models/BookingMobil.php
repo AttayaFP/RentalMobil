@@ -40,4 +40,89 @@ class BookingMobil extends Model
     {
         return $this->belongsTo(Mobil::class, 'kdmobil', 'kdmobil');
     }
+
+    public function pengembalian()
+    {
+        return $this->hasOne(KembaliMobil::class, 'kdbooking', 'kdbooking');
+    }
+
+    public static function notifyOtherInterestedCustomers($kdmobil, $tglmulai, $tglselesai, $excludeKdbooking = null)
+    {
+        $query = self::where('kdmobil', $kdmobil)
+            ->where(function ($q) use ($tglmulai, $tglselesai) {
+                $q->where('tglmulai', '<=', $tglselesai)
+                  ->where('tglselesai', '>=', $tglmulai);
+            })
+            ->whereIn('status', ['Batal', 'Gagal', 'Expired', 'expire', 'cancel', 'deny']);
+
+        if ($excludeKdbooking) {
+            $query->where('kdbooking', '!=', $excludeKdbooking);
+        }
+
+        $interestedBookings = $query->with(['user', 'mobil'])->get();
+
+        foreach ($interestedBookings as $booking) {
+            if ($booking->user) {
+                $exists = Notifikasi::where('iduser', $booking->iduser)
+                    ->where('kdmobil', $kdmobil)
+                    ->where('pesan', 'like', "%" . date('d-m-Y', strtotime($booking->tglmulai)) . "%")
+                    ->where('is_read', false)
+                    ->exists();
+
+                if (!$exists) {
+                    Notifikasi::create([
+                        'iduser' => $booking->iduser,
+                        'kdmobil' => $kdmobil,
+                        'pesan' => "Kabar baik! Mobil " . $booking->mobil->nama_mobil . " yang sebelumnya ingin Anda sewa pada tanggal " . date('d-m-Y', strtotime($booking->tglmulai)) . " s/d " . date('d-m-Y', strtotime($booking->tglselesai)) . " kini sudah tersedia kembali. Silakan lakukan pemesanan ulang!",
+                        'is_read' => false,
+                    ]);
+                    $booking->update(['status' => 'Notified']);
+                }
+            }
+        }
+    }
+
+    public static function notifyFutureInterestedCustomers($kdmobil)
+    {
+        $today = now()->format('Y-m-d');
+        
+        $interestedBookings = self::where('kdmobil', $kdmobil)
+            ->where('tglmulai', '>=', $today)
+            ->whereIn('status', ['Batal', 'Gagal', 'Expired', 'expire', 'cancel', 'deny'])
+            ->with(['user', 'mobil'])
+            ->get();
+
+        foreach ($interestedBookings as $booking) {
+            if ($booking->user) {
+                $exists = Notifikasi::where('iduser', $booking->iduser)
+                    ->where('kdmobil', $kdmobil)
+                    ->where('pesan', 'like', "%" . date('d-m-Y', strtotime($booking->tglmulai)) . "%")
+                    ->where('is_read', false)
+                    ->exists();
+
+                if (!$exists) {
+                    Notifikasi::create([
+                        'iduser' => $booking->iduser,
+                        'kdmobil' => $kdmobil,
+                        'pesan' => "Kabar baik! Mobil " . $booking->mobil->nama_mobil . " yang sebelumnya ingin Anda sewa pada tanggal " . date('d-m-Y', strtotime($booking->tglmulai)) . " s/d " . date('d-m-Y', strtotime($booking->tglselesai)) . " kini sudah tersedia kembali untuk dipesan!",
+                        'is_read' => false,
+                    ]);
+                    $booking->update(['status' => 'Notified']);
+                }
+            }
+        }
+    }
+
+    public static function autoExpirePendingBookings($minutes = 1)
+    {
+        $expiredBookings = self::whereIn('status', ['Pending', 'pending'])
+            ->where('created_at', '<', now()->subMinutes($minutes))
+            ->get();
+
+        foreach ($expiredBookings as $booking) {
+            $booking->update(['status' => 'Expired']);
+            self::notifyOtherInterestedCustomers($booking->kdmobil, $booking->tglmulai, $booking->tglselesai, $booking->kdbooking);
+        }
+    }
 }
+

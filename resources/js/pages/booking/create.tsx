@@ -1,7 +1,7 @@
 import AdminLayout from '@/layouts/AdminLayout';
 import TemplateLayout from '@/layouts/TemplateLayout';
-import { useForm, usePage } from '@inertiajs/react';
-import { useEffect } from 'react';
+import { useForm, usePage, router } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
 
 interface AuthUser {
     id: number;
@@ -48,6 +48,55 @@ export default function Create({ users, mobils, selected_kdmobil, next_kdbooking
         payment_method: 'Midtrans',
         status:         'Pending',
     });
+    const [availableMobils, setAvailableMobils] = useState<MobilItem[]>(mobils);
+    const [isLoadingAvailable, setIsLoadingAvailable] = useState(false);
+    const [isReminderRequested, setIsReminderRequested] = useState(false);
+    const [isReminderProcessing, setIsReminderProcessing] = useState(false);
+
+    useEffect(() => {
+        setIsReminderRequested(false);
+    }, [data.kdmobil, data.tglmulai, data.tglselesai]);
+
+    const handleReminderRequest = () => {
+        if (!data.kdmobil || !data.tglmulai || !data.tglselesai) return;
+
+        setIsReminderProcessing(true);
+        router.post('/booking/request-reminder', {
+            kdmobil: data.kdmobil,
+            tglmulai: data.tglmulai,
+            tglselesai: data.tglselesai
+        }, {
+            preserveScroll: true,
+            onSuccess: () => {
+                setIsReminderRequested(true);
+                setIsReminderProcessing(false);
+            },
+            onError: () => {
+                setIsReminderProcessing(false);
+            }
+        });
+    };
+
+    useEffect(() => {
+        if (data.tglmulai && data.tglselesai) {
+            setIsLoadingAvailable(true);
+            fetch(`/booking/available-cars?tglmulai=${data.tglmulai}&tglselesai=${data.tglselesai}`)
+                .then(res => res.json())
+                .then(resData => {
+                    setAvailableMobils(resData);
+                    setIsLoadingAvailable(false);
+                })
+                .catch(err => {
+                    console.error("Gagal memuat mobil yang tersedia", err);
+                    setIsLoadingAvailable(false);
+                });
+        } else {
+            setAvailableMobils(mobils);
+        }
+    }, [data.tglmulai, data.tglselesai, mobils]);
+
+    const isSelectedMobilUnavailable = data.kdmobil && !isLoadingAvailable && !availableMobils.some(m => m.kdmobil?.toString().trim() === data.kdmobil?.toString().trim());
+
     const selectedMobil: MobilItem | null = mobils.find(m => m.kdmobil?.toString().trim() === data.kdmobil?.toString().trim()) ?? null;
     useEffect(() => {
         const m = mobils.find(x => x.kdmobil?.toString().trim() === data.kdmobil?.toString().trim()) ?? null;
@@ -108,14 +157,61 @@ export default function Create({ users, mobils, selected_kdmobil, next_kdbooking
                                                             style={selectSt}
                                                         >
                                                             <option value="">-- Pilih Mobil --</option>
-                                                            {mobils.map(m => (
-                                                                <option key={m.kdmobil} value={m.kdmobil}>
-                                                                    {m.nama_mobil} ({formatCurrency(m.harga)} / hari)
-                                                                </option>
-                                                            ))}
+                                                            {mobils.map(m => {
+                                                                const isAvailable = availableMobils.some(am => am.kdmobil?.toString().trim() === m.kdmobil?.toString().trim());
+                                                                if (!isAvailable && m.kdmobil?.toString().trim() !== data.kdmobil?.toString().trim()) {
+                                                                    return null;
+                                                                }
+                                                                return (
+                                                                    <option key={m.kdmobil} value={m.kdmobil} disabled={!isAvailable && !isLoadingAvailable}>
+                                                                        {m.nama_mobil} ({formatCurrency(m.harga)} / hari) {!isAvailable && !isLoadingAvailable ? '— [TIDAK TERSEDIA PADA TANGGAL INI]' : ''}
+                                                                    </option>
+                                                                );
+                                                            })}
                                                         </select>
                                                     </div>
+                                                    {isLoadingAvailable && <span className="small text-muted mt-1 d-block">Memeriksa ketersediaan mobil...</span>}
                                                     {errors.kdmobil && <Err msg={errors.kdmobil} />}
+
+                                                    {isSelectedMobilUnavailable && (
+                                                        <div className="alert alert-warning mt-3 p-3" style={{ borderRadius: '12px', borderLeft: '5px solid #ffc107', backgroundColor: '#fff3cd', color: '#856404' }}>
+                                                            <h6 className="font-weight-bold mb-1">⚠️ Mobil Tidak Tersedia</h6>
+                                                            <p className="small mb-2">Mobil <strong>{selectedMobil?.nama_mobil}</strong> sudah dipesan pada tanggal {data.tglmulai} s/d {data.tglselesai}.</p>
+                                                            {availableMobils.length > 0 ? (
+                                                                <div>
+                                                                    <p className="small font-weight-bold mb-1 text-uppercase" style={{ fontSize: '10px' }}>Rekomendasi Mobil Lain yang Tersedia:</p>
+                                                                    <div className="d-flex flex-wrap mb-2" style={{ gap: '5px' }}>
+                                                                        {availableMobils.map(am => (
+                                                                            <button 
+                                                                                key={am.kdmobil} 
+                                                                                type="button" 
+                                                                                onClick={() => setData('kdmobil', am.kdmobil)}
+                                                                                className="btn btn-sm btn-outline-warning"
+                                                                                style={{ borderRadius: '20px', fontSize: '11px', padding: '4px 10px', textTransform: 'none' }}
+                                                                            >
+                                                                                {am.nama_mobil}
+                                                                            </button>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                            ) : (
+                                                                <p className="small mb-2">Tidak ada mobil lain yang tersedia pada rentang tanggal ini.</p>
+                                                            )}
+                                                            <div className="mt-3 border-top pt-2 d-flex justify-content-between align-items-center">
+                                                                <span className="small font-weight-bold text-dark">Ingin sewa mobil ini jika tersedia kembali?</span>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={handleReminderRequest}
+                                                                    disabled={isReminderRequested || isReminderProcessing}
+                                                                    className={`btn btn-xs ${isReminderRequested ? 'btn-success' : 'btn-warning'} font-weight-bold text-white`}
+                                                                    style={{ borderRadius: '5px', fontSize: '11px', padding: '4px 10px', backgroundColor: isReminderRequested ? '#28a745' : '#f96d00', borderColor: isReminderRequested ? '#28a745' : '#f96d00' }}
+                                                                >
+                                                                    <i className="ion-ios-notifications mr-1"></i>
+                                                                    {isReminderProcessing ? 'Memproses...' : (isReminderRequested ? '✓ Pengingat Aktif' : 'Beri Tahu Saya Jika Tersedia')}
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    )}
                                                 </FormField>
                                             </div>
 
@@ -216,7 +312,7 @@ export default function Create({ users, mobils, selected_kdmobil, next_kdbooking
 
                                             <button 
                                                 type="submit" 
-                                                disabled={processing || !data.kdmobil || !data.tglmulai || !data.tglselesai}
+                                                disabled={processing || !data.kdmobil || !data.tglmulai || !data.tglselesai || isSelectedMobilUnavailable || isLoadingAvailable}
                                                 className="btn btn-primary btn-block py-3 font-weight-bold"
                                                 style={{ borderRadius: '12px', fontSize: '16px', boxShadow: '0 5px 15px rgba(249, 109, 0, 0.3)' }}
                                             >
@@ -272,12 +368,59 @@ export default function Create({ users, mobils, selected_kdmobil, next_kdbooking
                                             <label className="small font-weight-bold text-uppercase">Pilih Mobil</label>
                                             <select className="form-control" value={data.kdmobil} onChange={e => setData('kdmobil', e.target.value)} required>
                                                 <option value="">-- Pilih Mobil --</option>
-                                                {mobils.map(m => (
-                                                    <option key={m.kdmobil} value={m.kdmobil}>
-                                                        {m.nama_mobil} — {m.plat_mobil} ({formatCurrency(m.harga)}/hari)
-                                                    </option>
-                                                ))}
+                                                {mobils.map(m => {
+                                                    const isAvailable = availableMobils.some(am => am.kdmobil?.toString().trim() === m.kdmobil?.toString().trim());
+                                                    if (!isAvailable && m.kdmobil?.toString().trim() !== data.kdmobil?.toString().trim()) {
+                                                        return null;
+                                                    }
+                                                    return (
+                                                        <option key={m.kdmobil} value={m.kdmobil} disabled={!isAvailable && !isLoadingAvailable}>
+                                                            {m.nama_mobil} — {m.plat_mobil} ({formatCurrency(m.harga)}/hari) {!isAvailable && !isLoadingAvailable ? '— [TIDAK TERSEDIA PADA TANGGAL INI]' : ''}
+                                                        </option>
+                                                    );
+                                                })}
                                             </select>
+                                            {isLoadingAvailable && <span className="small text-muted mt-1 d-block">Memeriksa ketersediaan mobil...</span>}
+                                            
+                                            {isSelectedMobilUnavailable && (
+                                                <div className="alert alert-danger mt-2 p-3" style={{ borderRadius: '10px' }}>
+                                                    <h6 className="font-weight-bold mb-1">⚠️ Mobil Tidak Tersedia</h6>
+                                                    <p className="small mb-2">Mobil <strong>{selectedMobil?.nama_mobil}</strong> sudah dipesan pada tanggal {data.tglmulai} s/d {data.tglselesai}.</p>
+                                                    {availableMobils.length > 0 ? (
+                                                        <div>
+                                                            <p className="small font-weight-bold mb-1 text-uppercase" style={{ fontSize: '10px' }}>Alternatif Tersedia:</p>
+                                                            <div className="d-flex flex-wrap mb-2" style={{ gap: '5px' }}>
+                                                                {availableMobils.map(am => (
+                                                                    <button 
+                                                                        key={am.kdmobil} 
+                                                                        type="button" 
+                                                                        onClick={() => setData('kdmobil', am.kdmobil)}
+                                                                        className="btn btn-xs btn-outline-danger"
+                                                                        style={{ borderRadius: '5px', fontSize: '11px', padding: '2px 8px' }}
+                                                                    >
+                                                                        {am.nama_mobil}
+                                                                    </button>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <p className="small mb-2">Tidak ada mobil lain yang tersedia pada rentang tanggal ini.</p>
+                                                    )}
+                                                    <div className="mt-3 border-top pt-2 d-flex justify-content-between align-items-center">
+                                                        <span className="small font-weight-bold text-dark">Ingin sewa mobil ini jika tersedia kembali?</span>
+                                                        <button
+                                                            type="button"
+                                                            onClick={handleReminderRequest}
+                                                            disabled={isReminderRequested || isReminderProcessing}
+                                                            className={`btn btn-xs ${isReminderRequested ? 'btn-success' : 'btn-warning'} font-weight-bold text-white`}
+                                                            style={{ borderRadius: '5px', fontSize: '11px', padding: '4px 10px', backgroundColor: isReminderRequested ? '#28a745' : '#f96d00', borderColor: isReminderRequested ? '#28a745' : '#f96d00' }}
+                                                        >
+                                                            <i className="ion-ios-notifications mr-1"></i>
+                                                            {isReminderProcessing ? 'Memproses...' : (isReminderRequested ? '✓ Pengingat Aktif' : 'Beri Tahu Saya Jika Tersedia')}
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                         <div className="col-md-6 form-group mb-4">
                                             <label className="small font-weight-bold text-uppercase text-primary">Tanggal Mulai</label>
@@ -313,7 +456,7 @@ export default function Create({ users, mobils, selected_kdmobil, next_kdbooking
                                 </div>
 
                                 <div className="card shadow-sm border-0 p-4" style={{ borderRadius: '15px' }}>
-                                    <button type="submit" className="btn btn-primary btn-block py-3 font-weight-bold shadow-sm" disabled={processing} style={{ backgroundColor: '#f96d00', borderColor: '#f96d00', borderRadius: '10px' }}>
+                                    <button type="submit" className="btn btn-primary btn-block py-3 font-weight-bold shadow-sm" disabled={processing || isSelectedMobilUnavailable || isLoadingAvailable} style={{ backgroundColor: '#f96d00', borderColor: '#f96d00', borderRadius: '10px' }}>
                                         <i className="ion-ios-checkmark-circle mr-2"></i>
                                         {processing ? 'Memproses...' : 'Konfirmasi Booking'}
                                     </button>

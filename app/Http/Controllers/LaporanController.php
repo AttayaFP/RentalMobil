@@ -100,7 +100,7 @@ class LaporanController extends Controller
                 'tglmulai' => $booking->tglmulai,
                 'tglselesai' => $booking->tglselesai,
                 'status' => $booking->status,
-                'payment_type' => $booking->payment_type,
+                'payment_type' => $booking->payment_method ?? $booking->payment_type ?? '-',
                 'total_bayar' => $booking->total_bayar,
             ];
         });
@@ -155,18 +155,21 @@ class LaporanController extends Controller
 
     public function rental(Request $request): Response
     {
-        $query = KembaliMobil::with(['user', 'booking.mobil']);
+        $query = BookingMobil::with(['user', 'mobil', 'pengembalian']);
 
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
-                $q->where('kdpengembalian', 'like', "%{$search}%")
-                  ->orWhere('kdbooking', 'like', "%{$search}%")
+                $q->where('kdbooking', 'like', "%{$search}%")
+                  ->orWhereHas('pengembalian', function($qp) use ($search) {
+                      $qp->where('kdpengembalian', 'like', "%{$search}%");
+                  })
                   ->orWhereHas('user', function($qu) use ($search) {
                       $qu->where('nama_lengkap', 'like', "%{$search}%");
                   })
-                  ->orWhereHas('booking.mobil', function($qm) use ($search) {
-                      $qm->where('nama_mobil', 'like', "%{$search}%");
+                  ->orWhereHas('mobil', function($qm) use ($search) {
+                      $qm->where('nama_mobil', 'like', "%{$search}%")
+                        ->orWhere('plat_mobil', 'like', "%{$search}%");
                   });
             });
         }
@@ -175,24 +178,26 @@ class LaporanController extends Controller
             $query->whereBetween('tglmulai', [$request->start_date, $request->end_date]);
         }
 
-        $rentals = $query->latest()->get()->map(function ($kembali) {
-            $totalSewa = $kembali->booking->total_bayar ?? 0;
-            $denda = $kembali->denda ?? 0;
+        $rentals = $query->latest()->get()->map(function ($booking) {
+            $pengembalian = $booking->pengembalian;
+            $totalSewa = (float) ($booking->total_bayar ?? 0);
+            $denda = (float) ($pengembalian->denda ?? 0);
 
             return [
-                'koderental' => $kembali->kdpengembalian,
-                'kdbooking' => $kembali->kdbooking,
-                'nama_pelanggan' => $kembali->user->nama_lengkap ?? 'N/A',
-                'nama_mobil' => $kembali->booking->mobil->nama_mobil ?? 'N/A',
-                'plat_mobil' => $kembali->booking->mobil->plat_mobil ?? 'N/A',
-                'tglmulai' => $kembali->tglmulai,
-                'tglselesai' => $kembali->tglselesai,
-                'tglpengembalian' => $kembali->tglpengembalian,
-                'keterlambatan' => $kembali->keterlambatan . ' Hari',
+                'koderental' => $pengembalian->kdpengembalian ?? $booking->kdbooking,
+                'kdbooking' => $booking->kdbooking,
+                'nama_pelanggan' => $booking->user->nama_lengkap ?? 'N/A',
+                'nama_mobil' => $booking->mobil->nama_mobil ?? 'N/A',
+                'plat_mobil' => $booking->mobil->plat_mobil ?? 'N/A',
+                'tglmulai' => $booking->tglmulai,
+                'tglselesai' => $booking->tglselesai,
+                'tglpengembalian' => $pengembalian->tglpengembalian ?? '-',
+                'keterlambatan' => $pengembalian ? ($pengembalian->keterlambatan . ' Hari') : '0 Hari',
                 'denda' => $denda,
                 'totalsewa' => $totalSewa,
                 'total_seluruh' => $totalSewa + $denda,
-                'status' => $kembali->booking->status ?? 'N/A',
+                'status' => $booking->status,
+                'status_mobil' => $booking->mobil->status ?? 'Tersedia',
             ];
         });
 
@@ -205,7 +210,8 @@ class LaporanController extends Controller
     public function belumKembali(Request $request): Response
     {
         $query = BookingMobil::whereNotIn('kdbooking', KembaliMobil::pluck('kdbooking'))
-            ->where('status', 'Paid')
+            ->where('status', '!=', 'Selesai')
+            ->where('status', '!=', 'Batal')
             ->with('mobil');
 
         if ($request->filled('search')) {

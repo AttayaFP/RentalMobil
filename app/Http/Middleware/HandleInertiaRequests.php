@@ -44,6 +44,35 @@ class HandleInertiaRequests extends Middleware
             'quote' => ['message' => trim($message), 'author' => trim($author)],
             'auth' => [
                 'user' => $request->user(),
+                'notifications' => $request->user() 
+                    ? (function() use ($request) {
+                        \App\Models\Notifikasi::generatePassiveNotifications($request->user()->id);
+                        return \App\Models\Notifikasi::where('iduser', $request->user()->id)->where('is_read', false)->latest()->get();
+                      })()
+                    : [],
+                'mobil_selesai_rawat' => $request->user() && $request->user()->role === 'admin'
+                    ? (function() {
+                        return \App\Models\Mobil::whereRaw('LOWER(status) = ?', ['perawatan'])
+                            ->get()
+                            ->filter(function ($mobil) {
+                                $latestKembali = \App\Models\KembaliMobil::whereHas('booking', function ($q) use ($mobil) {
+                                    $q->where('kdmobil', $mobil->kdmobil);
+                                })->orderBy('tglpengembalian', 'desc')->first();
+
+                                if ($latestKembali && $latestKembali->tglpengembalian) {
+                                    $tglPengembalian = \Carbon\Carbon::parse($latestKembali->tglpengembalian)->startOfDay();
+                                } else {
+                                    $tglPengembalian = \Carbon\Carbon::parse($mobil->updated_at)->startOfDay();
+                                }
+
+                                $hariIni = \Carbon\Carbon::now()->startOfDay();
+
+                                return $tglPengembalian->diffInDays($hariIni, false) >= 2;
+                            })
+                            ->values()
+                            ->toArray();
+                      })()
+                    : [],
             ],
             'flash' => [
                 'success' => $request->session()->get('success'),

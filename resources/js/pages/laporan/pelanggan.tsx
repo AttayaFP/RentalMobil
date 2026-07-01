@@ -8,6 +8,7 @@ interface Pelanggan {
     nama_lengkap: string;
     username: string;
     email: string;
+    jenis_kelamin?: string;
     nohp: string;
     alamat: string;
 }
@@ -21,6 +22,14 @@ interface Props {
 
 export default function PelangganReport({ pelanggans, filters }: Props) {
     const handlePrint = () => window.print();
+
+    const formatGender = (jk?: string) => {
+        if (!jk) return '-';
+        const val = jk.trim().toUpperCase();
+        if (val === 'L' || val === 'LAKI-LAKI' || val === 'LAKI LAKI') return 'Laki-Laki';
+        if (val === 'P' || val === 'PEREMPUAN') return 'Perempuan';
+        return jk;
+    };
 
     return (
         <AdminLayout title="Laporan Data Pelanggan">
@@ -76,6 +85,7 @@ export default function PelangganReport({ pelanggans, filters }: Props) {
                                     <th className="py-3 px-3 border-0 text-center">NO</th>
                                     <th className="py-3 px-3 border-0">ID</th>
                                     <th className="py-3 px-3 border-0">NAMA LENGKAP</th>
+                                    <th className="py-3 px-3 border-0 text-center">JENIS KELAMIN</th>
                                     <th className="py-3 px-3 border-0">USERNAME</th>
                                     <th className="py-3 px-3 border-0">EMAIL</th>
                                     <th className="py-3 px-3 border-0">NO. HP</th>
@@ -88,6 +98,7 @@ export default function PelangganReport({ pelanggans, filters }: Props) {
                                         <td className="py-3 px-3 text-center text-muted font-weight-bold">{index + 1}</td>
                                         <td className="py-3 px-3 font-weight-bold text-primary">#{p.id}</td>
                                         <td className="py-3 px-3 font-weight-bold text-dark">{p.nama_lengkap}</td>
+                                        <td className="py-3 px-3 text-center">{formatGender(p.jenis_kelamin)}</td>
                                         <td className="py-3 px-3"><code>@{p.username}</code></td>
                                         <td className="py-3 px-3 text-muted">{p.email}</td>
                                         <td className="py-3 px-3">{p.nohp || '-'}</td>
@@ -95,11 +106,24 @@ export default function PelangganReport({ pelanggans, filters }: Props) {
                                     </tr>
                                 )) : (
                                     <tr>
-                                        <td colSpan={7} className="text-center py-5 text-muted">Data pelanggan tidak ditemukan.</td>
+                                        <td colSpan={8} className="text-center py-5 text-muted">Data pelanggan tidak ditemukan.</td>
                                     </tr>
                                 )}
                             </tbody>
+                            <tfoot className="bg-light">
+                                <tr className="font-weight-bold" style={{ fontSize: '11px' }}>
+                                    <td colSpan={7} className="text-right py-3 text-uppercase">TOTAL SELURUH PELANGGAN</td>
+                                    <td className="text-left py-3 text-primary font-weight-bold px-3">
+                                        {pelanggans.length} Pelanggan
+                                    </td>
+                                </tr>
+                            </tfoot>
                         </table>
+                    </div>
+
+                    <div className="mt-3 p-3 border rounded bg-light d-flex justify-content-between align-items-center">
+                        <span className="font-weight-bold text-uppercase small text-muted">Jumlah Seluruh Data Pelanggan:</span>
+                        <span className="badge badge-primary px-3 py-2" style={{ fontSize: '14px', backgroundColor: '#222831' }}>{pelanggans.length} Pelanggan</span>
                     </div>
 
                     <div className="mt-5 text-right opacity-75 small italic print:block d-none">

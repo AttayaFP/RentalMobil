@@ -31,6 +31,8 @@ export default function BookingReport({ bookings, filters }: Props) {
         return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
     };
 
+    const grandTotal = bookings.reduce((acc, curr) => acc + (curr.total_bayar || 0), 0);
+
     return (
         <AdminLayout title="Laporan Booking">
             <motion.div 
@@ -85,11 +87,12 @@ export default function BookingReport({ bookings, filters }: Props) {
                                     <th className="py-3 px-2 border-0 text-center">NO</th>
                                     <th className="py-3 px-2 border-0">KODE</th>
                                     <th className="py-3 px-2 border-0">PELANGGAN</th>
-                                    <th className="py-3 px-2 border-0">UNIT MOBIL</th>
+                                    <th className="py-3 px-2 border-0">NAMA MOBIL</th>
                                     <th className="py-3 px-2 border-0">PLAT</th>
-                                    <th className="py-3 px-2 border-0 text-center">DURASI</th>
-                                    <th className="py-3 px-2 border-0">TGL MULAI</th>
-                                    <th className="py-3 px-2 border-0">TGL SELESAI</th>
+                                    <th className="py-3 px-2 border-0 text-center">LAMA SEWA</th>
+                                    <th className="py-3 px-2 border-0">TANGGAL MULAI</th>
+                                    <th className="py-3 px-2 border-0">TANGGAL SELESAI</th>
+                                    <th className="py-3 px-2 border-0 text-center">METODE PEMBAYARAN</th>
                                     <th className="py-3 px-2 border-0 text-right">TOTAL</th>
                                     <th className="py-3 px-2 border-0 text-center">STATUS</th>
                                 </tr>
@@ -105,6 +108,7 @@ export default function BookingReport({ bookings, filters }: Props) {
                                         <td className="py-3 px-2 text-center">{b.waktu_order}</td>
                                         <td className="py-3 px-2 text-muted">{b.tglmulai}</td>
                                         <td className="py-3 px-2 text-muted">{b.tglselesai}</td>
+                                        <td className="py-3 px-2 text-center font-weight-bold text-dark">{b.payment_type || '-'}</td>
                                         <td className="py-3 px-2 text-right font-weight-bold text-dark">{formatCurrency(b.total_bayar)}</td>
                                         <td className="py-3 px-2 text-center">
                                             <span className={`small font-weight-bold text-uppercase ${b.status === 'Paid' ? 'text-success' : 'text-warning'}`}>
@@ -114,11 +118,29 @@ export default function BookingReport({ bookings, filters }: Props) {
                                     </tr>
                                 )) : (
                                     <tr>
-                                        <td colSpan={10} className="text-center py-5 text-muted">Data booking tidak ditemukan.</td>
+                                        <td colSpan={11} className="text-center py-5 text-muted">Data booking tidak ditemukan.</td>
                                     </tr>
                                 )}
                             </tbody>
+                            <tfoot className="bg-light">
+                                <tr className="font-weight-bold" style={{ fontSize: '11px' }}>
+                                    <td colSpan={9} className="text-right py-3 text-uppercase">TOTAL SELURUH PENDAPATAN BOOKING</td>
+                                    <td className="text-right py-3 text-primary font-weight-bold">{formatCurrency(grandTotal)}</td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
                         </table>
+                    </div>
+
+                    <div className="mt-3 p-3 border rounded bg-light d-flex flex-wrap justify-content-between align-items-center gap-3">
+                        <div>
+                            <span className="font-weight-bold text-uppercase small text-muted d-block">Jumlah Seluruh Data Booking:</span>
+                            <span className="badge badge-primary px-3 py-2 mt-1" style={{ fontSize: '14px', backgroundColor: '#222831' }}>{bookings.length} Pesanan (Booking)</span>
+                        </div>
+                        <div className="text-right">
+                            <span className="font-weight-bold text-uppercase small text-muted d-block">Total Seluruh Pembayaran Booking:</span>
+                            <span className="h5 font-weight-bold mb-0" style={{ color: '#f96d00' }}>{formatCurrency(grandTotal)}</span>
+                        </div>
                     </div>
 
                     <div className="mt-5 text-right opacity-75 small italic print:block d-none">

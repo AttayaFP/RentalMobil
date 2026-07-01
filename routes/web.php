@@ -76,10 +76,18 @@ Route::middleware(['auth'])->group(function () {
         Route::get('booking/{booking}/checkout', [BookingController::class, 'checkout'])->name('booking.checkout');
         Route::get('booking/{booking}/invoice', [BookingController::class, 'invoice'])->name('booking.invoice');
         Route::post('booking/{booking}/success', [BookingController::class, 'success'])->name('booking.success');
+        Route::get('booking/available-cars', [BookingController::class, 'getAvailableCars'])->name('booking.available-cars');
+        Route::post('booking/request-reminder', [BookingController::class, 'requestReminder'])->name('booking.request-reminder');
         Route::resource('booking', BookingController::class)->except(['destroy']);
         
         Route::get('pengembalian/{pengembalian}/checkout', [PengembalianController::class, 'checkout'])->name('pengembalian.checkout');
         Route::post('pengembalian/{pengembalian}/success', [PengembalianController::class, 'success'])->name('pengembalian.success');
+        
+        Route::post('notifikasi/{id}/read', function ($id) {
+            $notif = \App\Models\Notifikasi::where('iduser', auth()->id())->findOrFail($id);
+            $notif->update(['is_read' => true]);
+            return back();
+        })->name('notifikasi.read');
     });
 });
 

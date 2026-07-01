@@ -13,24 +13,35 @@ interface Props {
     pengembalian: Pengembalian;
     snap_token: string;
     client_key: string;
+    is_production?: boolean;
 }
 
-export default function Checkout({ pengembalian, snap_token, client_key }: Props) {
+export default function Checkout({ pengembalian, snap_token, client_key, is_production }: Props) {
     const { auth } = usePage<{ auth: { user: { role: string } } }>().props;
     const user = auth?.user;
     const isPelanggan = user?.role === 'pelanggan';
 
     const [paymentStatus, setPaymentStatus] = useState<'pending' | 'success' | 'error' | 'none'>('none');
+    const [isScriptLoaded, setIsScriptLoaded] = useState<boolean>(false);
 
     useEffect(() => {
-        const midtransScriptUrl = 'https://app.sandbox.midtrans.com/snap/snap.js';
-        const script = document.createElement('script');
-        script.src = midtransScriptUrl;
-        script.setAttribute('data-client-key', client_key);
-        script.async = true;
-        document.body.appendChild(script);
-        return () => { document.body.removeChild(script); };
-    }, [client_key]);
+        const midtransScriptUrl = is_production
+            ? 'https://app.midtrans.com/snap/snap.js'
+            : 'https://app.sandbox.midtrans.com/snap/snap.js';
+
+        let script = document.querySelector(`script[id="midtrans-script"]`) as HTMLScriptElement;
+        if (!script) {
+            script = document.createElement('script');
+            script.id = 'midtrans-script';
+            script.src = midtransScriptUrl;
+            script.setAttribute('data-client-key', client_key);
+            script.async = true;
+            script.onload = () => setIsScriptLoaded(true);
+            document.body.appendChild(script);
+        } else {
+            setIsScriptLoaded(true);
+        }
+    }, [client_key, is_production]);
 
     const handlePay = useCallback(() => {
         if (window.snap) {
@@ -44,14 +55,20 @@ export default function Checkout({ pengembalian, snap_token, client_key }: Props
                 },
                 onPending: function () { setPaymentStatus('pending'); },
                 onError: function () { setPaymentStatus('error'); },
+                onClose: function () { setPaymentStatus('none'); },
             });
+        } else {
+            alert('Gerbang pembayaran Midtrans belum siap. Silakan tunggu sebentar dan coba lagi.');
         }
     }, [snap_token, pengembalian.kdpengembalian, isPelanggan]);
 
     useEffect(() => {
-        const timer = setTimeout(() => { handlePay(); }, 1500);
-        return () => clearTimeout(timer);
-    }, [snap_token, handlePay]);
+        if (isScriptLoaded) {
+            const timer = setTimeout(() => { handlePay(); }, 800);
+            return () => clearTimeout(timer);
+        }
+    }, [isScriptLoaded, handlePay]);
+
 
     const content = (
         <div className="row justify-content-center">

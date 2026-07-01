@@ -81,9 +81,9 @@ export default function MobilReport({ mobils, filters }: Props) {
                                 <tr>
                                     <th className="py-2 px-2 border-0 text-center">NO</th>
                                     <th className="py-2 px-2 border-0">KODE</th>
-                                    <th className="py-2 px-2 border-0">NAMA UNIT</th>
+                                    <th className="py-2 px-2 border-0">NAMA MOBIL</th>
                                     <th className="py-2 px-2 border-0">KATEGORI</th>
-                                    <th className="py-2 px-2 border-0 text-center">THN</th>
+                                    <th className="py-2 px-2 border-0 text-center">TAHUN</th>
                                     <th className="py-2 px-2 border-0">WARNA</th>
                                     <th className="py-2 px-2 border-0">STNK</th>
                                     <th className="py-2 px-2 border-0 text-center">PLAT</th>
@@ -115,7 +115,20 @@ export default function MobilReport({ mobils, filters }: Props) {
                                     </tr>
                                 )}
                             </tbody>
+                            <tfoot className="bg-light">
+                                <tr className="font-weight-bold" style={{ fontSize: '11px' }}>
+                                    <td colSpan={9} className="text-right py-3 text-uppercase">TOTAL SELURUH MOBIL / ARMADA</td>
+                                    <td className="text-center py-3 text-primary font-weight-bold">
+                                        {mobils.length} Unit
+                                    </td>
+                                </tr>
+                            </tfoot>
                         </table>
+                    </div>
+
+                    <div className="mt-3 p-3 border rounded bg-light d-flex justify-content-between align-items-center">
+                        <span className="font-weight-bold text-uppercase small text-muted">Jumlah Seluruh Data Mobil:</span>
+                        <span className="badge badge-primary px-3 py-2" style={{ fontSize: '14px', backgroundColor: '#222831' }}>{mobils.length} Unit Mobil</span>
                     </div>
 
                     <div className="mt-5 text-right opacity-75 small italic print:block d-none">
