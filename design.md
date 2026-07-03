@@ -322,3 +322,83 @@ When refining existing screens generated with this design system:
 3. Use natural language descriptions, not CSS values — "sharp-cut golden rectangle" not "border-radius: 0px; background: #FFC000"
 4. Describe the desired "feel" alongside specific measurements — "floating in total darkness" communicates the black canvas better than "background: #000000"
 5. Remember that UPPERCASE IS THE DEFAULT — if text isn't uppercase at display sizes, it probably should be
+
+## 10. Animation & Interaction System
+
+### Libraries
+
+| Library | Version | Purpose |
+|---------|---------|---------|
+| GSAP | 3.x | Core animation engine — timelines, ScrollTrigger, parallax |
+| @gsap/react | 2.x | React hooks for GSAP |
+| Framer Motion | 12.x | Page transitions, hover effects, layout animations |
+| Lenis | 1.x | Smooth scroll (sinkronisasi dengan GSAP ticker) |
+| @tsparticles/react | 4.x | Gold particles di hero section |
+| Embla Carousel | 8.x | Touch-friendly carousel untuk mobil cards |
+
+### Smooth Scroll (Lenis)
+Lenis diinisialisasi di `app.tsx` dan terintegrasi dengan GSAP ticker. Setiap scroll event di-update melalui GSAP's `lagSmoothing(0)` untuk responsivitas maksimal.
+
+### GSAP Animation Hooks
+File: `resources/js/hooks/use-animation.ts`
+
+| Hook | Behavior | Use Case |
+|------|----------|----------|
+| `useHeroAnimation()` | Timeline: title → subtitle → CTA → badges | Hero section entrance |
+| `useScrollReveal()` | Fade + slide up saat elemen masuk viewport | Section headers, content blocks |
+| `useStaggerReveal()` | Staggered fade + slide untuk multiple items | Card grids, feature lists |
+| `useCountUp(value)` | Counter dari 0 → value dengan locale id-ID | Stats, angka pendapatan |
+| `useParallax(speed)` | Background bergerak dengan kecepatan berbeda saat scroll | Hero background image |
+| `useTextSplit()` | Setiap huruf muncul dengan 3D rotation + stagger | Display headings |
+| `useMagneticButton(strength)` | Button menarik cursor saat hover, elastic snap-back | CTA buttons |
+| `useMarquee(speed)` | Text berjalan otomatis infinite loop | Brand ticker, testimonials |
+| `useScaleReveal()` | Scale dari 0.8 → 1 + fade on scroll | CTA sections, callouts |
+
+### Framer Motion Patterns
+Digunakan untuk animasi yang lebih deklaratif:
+
+```tsx
+const fadeUp = {
+    hidden: { opacity: 0, y: 30 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.6 } },
+};
+
+const staggerContainer = {
+    hidden: {},
+    visible: { transition: { staggerChildren: 0.12 } },
+};
+
+<motion.div variants={staggerContainer} initial="hidden" whileInView="visible">
+    <motion.div variants={fadeUp}>Item 1</motion.div>
+    <motion.div variants={fadeUp}>Item 2</motion.div>
+</motion.div>
+```
+
+### Gold Particles
+File: `resources/js/components/gold-particles.tsx`
+- Warna: `#FFC000`, `#FFCE3E`, `#917300`
+- Particles bergerak lambat dengan links antar particles
+- `fullScreen: false`, `pointer-events-none` — tidak mengganggu interaksi user
+- Digunakan di hero section `welcome.tsx`
+
+### Carousel (Embla)
+File: `resources/js/components/carousel.tsx`
+- `loop: true`, `align: 'start'`
+- Navigation: prev/next buttons
+- Digunakan di `welcome.tsx` untuk mobile car cards (hidden di desktop, grid 3 kolom)
+
+### Scroll Indicator
+Di hero section `welcome.tsx`: animated scroll indicator dengan bouncing dot di bagian bawah viewport, menggunakan Framer Motion `animate={{ y: [0, 8, 0] }}` infinite loop.
+
+### Marquee (Brand Ticker)
+Brand names berjalan otomatis di bawah hero section menggunakan `useMarquee(25)`. Warna white/20% opacity dengan gold diamond separator.
+
+### Hover Effects
+- **Car cards**: `group-hover:scale-110` pada gambar + gradient overlay
+- **Feature cards**: border color transition `hover:border-gold/30` + background `hover:bg-white/10`
+- **Magnetic buttons**: GSAP mousemove tracking + elastic snap-back
+
+### CSS Animations (app.css)
+- `animate-fade-in`: opacity 0→1 + translateY 8px→0
+- `animate-shimmer`: gradient shimmer effect untuk loading states
+- Lenis smooth scroll classes: `html.lenis`, `.lenis.lenis-smooth`, `.lenis.lenis-stopped`

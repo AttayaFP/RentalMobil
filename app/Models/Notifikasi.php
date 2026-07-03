@@ -31,7 +31,8 @@ class Notifikasi extends Model
         
         $myFailedBookings = BookingMobil::where('iduser', $userId)
             ->where('tglmulai', '>=', $today)
-            ->whereIn('status', ['Batal', 'Gagal', 'Expired', 'expire', 'cancel', 'deny'])
+            ->where('payment_type', 'reminder')
+            ->where('status', 'Expired')
             ->with(['mobil'])
             ->get();
 
@@ -101,20 +102,16 @@ class Notifikasi extends Model
 
         foreach ($adminUsers as $admin) {
             foreach ($mobilsInMaintenance as $mobil) {
-                $exists = self::where('iduser', $admin->id)
-                    ->where('kdmobil', $mobil->kdmobil)
-                    ->where('pesan', 'like', '%perawatan%')
-                    ->where('is_read', false)
-                    ->exists();
-
-                if (!$exists) {
-                    self::create([
+                self::firstOrCreate(
+                    [
                         'iduser' => $admin->id,
                         'kdmobil' => $mobil->kdmobil,
-                        'pesan' => "Mobil " . $mobil->nama_mobil . " (" . $mobil->plat_mobil . ") sudah dalam status perawatan lebih dari 2 hari. Silakan ubah status menjadi Tersedia jika sudah selesai.",
                         'is_read' => false,
-                    ]);
-                }
+                    ],
+                    [
+                        'pesan' => "Mobil " . $mobil->nama_mobil . " (" . $mobil->plat_mobil . ") sudah dalam status perawatan lebih dari 2 hari. Silakan ubah status menjadi Tersedia jika sudah selesai.",
+                    ]
+                );
             }
         }
     }

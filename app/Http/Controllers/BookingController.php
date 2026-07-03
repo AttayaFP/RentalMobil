@@ -175,6 +175,29 @@ class BookingController extends Controller
             return back()->withErrors(['kdmobil' => 'Maaf, mobil ini sudah dibooking oleh pelanggan lain pada rentang tanggal tersebut. Silakan pilih tanggal atau mobil lain.']);
         }
 
+        $existingReminder = BookingMobil::where('iduser', $request->iduser)
+            ->where('kdmobil', $request->kdmobil)
+            ->where('tglmulai', $request->tglmulai)
+            ->where('tglselesai', $request->tglselesai)
+            ->whereIn('status', ['Expired', 'Notified'])
+            ->where('payment_type', 'reminder')
+            ->first();
+
+        if ($existingReminder) {
+            $existingReminder->update([
+                'tglbooking' => $request->tglbooking,
+                'harga' => $request->harga,
+                'lama_sewa' => $request->lama_sewa,
+                'total_bayar' => $request->total_bayar,
+                'payment_method' => $request->payment_method,
+                'transaction_id' => 'TRX-' . strtoupper(bin2hex(random_bytes(4))),
+                'transaction_time' => now(),
+                'status' => 'Pending',
+            ]);
+
+            return redirect()->route('booking.checkout', $existingReminder->kdbooking);
+        }
+
         $data = $request->all();
         $data['kdbooking'] = $this->generateKdBooking();
 
@@ -360,18 +383,23 @@ class BookingController extends Controller
             ->exists();
 
         if (!$exists) {
+            $mobil = Mobil::find($request->kdmobil);
+            $tglmulai = new \DateTime($request->tglmulai);
+            $tglselesai = new \DateTime($request->tglselesai);
+            $lamaSewa = max(1, $tglmulai->diff($tglselesai)->days);
+
             BookingMobil::create([
-                'kdbooking' => 'RM-' . strtoupper(bin2hex(random_bytes(3))),
+                'kdbooking' => $this->generateKdBooking(),
                 'tglbooking' => now()->format('Y-m-d'),
                 'iduser' => Auth::id(),
                 'kdmobil' => $request->kdmobil,
-                'harga' => 0,
+                'harga' => $mobil->harga,
                 'payment_type' => 'reminder',
                 'payment_method' => 'reminder',
                 'tglmulai' => $request->tglmulai,
                 'tglselesai' => $request->tglselesai,
-                'lama_sewa' => 1,
-                'total_bayar' => 0,
+                'lama_sewa' => $lamaSewa,
+                'total_bayar' => $mobil->harga * $lamaSewa,
                 'transaction_id' => 'REM-' . time(),
                 'transaction_time' => now(),
                 'status' => 'Expired',

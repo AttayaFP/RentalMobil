@@ -41,22 +41,26 @@
 - **Backend**: Laravel 12 (PHP 8.2+), MySQL 8 (database: `rental_mobil`, user: `root`, no password)
 - **Frontend**: React 19 + TypeScript via Inertia.js v2
 - **CSS**: Tailwind CSS 4 + shadcn/ui (Radix UI primitives)
-- **Animation**: GSAP 3 + @gsap/react (ScrollTrigger)
+- **Animation**: GSAP 3 + @gsap/react (ScrollTrigger) + Framer Motion
+- **Smooth Scroll**: Lenis (sinkronisasi dengan GSAP ticker)
+- **Carousel**: Embla Carousel React
+- **Particles**: @tsparticles/react + @tsparticles/slim
 - **Payment**: Midtrans Snap API (`midtrans/midtrans-php`)
 - **Build**: Vite 6
 - **Testing**: Pest PHP 3
-- **Design**: Gold accent theme (lihat `design.md`)
+- **Design**: Lamborghini-inspired dark theme (lihat `design.md`)
 
 ## Design System
-- **Background**: White `hsl(0,0%,100%)`
-- **Surface/Card**: White `hsl(0,0%,100%)`
-- **Primary/Accent**: Gold `hsl(45,100%,50%)` (#FFC000)
-- **Text**: Near Black `hsl(0,0%,3.9%)`
-- **Muted Text**: `hsl(0,0%,45.1%)`
-- **Border**: `hsl(0,0%,92.8%)`
+- **Background**: Absolute Black `#000000`
+- **Surface/Card**: Charcoal `#202020`
+- **Primary/Accent**: Lamborghini Gold `#FFC000`
+- **Text**: Pure White `#FFFFFF`
+- **Muted Text**: Ash `#7D7D7D`
+- **Border**: White at 10% opacity
 - **Radius**: `0px` — sharp, angular
 - **Sidebar**: Dark `hsl(0,0%,3.9%)`
 - **Charts**: Gold, Cyan, Light Gold, Dark Gold, Ash
+- **Custom Colors**: `--color-gold: #FFC000`, `--color-gold-dark: #917300`, `--color-gold-light: #FFCE3E`
 
 ## Database Schema
 
@@ -70,7 +74,7 @@ mobil (kdmobil, nama_mobil, thn_mobil, plat_mobil, warna_mobil, stnk_mobil, harg
 
 booking_mobil (kdbooking, tglbooking, iduser, kdmobil, harga, payment_type, payment_method, tglmulai, tglselesai, lama_sewa, total_bayar, transaction_id, transaction_time, status)
   FK: iduser → users, kdmobil → mobil
-  Status flow: Pending → Sukses/Expired/Batal/Gagal
+  Status flow: Pending → Sukses/Expired/Batal/Gagal/Notified
   Auto-expire Pending bookings after 1 minute
 
 kembali_mobil (kdpengembalian, kdbooking, iduser, tglmulai, tglselesai, tglpengembalian, keterlambatan, denda)
@@ -82,7 +86,7 @@ notifikasis (id, iduser, kdmobil, pesan, is_read)
 
 ## Primary Key Format
 - `kdmobil`: MBL-001 (prefix MBL- + 3 digit)
-- `kdbooking`: BO001 (prefix BO + 3 digit)
+- `kdbooking`: BO001 (prefix BO + 3 digit) — SEMUA booking termasuk reminder menggunakan format ini
 - `kdpengembalian`: KMB-001 (prefix KMB- + 3 digit)
 - `kdkategori`: manual input
 - Semua auto-generate di controller, bukan auto-increment
@@ -102,34 +106,53 @@ Middleware: `CheckRole` di `app/Http/Middleware/CheckRole.php`, registered as `r
 ### Booking
 1. Pelanggan pilih mobil → `GET /booking/create?kdmobil=xxx`
 2. Form submit → `POST /booking` → validasi overlap + lockForUpdate
-3. Booking created (status: Pending) → redirect ke Midtrans Snap checkout
-4. Payment success callback → `POST /booking/{id}/success` → status: Sukses, mobil: Disewa
-5. Invoice: `GET /booking/{id}/invoice`
+3. Jika ada reminder (Expired/Notified, payment_type=reminder) untuk user+mobil+tanggal sama → update reminder jadi Pending (reuse kdbooking)
+4. Jika tidak ada reminder → buat booking baru dengan kdbooking baru
+5. Redirect ke Midtrans Snap checkout
+6. Payment success callback → `POST /booking/{id}/success` → status: Sukses, mobil: Disewa
+7. Invoice: `GET /booking/{id}/invoice`
+
+### Reminder (Pengingat)
+1. Pelanggan aktifkan pengingat → `POST /booking/request-reminder`
+2. Booking dibuat dengan status `Expired`, `payment_type = 'reminder'`, kdbooking format BO001
+3. Harga, lama_sewa, total_bayar dihitung dari mobil yang dipilih
+4. Saat mobil tersedia kembali → notifikasi dikirim ke user yang aktifkan pengingat
+5. Saat user klik "Booking Sekarang" → `store()` mendeteksi reminder yang ada → reuse kdbooking yang sama
 
 ### Pengembalian
-1. Admin buat pengembalian → `POST /pengembalian`
+1. Admin buat pengembalian → `POST /pengembalian` (hanya booking berstatus Sukses/Success/Berhasil)
 2. Hitung keterlambatan + denda
 3. Booking → Selesai, Mobil → Perawatan
 4. Jika ada denda + payment_type=transfer → redirect Midtrans checkout denda
 
 ### Notification System
-Notifikasi disimpan di tabel `notifikasis` dan di-share via `HandleInertiaRequests`. Filter berdasarkan role:
-- **Pelanggan**: hanya notifikasi booking (pesan TANPA kata "perawatan")
-- **Admin**: hanya notifikasi perawatan (pesan DENGAN kata "perawatan")
-- **Pimpinan**: tidak ada notifikasi
+Notifikasi disimpan di tabel `notifikasis` dan di-share via `HandleInertiaRequests`.
 
-Trigger notifikasi pelanggan:
-- `BookingMobil::notifyOtherInterestedCustomers()` — saat booking dibatalkan/gagal/expired, cek pelanggan lain yang booking mobil sama di tanggal overlap
-- `BookingMobil::notifyFutureInterestedCustomers()` — saat mobil berubah status ke Tersedia
-- `Notifikasi::generatePassiveNotifications($userId)` — real-time check saat pelanggan login
+#### Dua Jenis Notifikasi Admin
+1. **Mobil Selesai Perawatan** (`mobil_selesai_rawat`): mobil dalam status Perawatan ≥2 hari
+   - Sumber: query langsung ke tabel `mobil` + `kembali_mobil`
+   - Aksi: "Ubah ke Tersedia" — hilang setelah admin ubah status mobil
+   - Tidak bisa di-mark-as-read atau dihapus
+   - Ditampilkan di section "Mobil Selesai Perawatan" pada `nav-user.tsx`
 
-Trigger notifikasi admin:
-- `Notifikasi::generateAdminMaintenanceNotifications()` — buat notif untuk semua admin jika mobil perawatan ≥2 hari
+2. **Pemberitahuan** (`notifications`): notifikasi dari tabel `notifikasis`
+   - Filter: `pesan NOT LIKE '%perawatan%'` (admin hanya melihat non-perawatan)
+   - Aksi: "Booking Sekarang" / "Tutup" (mark as read) / "Hapus" (delete)
+   - Ditampilkan di section "Pemberitahuan" pada `nav-user.tsx`
 
-Tampilan notifikasi:
-- **Admin**: Sheet panel dari sidebar user menu (`nav-user.tsx`)
-- **Pelanggan**: Sheet panel dari guest layout (`guest-layout.tsx`, bell icon di header)
-- Aksi: "Ubah ke Tersedia" (admin) / "Booking Sekarang" (pelanggan) / "Tutup" (mark as read)
+#### Notifikasi Pelanggan
+- Filter: `pesan NOT LIKE '%perawatan%'`
+- Aksi: "Booking Sekarang" / "Tutup" (mark as read)
+
+#### Trigger Notifikasi
+- `BookingMobil::notifyOtherInterestedCustomers()` — saat booking reminder Expired, cek user lain yang punya reminder untuk mobil+tanggal overlap. HANYA memproses booking dengan `payment_type = 'reminder'`
+- `BookingMobil::notifyFutureInterestedCustomers()` — saat mobil berubah status ke Tersedia, cek user yang punya reminder untuk mobil tersebut. HANYA memproses booking dengan `payment_type = 'reminder'`
+- `Notifikasi::generatePassiveNotifications($userId)` — real-time check saat pelanggan login. HANYA memproses booking dengan `payment_type = 'reminder'` dan `status = 'Expired'`
+- `Notifikasi::generateAdminMaintenanceNotifications()` — buat notif untuk semua admin jika mobil perawatan ≥2 hari. Menggunakan `firstOrCreate` untuk mencegah duplikat
+
+#### Route Notifikasi
+- `POST /notifikasi/{id}/read` — mark as read
+- `DELETE /notifikasi/{id}` — hapus notifikasi
 
 ## Laporan (6 jenis)
 - `/laporan/pelanggan` — daftar pelanggan
@@ -146,9 +169,9 @@ Tampilan notifikasi:
 - `routes/console.php` — artisan commands
 
 ## Key Controllers
-- `BookingController.php` — booking CRUD + Midtrans checkout + auto-expire
+- `BookingController.php` — booking CRUD + Midtrans checkout + auto-expire + reminder reuse
 - `MobilController.php` — mobil CRUD + status management + setTersedia
-- `PengembalianController.php` — pengembalian CRUD + denda checkout
+- `PengembalianController.php` — pengembalian CRUD + denda checkout (hanya booking Sukses)
 - `DashboardController.php` — stats + charts + recent bookings + mobil selesai rawat
 - `LaporanController.php` — 6 laporan endpoints
 - `PelangganController.php` — user/pelanggan CRUD
@@ -224,8 +247,8 @@ File: `app/Http/Middleware/HandleInertiaRequests.php`
 
 Shared props:
 - `auth.user` — authenticated user
-- `auth.notifications` — unread notifikasis (filtered by role: admin=perawatan only, pelanggan=booking only)
-- `auth.mobil_selesai_rawat` — mobil perawatan ≥2 days (admin only, for Sheet panel)
+- `auth.notifications` — unread notifikasis (filtered by role: admin=non-perawatan only, pelanggan=non-perawatan)
+- `auth.mobil_selesai_rawat` — mobil perawatan ≥2 days (admin only, query dari tabel mobil)
 - `flash.success` / `flash.error` — session flash messages (displayed via sonner toast in app-sidebar-layout)
 - `name` — app name
 - `quote` — random inspiring quote
@@ -258,6 +281,11 @@ File: `resources/js/hooks/use-animation.ts`
 | `useScrollReveal()` | Fade+slide up saat scroll masuk viewport | `.reveal` |
 | `useStaggerReveal()` | Staggered fade+slide untuk multiple items | `.stagger-item` |
 | `useCountUp(endValue)` | Angka counter animasi dari 0 → value | ref-based |
+| `useParallax(speed)` | Background parallax saat scroll | ref-based |
+| `useTextSplit()` | Animasi per-huruf dengan 3D rotation | ref-based |
+| `useMagneticButton(strength)` | Button menarik cursor saat hover | ref-based |
+| `useMarquee(speed)` | Text berjalan otomatis (infinite loop) | `.marquee-inner` |
+| `useScaleReveal()` | Scale + fade on scroll | ref-based |
 
 ### Pola Penggunaan
 ```tsx
@@ -279,18 +307,47 @@ export default function Page() {
 }
 ```
 
-### Halaman dengan Animasi
-- `welcome.tsx` — hero timeline + scroll reveal + card stagger
+## Lenis Smooth Scroll
+Package: `lenis`
+Setup: `app.tsx` — terintegrasi dengan GSAP ticker untuk sinkronisasi ScrollTrigger
+
+```tsx
+import Lenis from 'lenis';
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+const lenis = new Lenis({ autoRaf: false });
+lenis.on('scroll', ScrollTrigger.update);
+gsap.ticker.add((time) => { lenis.raf(time * 1000); });
+gsap.ticker.lagSmoothing(0);
+```
+
+## Framer Motion
+Package: `framer-motion` (sudah terinstall, digunakan di welcome.tsx dan dashboard.tsx)
+Pattern: `motion.div` dengan `initial`, `animate`, `whileInView`, `whileHover`, `variants`
+
+## Embla Carousel
+Package: `embla-carousel-react`
+File: `resources/js/components/carousel.tsx`
+Digunakan di: welcome.tsx (mobile car cards)
+
+## Gold Particles
+Package: `@tsparticles/react` + `@tsparticles/slim`
+File: `resources/js/components/gold-particles.tsx`
+Digunakan di: welcome.tsx (hero section)
+
+## Halaman dengan Animasi
+- `welcome.tsx` — hero timeline + parallax + particles + text split + marquee + stagger + scale reveal
 - `about.tsx` — scroll reveal + values stagger + CTA reveal
 - `services.tsx` — header reveal + cards stagger
 - `pricing.tsx` — header reveal + table stagger
 - `cars.tsx` — header reveal + cards stagger
 - `contact.tsx` — info cards stagger + form reveal
-- `dashboard.tsx` — stat cards stagger + count up + chart reveal
+- `dashboard.tsx` — stat cards stagger + count up + chart reveal + Framer Motion
 
 ### Hero Background Image
 File: `resources/js/assets/images/logo.jpg`
-Digunakan di `welcome.tsx` sebagai background-image hero section (tanpa overlay).
+Digunakan di `welcome.tsx` sebagai background-image hero section dengan parallax + gradient overlay.
 
 ## Development Commands
 ```bash

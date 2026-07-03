@@ -53,7 +53,8 @@ class BookingMobil extends Model
                 $q->where('tglmulai', '<=', $tglselesai)
                   ->where('tglselesai', '>=', $tglmulai);
             })
-            ->whereIn('status', ['Batal', 'Gagal', 'Expired', 'expire', 'cancel', 'deny']);
+            ->where('payment_type', 'reminder')
+            ->where('status', 'Expired');
 
         if ($excludeKdbooking) {
             $query->where('kdbooking', '!=', $excludeKdbooking);
@@ -88,7 +89,8 @@ class BookingMobil extends Model
         
         $interestedBookings = self::where('kdmobil', $kdmobil)
             ->where('tglmulai', '>=', $today)
-            ->whereIn('status', ['Batal', 'Gagal', 'Expired', 'expire', 'cancel', 'deny'])
+            ->where('payment_type', 'reminder')
+            ->where('status', 'Expired')
             ->with(['user', 'mobil'])
             ->get();
 

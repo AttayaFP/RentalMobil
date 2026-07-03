@@ -1,14 +1,14 @@
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
+import { ChevronLeft, ChevronRight, Pencil, Plus, Search, Tag, Trash2 } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Tag, Plus, Pencil, Trash2, Search, ChevronLeft, ChevronRight, Info } from 'lucide-react';
 import { toast } from 'sonner';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -97,7 +97,7 @@ export default function Index({ kategoris, filters }: Props) {
                         <CardContent>
                             <div className="mb-4 flex items-center gap-2">
                                 <div className="relative max-w-sm flex-1">
-                                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                    <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
                                     <Input
                                         placeholder="Cari kode atau nama kategori..."
                                         value={search}
@@ -127,7 +127,11 @@ export default function Index({ kategoris, filters }: Props) {
                                                 <TableCell className="font-medium">{k.nama_kategori}</TableCell>
                                                 <TableCell className="text-right">
                                                     <div className="flex justify-end gap-1">
-                                                        <Button variant="ghost" size="icon" onClick={() => router.visit(`/kategori/${k.kdkategori}/edit`)}>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            onClick={() => router.visit(`/kategori/${k.kdkategori}/edit`)}
+                                                        >
                                                             <Pencil className="h-4 w-4" />
                                                         </Button>
                                                         <Button
@@ -144,7 +148,7 @@ export default function Index({ kategoris, filters }: Props) {
                                         ))
                                     ) : (
                                         <TableRow>
-                                            <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
+                                            <TableCell colSpan={4} className="text-muted-foreground h-24 text-center">
                                                 Tidak ada data kategori
                                             </TableCell>
                                         </TableRow>
@@ -154,8 +158,9 @@ export default function Index({ kategoris, filters }: Props) {
 
                             {totalPages > 1 && (
                                 <div className="mt-4 flex items-center justify-between">
-                                    <p className="text-sm text-muted-foreground">
-                                        Menampilkan {(page - 1) * PER_PAGE + 1}–{Math.min(page * PER_PAGE, filtered.length)} dari {filtered.length} data
+                                    <p className="text-muted-foreground text-sm">
+                                        Menampilkan {(page - 1) * PER_PAGE + 1}–{Math.min(page * PER_PAGE, filtered.length)} dari {filtered.length}{' '}
+                                        data
                                     </p>
                                     <div className="flex items-center gap-2">
                                         <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>
@@ -164,32 +169,17 @@ export default function Index({ kategoris, filters }: Props) {
                                         <span className="text-sm">
                                             {page} / {totalPages}
                                         </span>
-                                        <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages}>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                                            disabled={page === totalPages}
+                                        >
                                             <ChevronRight className="h-4 w-4" />
                                         </Button>
                                     </div>
                                 </div>
                             )}
-                        </CardContent>
-                    </Card>
-
-                    <Card className="border-orange-200 bg-orange-50 dark:border-orange-900 dark:bg-orange-950">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-base text-orange-700 dark:text-orange-300">
-                                <Info className="h-4 w-4" />
-                                Informasi Kategori
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="text-sm text-orange-800 dark:text-orange-200">
-                            <p className="mb-3">
-                                Gunakan kategori untuk mempermudah pelanggan mencari mobil yang sesuai dengan kebutuhan mereka.
-                            </p>
-                            <p className="font-semibold">Contoh:</p>
-                            <ul className="mt-1 list-inside list-disc space-y-1">
-                                <li>MPV: Cocok untuk keluarga</li>
-                                <li>Sedan: Untuk kenyamanan & gaya</li>
-                                <li>SUV: Untuk medan berat</li>
-                            </ul>
                         </CardContent>
                     </Card>
                 </div>

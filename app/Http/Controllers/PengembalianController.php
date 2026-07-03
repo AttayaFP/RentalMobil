@@ -56,7 +56,7 @@ class PengembalianController extends Controller
     public function create()
     {
         return Inertia::render('pengembalian/create', [
-            'bookings' => BookingMobil::with(['user', 'mobil'])->where('status', '!=', 'Selesai')->get(),
+            'bookings' => BookingMobil::with(['user', 'mobil'])->whereIn('status', ['Sukses', 'Success', 'Berhasil'])->get(),
             'users' => User::all(),
             'next_kdpengembalian' => $this->generateKdPengembalian(),
         ]);
@@ -99,7 +99,7 @@ class PengembalianController extends Controller
         return Inertia::render('pengembalian/edit', [
             'pengembalian' => $pengembalian->load('booking.mobil'),
             'bookings' => BookingMobil::with(['user', 'mobil'])
-                ->where('status', '!=', 'Selesai')
+                ->whereIn('status', ['Sukses', 'Success', 'Berhasil'])
                 ->orWhere('kdbooking', $pengembalian->kdbooking)
                 ->get(),
             'users' => User::all(),

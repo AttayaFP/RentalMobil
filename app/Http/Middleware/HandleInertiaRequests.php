@@ -36,13 +36,9 @@ class HandleInertiaRequests extends Middleware
             }
 
             if ($user->role === 'admin') {
-                Notifikasi::generateAdminMaintenanceNotifications();
-            }
-
-            if ($user->role === 'admin') {
                 $notifications = Notifikasi::where('iduser', $user->id)
                     ->where('is_read', false)
-                    ->where('pesan', 'like', '%perawatan%')
+                    ->where('pesan', 'not like', '%perawatan%')
                     ->latest()
                     ->get();
             } elseif ($user->role === 'pelanggan') {

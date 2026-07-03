@@ -88,6 +88,12 @@ Route::middleware(['auth'])->group(function () {
             $notif->update(['is_read' => true]);
             return back();
         })->name('notifikasi.read');
+
+        Route::delete('notifikasi/{id}', function ($id) {
+            $notif = \App\Models\Notifikasi::where('iduser', auth()->id())->findOrFail($id);
+            $notif->delete();
+            return back();
+        })->name('notifikasi.delete');
     });
 });
 

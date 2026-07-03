@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useCallback } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
@@ -118,6 +118,175 @@ export function useCountUp(endValue: number, options?: { duration?: number; pref
 
         return () => ctx.revert();
     }, [endValue, options?.duration, options?.prefix, options?.suffix]);
+
+    return ref;
+}
+
+export function useParallax(speed?: number) {
+    const ref = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (!ref.current) return;
+
+        const ctx = gsap.context(() => {
+            gsap.to(ref.current, {
+                yPercent: (speed ?? 0.3) * -100,
+                ease: 'none',
+                scrollTrigger: {
+                    trigger: ref.current,
+                    start: 'top bottom',
+                    end: 'bottom top',
+                    scrub: true,
+                },
+            });
+        }, ref);
+
+        return () => ctx.revert();
+    }, [speed]);
+
+    return ref;
+}
+
+export function useTextSplit() {
+    const ref = useRef<HTMLHeadingElement>(null);
+
+    useEffect(() => {
+        if (!ref.current) return;
+
+        const el = ref.current;
+        const text = el.textContent ?? '';
+        el.innerHTML = '';
+
+        const chars = text.split('').map((char) => {
+            const span = document.createElement('span');
+            span.textContent = char === ' ' ? '\u00A0' : char;
+            span.style.display = 'inline-block';
+            el.appendChild(span);
+            return span;
+        });
+
+        const ctx = gsap.context(() => {
+            gsap.set(chars, { autoAlpha: 0, y: 40, rotateX: -90 });
+
+            ScrollTrigger.create({
+                trigger: el,
+                start: 'top 85%',
+                once: true,
+                onEnter: () => {
+                    gsap.to(chars, {
+                        autoAlpha: 1,
+                        y: 0,
+                        rotateX: 0,
+                        duration: 0.6,
+                        stagger: 0.03,
+                        ease: 'back.out(1.7)',
+                    });
+                },
+            });
+        }, ref);
+
+        return () => ctx.revert();
+    }, []);
+
+    return ref;
+}
+
+export function useMagneticButton(strength?: number) {
+    const ref = useRef<HTMLButtonElement>(null);
+
+    const handleMouseMove = useCallback((e: MouseEvent) => {
+        if (!ref.current) return;
+        const rect = ref.current.getBoundingClientRect();
+        const x = e.clientX - rect.left - rect.width / 2;
+        const y = e.clientY - rect.top - rect.height / 2;
+        const factor = strength ?? 0.35;
+
+        gsap.to(ref.current, {
+            x: x * factor,
+            y: y * factor,
+            duration: 0.3,
+            ease: 'power2.out',
+        });
+    }, [strength]);
+
+    const handleMouseLeave = useCallback(() => {
+        if (!ref.current) return;
+        gsap.to(ref.current, {
+            x: 0,
+            y: 0,
+            duration: 0.5,
+            ease: 'elastic.out(1, 0.5)',
+        });
+    }, []);
+
+    useEffect(() => {
+        const el = ref.current;
+        if (!el) return;
+
+        el.addEventListener('mousemove', handleMouseMove as EventListener);
+        el.addEventListener('mouseleave', handleMouseLeave);
+
+        return () => {
+            el.removeEventListener('mousemove', handleMouseMove as EventListener);
+            el.removeEventListener('mouseleave', handleMouseLeave);
+        };
+    }, [handleMouseMove, handleMouseLeave]);
+
+    return ref;
+}
+
+export function useMarquee(speed?: number) {
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (!containerRef.current) return;
+
+        const ctx = gsap.context(() => {
+            const inner = containerRef.current!.querySelector('.marquee-inner');
+            if (!inner) return;
+
+            const totalWidth = inner.scrollWidth / 2;
+
+            gsap.to(inner, {
+                x: -totalWidth,
+                duration: speed ?? 30,
+                ease: 'none',
+                repeat: -1,
+            });
+        }, containerRef);
+
+        return () => ctx.revert();
+    }, [speed]);
+
+    return containerRef;
+}
+
+export function useScaleReveal() {
+    const ref = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (!ref.current) return;
+
+        const ctx = gsap.context(() => {
+            gsap.set(ref.current, { autoAlpha: 0, scale: 0.8 });
+
+            ScrollTrigger.create({
+                trigger: ref.current,
+                start: 'top 85%',
+                once: true,
+                onEnter: () => {
+                    gsap.to(ref.current, {
+                        autoAlpha: 1,
+                        scale: 1,
+                        duration: 0.8,
+                        ease: 'power3.out',
+                    });
+                },
+            });
+        }, ref);
+
+        return () => ctx.revert();
+    }, []);
 
     return ref;
 }

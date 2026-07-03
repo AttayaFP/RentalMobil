@@ -7,7 +7,7 @@ import { UserMenuContent } from '@/components/user-menu-content';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { type SharedData } from '@/types';
 import { router, usePage } from '@inertiajs/react';
-import { Bell, Car, Check, ChevronsUpDown, Wrench, X } from 'lucide-react';
+import { Bell, Car, Check, ChevronsUpDown, Trash2, Wrench, X } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -46,6 +46,13 @@ export function NavUser() {
         router.post(`/notifikasi/${id}/read`, {}, {
             preserveScroll: true,
             onSuccess: () => toast.success('Notifikasi ditandai sudah dibaca'),
+        });
+    };
+
+    const deleteNotif = (id: number) => {
+        router.delete(`/notifikasi/${id}`, {
+            preserveScroll: true,
+            onSuccess: () => toast.success('Notifikasi dihapus'),
         });
     };
 
@@ -120,61 +127,50 @@ export function NavUser() {
                         {notifications.length > 0 && (
                             <>
                                 <p className="text-xs font-semibold uppercase text-muted-foreground">Pemberitahuan</p>
-                                {notifications.map((notif) => {
-                                    const isMaintenanceNotif = notif.pesan.toLowerCase().includes('perawatan');
-                                    return (
-                                        <div key={notif.id} className="flex items-start gap-3 rounded-lg border p-3">
-                                            <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${isMaintenanceNotif ? 'bg-orange-500/10' : 'bg-blue-500/10'}`}>
-                                                {isMaintenanceNotif ? (
-                                                    <Wrench className="h-4 w-4 text-orange-500" />
-                                                ) : (
-                                                    <Car className="h-4 w-4 text-blue-500" />
-                                                )}
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-sm leading-relaxed">{notif.pesan}</p>
-                                                <div className="mt-2 flex gap-2">
-                                                    {isMaintenanceNotif && notif.kdmobil && (
-                                                        <Button
-                                                            size="sm"
-                                                            className="h-7 text-xs"
-                                                            onClick={() => {
-                                                                markAsRead(notif.id);
-                                                                setTersedia(notif.kdmobil!, '');
-                                                            }}
-                                                        >
-                                                            <Check className="mr-1 h-3 w-3" />
-                                                            Ubah ke Tersedia
-                                                        </Button>
-                                                    )}
-                                                    {!isMaintenanceNotif && notif.kdmobil && (
-                                                        <Button
-                                                            size="sm"
-                                                            variant="outline"
-                                                            className="h-7 text-xs"
-                                                            onClick={() => {
-                                                                markAsRead(notif.id);
-                                                                setOpenNotif(false);
-                                                                router.visit(`/booking/create?kdmobil=${notif.kdmobil}`);
-                                                            }}
-                                                        >
-                                                            Booking Sekarang
-                                                        </Button>
-                                                    )}
+                                {notifications.map((notif) => (
+                                    <div key={notif.id} className="flex items-start gap-3 rounded-lg border p-3">
+                                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-500/10">
+                                            <Car className="h-4 w-4 text-blue-500" />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm leading-relaxed">{notif.pesan}</p>
+                                            <div className="mt-2 flex gap-2">
+                                                {notif.kdmobil && (
                                                     <Button
                                                         size="sm"
-                                                        variant="ghost"
-                                                        className="h-7 text-xs text-muted-foreground"
-                                                        onClick={() => markAsRead(notif.id)}
+                                                        variant="outline"
+                                                        className="h-7 text-xs"
+                                                        onClick={() => {
+                                                            markAsRead(notif.id);
+                                                            setOpenNotif(false);
+                                                            router.visit(`/booking/create?kdmobil=${notif.kdmobil}`);
+                                                        }}
                                                     >
-                                                        <X className="mr-1 h-3 w-3" />
-                                                        Tutup
+                                                        Booking Sekarang
                                                     </Button>
-                                                </div>
+                                                )}
+                                                <Button
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    className="h-7 text-xs text-muted-foreground"
+                                                    onClick={() => markAsRead(notif.id)}
+                                                >
+                                                    <X className="mr-1 h-3 w-3" />
+                                                    Tutup
+                                                </Button>
+                                                <Button
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    className="h-7 text-xs text-red-500 hover:text-red-600"
+                                                    onClick={() => deleteNotif(notif.id)}
+                                                >
+                                                    <Trash2 className="mr-1 h-3 w-3" />
+                                                    Hapus
+                                                </Button>
                                             </div>
                                         </div>
-                                    );
-                                })}
+                                    </div>
+                                ))}
                             </>
                         )}
 
