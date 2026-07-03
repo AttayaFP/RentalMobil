@@ -1,57 +1,62 @@
-import TemplateLayout from '@/layouts/TemplateLayout';
-import { Head } from '@inertiajs/react';
+import { Card, CardContent } from '@/components/ui/card';
+import { useScrollReveal, useStaggerReveal } from '@/hooks/use-animation';
+import GuestLayout from '@/layouts/guest-layout';
+import { Head, Link } from '@inertiajs/react';
+import { Calendar, Car, LifeBuoy } from 'lucide-react';
+import React from 'react';
+
+const services = [
+    { title: 'Sewa Mobil Harian', icon: Car, desc: 'Pilihan sewa mobil harian dengan tarif yang sangat kompetitif.' },
+    { title: 'Sewa Jangka Panjang', icon: Calendar, desc: 'Solusi transportasi untuk kebutuhan bulanan atau tahunan perusahaan.' },
+    { title: 'Layanan Darurat 24/7', icon: LifeBuoy, desc: 'Bantuan darurat di jalan siap melayani Anda kapan saja.' },
+];
 
 export default function Services() {
-    const services = [
-        { title: 'Antar Jemput Bandara', icon: 'ion-ios-airplane', desc: 'Layanan penjemputan dan pengantaran ke bandara tepat waktu.' },
-        { title: 'Sewa Mobil Harian', icon: 'ion-ios-car', desc: 'Pilihan sewa mobil harian dengan tarif yang sangat kompetitif.' },
-        { title: 'Sewa Mobil Pengantin', icon: 'ion-ios-heart', desc: 'Pilihan mobil mewah untuk momen spesial pernikahan Anda.' },
-        { title: 'City Tour', icon: 'ion-ios-map', desc: 'Paket perjalanan wisata keliling kota dengan driver profesional.' },
-        { title: 'Sewa Jangka Panjang', icon: 'ion-ios-calendar', desc: 'Solusi transportasi untuk kebutuhan bulanan atau tahunan perusahaan.' },
-        { title: 'Layanan Darurat 24/7', icon: 'ion-ios-help-buoy', desc: 'Bantuan darurat di jalan siap melayani Anda kapan saja.' },
-    ];
+    const headerRef = useScrollReveal();
+    const cardsRef = useStaggerReveal();
 
     return (
-        <TemplateLayout showHero={false}>
+        <>
             <Head title="Layanan Kami - Rental Mobil Nabil Padang" />
-            
-            <div className="hero-wrap ftco-degree-bg" style={{ backgroundImage: "url('/assets/template/images/bg_1.jpg')", height: '400px' }}>
-                <div className="overlay"></div>
-                <div className="container">
-                    <div className="row no-gutters slider-text justify-content-start align-items-center justify-content-center" style={{ height: '400px' }}>
-                        <div className="col-lg-8 text-center" data-aos="fade-up">
-                            <h1 className="mb-3 text-white font-weight-bold">Layanan Kami</h1>
-                            <p className="breadcrumbs text-white">
-                                <span><a href="/" className="text-white">Beranda</a></span> / <span>Layanan</span>
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
-            <section className="ftco-section">
-                <div className="container">
-                    <div className="row justify-content-center mb-5">
-                        <div className="col-md-7 text-center heading-section" data-aos="fade-up">
-                            <span className="subheading" style={{ color: '#01d28e' }}>Apa yang Kami Tawarkan</span>
-                            <h2 className="mb-3">Layanan Transportasi Terbaik</h2>
-                        </div>
+            <section className="bg-gradient-to-br from-emerald-600 via-teal-700 to-cyan-800 py-20">
+                <div className="mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8">
+                    <h1 className="hero-title text-4xl font-extrabold text-white">Layanan Kami</h1>
+                    <p className="hero-sub mt-2 text-emerald-100">
+                        <Link href="/" className="hover:underline">
+                            Beranda
+                        </Link>{' '}
+                        / Layanan
+                    </p>
+                </div>
+            </section>
+
+            <section ref={cardsRef} className="py-16">
+                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                    <div ref={headerRef} className="reveal mb-10 text-center">
+                        <p className="text-sm font-semibold text-emerald-600">Apa yang Kami Tawarkan</p>
+                        <h2 className="mt-2 text-3xl font-bold">Layanan Transportasi Terbaik</h2>
                     </div>
-                    <div className="row">
-                        {services.map((item, index) => (
-                            <div key={index} className="col-md-4 mb-4" data-aos="fade-up" data-aos-delay={index * 100}>
-                                <div className="services-wrap rounded bg-white p-4 shadow-sm text-center border-bottom border-success">
-                                    <div className="icon d-flex align-items-center justify-content-center mb-4 mx-auto" style={{ width: '80px', height: '80px', background: '#f8f9fa', borderRadius: '50%' }}>
-                                        <i className={`${item.icon}`} style={{ fontSize: '40px', color: '#01d28e' }}></i>
-                                    </div>
-                                    <h3 className="h5 font-weight-bold">{item.title}</h3>
-                                    <p className="text-muted small">{item.desc}</p>
-                                </div>
-                            </div>
-                        ))}
+                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                        {services.map((item) => {
+                            const Icon = item.icon;
+                            return (
+                                <Card key={item.title} className="stagger-item text-center">
+                                    <CardContent className="p-6">
+                                        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50">
+                                            <Icon className="h-8 w-8 text-emerald-600" />
+                                        </div>
+                                        <h3 className="mt-4 text-lg font-bold">{item.title}</h3>
+                                        <p className="text-muted-foreground mt-2 text-sm">{item.desc}</p>
+                                    </CardContent>
+                                </Card>
+                            );
+                        })}
                     </div>
                 </div>
             </section>
-        </TemplateLayout>
+        </>
     );
 }
+
+Services.layout = (page: React.ReactNode) => <GuestLayout>{page}</GuestLayout>;

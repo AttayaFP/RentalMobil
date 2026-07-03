@@ -1,6 +1,17 @@
-import AdminLayout from '@/layouts/AdminLayout';
+import AppLayout from '@/layouts/app-layout';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Head, useForm, usePage } from '@inertiajs/react';
+import { Loader2, Save } from 'lucide-react';
 import { FormEventHandler } from 'react';
+import { toast } from 'sonner';
+
+const breadcrumbs = [
+    { title: 'Dashboard', href: '/dashboard' },
+    { title: 'Settings', href: '#' },
+];
 
 export default function Profile() {
     const { auth } = usePage<{ auth: { user: { nama_lengkap: string; email: string } } }>().props;
@@ -12,66 +23,58 @@ export default function Profile() {
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
-        patch('/settings/profile');
+        patch('/settings/profile', {
+            onSuccess: () => toast.success('Profil berhasil diperbarui.'),
+        });
     };
 
     return (
-        <AdminLayout title="Pengaturan Akun">
+        <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Profil Saya" />
-            
-            <div className="row justify-content-center">
-                <div className="col-lg-8">
-                    <div className="card shadow-sm border-0 p-4 p-md-5" style={{ borderRadius: '15px' }}>
-                        <div className="mb-4">
-                            <h4 className="font-weight-bold mb-1">Informasi Profil</h4>
-                            <p className="text-muted small">Perbarui informasi dasar akun Anda di sini.</p>
-                        </div>
 
-                        {recentlySuccessful && (
-                            <div className="alert alert-success border-0 mb-4" style={{ borderRadius: '10px' }}>
-                                <i className="ion-ios-checkmark-circle mr-2"></i> Profil Anda berhasil diperbarui.
-                            </div>
-                        )}
+            <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
+                <Card className="max-w-2xl">
+                    <CardHeader>
+                        <CardTitle>Informasi Profil</CardTitle>
+                        <CardDescription>Perbarui informasi dasar akun Anda di sini.</CardDescription>
+                    </CardHeader>
 
-                        <form onSubmit={submit}>
-                            <div className="form-group mb-4">
-                                <label className="font-weight-bold text-dark small text-uppercase">Nama Lengkap</label>
-                                <input 
-                                    type="text" 
-                                    className={`form-control ${errors.nama_lengkap ? 'is-invalid' : ''}`}
+                    <CardContent>
+                        <form onSubmit={submit} className="space-y-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="nama_lengkap">Nama Lengkap</Label>
+                                <Input
+                                    id="nama_lengkap"
+                                    type="text"
                                     value={data.nama_lengkap}
                                     onChange={(e) => setData('nama_lengkap', e.target.value)}
                                     required
                                 />
-                                {errors.nama_lengkap && <div className="invalid-feedback">{errors.nama_lengkap}</div>}
+                                {errors.nama_lengkap && <p className="text-sm text-destructive">{errors.nama_lengkap}</p>}
                             </div>
 
-                            <div className="form-group mb-4">
-                                <label className="font-weight-bold text-dark small text-uppercase">Alamat Email</label>
-                                <input 
-                                    type="email" 
-                                    className={`form-control ${errors.email ? 'is-invalid' : ''}`}
+                            <div className="space-y-2">
+                                <Label htmlFor="email">Alamat Email</Label>
+                                <Input
+                                    id="email"
+                                    type="email"
                                     value={data.email}
                                     onChange={(e) => setData('email', e.target.value)}
                                     required
                                 />
-                                {errors.email && <div className="invalid-feedback">{errors.email}</div>}
+                                {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
                             </div>
 
-                            <div className="mt-5 pt-4 border-top">
-                                <button type="submit" className="btn btn-primary px-5 py-3 font-weight-bold" disabled={processing} style={{ backgroundColor: '#f96d00', borderColor: '#f96d00', borderRadius: '10px' }}>
+                            <div className="pt-2">
+                                <Button type="submit" disabled={processing}>
+                                    {processing ? <Loader2 className="animate-spin" /> : <Save />}
                                     {processing ? 'Menyimpan...' : 'Simpan Perubahan'}
-                                </button>
+                                </Button>
                             </div>
                         </form>
-                    </div>
-                </div>
+                    </CardContent>
+                </Card>
             </div>
-
-            <style dangerouslySetInnerHTML={{ __html: `
-                .form-control { border-radius: 8px; padding: 12px 15px; border: 1px solid #ddd; height: auto; }
-                .form-control:focus { border-color: #f96d00; box-shadow: 0 0 0 0.2rem rgba(249, 109, 0, 0.1); }
-            `}} />
-        </AdminLayout>
+        </AppLayout>
     );
 }

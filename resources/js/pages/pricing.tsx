@@ -1,5 +1,10 @@
-import TemplateLayout from '@/layouts/TemplateLayout';
-import { Head, Link } from '@inertiajs/react';
+import GuestLayout from '@/layouts/guest-layout';
+import { Head, Link, router, usePage } from '@inertiajs/react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import React from 'react';
+import { useScrollReveal, useStaggerReveal } from '@/hooks/use-animation';
 
 interface Mobil {
     kdmobil: string;
@@ -15,79 +20,83 @@ interface Props {
 }
 
 export default function Pricing({ mobils }: Props) {
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
+    const { auth } = usePage<{ auth: { user: { id: number; role: string } | null } }>().props;
+    const user = auth?.user;
+    const headerRef = useScrollReveal();
+    const tableRef = useStaggerReveal();
+
+    const formatCurrency = (amount: number) =>
+        new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
+
+    const handleSewa = (kdmobil: string) => {
+        if (!user) {
+            router.visit('/login');
+        } else if (user.role === 'pelanggan') {
+            router.visit(`/booking/create?kdmobil=${kdmobil}`);
+        } else {
+            router.visit('/booking');
+        }
     };
 
     return (
-        <TemplateLayout showHero={false}>
+        <>
             <Head title="Daftar Harga - Rental Mobil Nabil Padang" />
-            
-            <div className="hero-wrap ftco-degree-bg" style={{ backgroundImage: "url('/assets/template/images/bg_1.jpg')", height: '400px' }}>
-                <div className="overlay"></div>
-                <div className="container">
-                    <div className="row no-gutters slider-text justify-content-start align-items-center justify-content-center" style={{ height: '400px' }}>
-                        <div className="col-lg-8 text-center" data-aos="fade-up">
-                            <h1 className="mb-3 text-white font-weight-bold">Daftar Harga</h1>
-                            <p className="breadcrumbs text-white">
-                                <span><a href="/" className="text-white">Beranda</a></span> / <span>Daftar Harga</span>
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
-            <section className="ftco-section bg-light">
-                <div className="container">
-                    <div className="row justify-content-center mb-5">
-                        <div className="col-md-7 text-center heading-section" data-aos="fade-up">
-                            <span className="subheading" style={{ color: '#01d28e' }}>Tarif Rental</span>
-                            <h2 className="mb-3">Harga Sewa Mobil Terbaik</h2>
-                        </div>
+            <section className="bg-gradient-to-br from-emerald-600 via-teal-700 to-cyan-800 py-20">
+                <div className="mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8">
+                    <h1 className="hero-title text-4xl font-extrabold text-white">Daftar Harga</h1>
+                    <p className="hero-sub mt-2 text-emerald-100">
+                        <Link href="/" className="hover:underline">Beranda</Link> / Daftar Harga
+                    </p>
+                </div>
+            </section>
+
+            <section ref={tableRef} className="bg-muted/30 py-16">
+                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                    <div ref={headerRef} className="reveal mb-10 text-center">
+                        <p className="text-sm font-semibold text-emerald-600">Tarif Rental</p>
+                        <h2 className="mt-2 text-3xl font-bold">Harga Sewa Mobil Terbaik</h2>
                     </div>
-                    <div className="row" data-aos="fade-up">
-                        <div className="col-md-12">
-                            <div className="table-responsive">
-                                <table className="table table-bordered bg-white shadow-sm" style={{ borderRadius: '15px', overflow: 'hidden' }}>
-                                    <thead className="thead-dark">
-                                        <tr className="text-center">
-                                            <th>Gambar</th>
-                                            <th>Nama Mobil</th>
-                                            <th>Tarif Per Jam</th>
-                                            <th>Tarif Per Hari</th>
-                                            <th>Sewa Sekarang</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {mobils.map((mobil) => (
-                                            <tr key={mobil.kdmobil} className="text-center align-middle">
-                                                <td style={{ width: '150px' }}>
-                                                    <img 
-                                                        src={mobil.foto ? `/storage/${mobil.foto}` : '/assets/template/images/car-1.jpg'} 
-                                                        alt={mobil.nama_mobil}
-                                                        className="img-fluid rounded"
-                                                        style={{ maxHeight: '80px' }}
-                                                    />
-                                                </td>
-                                                <td className="align-middle font-weight-bold">{mobil.nama_mobil}</td>
-                                                <td className="align-middle text-primary">{formatCurrency(mobil.harga / 10)}</td>
-                                                <td className="align-middle font-weight-bold text-success">{formatCurrency(mobil.harga)}</td>
-                                                <td className="align-middle">
-                                                    {mobil.status === 'Tersedia' ? (
-                                                        <Link href={`/booking/create?kdmobil=${mobil.kdmobil}`} className="btn btn-primary px-4 py-2" style={{ backgroundColor: '#01d28e', borderColor: '#01d28e' }}>Sewa</Link>
-                                                    ) : (
-                                                        <button className="btn btn-secondary px-4 py-2 disabled" style={{ cursor: 'not-allowed' }}>Habis</button>
-                                                    )}
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
+                    <div className="stagger-item overflow-hidden rounded-lg border bg-white shadow-sm">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead className="w-[100px]">Gambar</TableHead>
+                                    <TableHead>Nama Mobil</TableHead>
+                                    <TableHead>Tarif Per Hari</TableHead>
+                                    <TableHead className="text-center">Sewa</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {mobils.map((mobil) => (
+                                    <TableRow key={mobil.kdmobil}>
+                                        <TableCell>
+                                            <img
+                                                src={mobil.foto ? `/storage/${mobil.foto}` : '/img/car-placeholder.png'}
+                                                alt={mobil.nama_mobil}
+                                                className="h-16 w-24 rounded object-cover"
+                                            />
+                                        </TableCell>
+                                        <TableCell className="font-medium">{mobil.nama_mobil}</TableCell>
+                                        <TableCell className="font-semibold text-emerald-600">{formatCurrency(mobil.harga)}</TableCell>
+                                        <TableCell className="text-center">
+                                            {mobil.status === 'Tersedia' ? (
+                                                <Button size="sm" onClick={() => handleSewa(mobil.kdmobil)}>
+                                                    Sewa
+                                                </Button>
+                                            ) : (
+                                                <Badge variant="secondary">Habis</Badge>
+                                            )}
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
                     </div>
                 </div>
             </section>
-        </TemplateLayout>
+        </>
     );
 }
+
+Pricing.layout = (page: React.ReactNode) => <GuestLayout>{page}</GuestLayout>;

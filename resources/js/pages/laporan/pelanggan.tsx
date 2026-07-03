@@ -1,16 +1,26 @@
-import AdminLayout from '@/layouts/AdminLayout';
-import SearchFilter from '@/components/SearchFilter';
-import { motion } from 'framer-motion';
-import { Printer, Users } from 'lucide-react';
+import AppLayout from '@/layouts/app-layout';
+import { type BreadcrumbItem } from '@/types';
+import { Head, router } from '@inertiajs/react';
+import { useCallback, useMemo, useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Users, Printer, Search } from 'lucide-react';
+
+const breadcrumbs: BreadcrumbItem[] = [
+    { title: 'Dashboard', href: '/dashboard' },
+    { title: 'Laporan Pelanggan', href: '/laporan/pelanggan' },
+];
 
 interface Pelanggan {
     id: number;
     nama_lengkap: string;
     username: string;
     email: string;
-    jenis_kelamin?: string;
     nohp: string;
-    alamat: string;
+    created_at: string;
 }
 
 interface Props {
@@ -21,116 +31,103 @@ interface Props {
 }
 
 export default function PelangganReport({ pelanggans, filters }: Props) {
-    const handlePrint = () => window.print();
+    const [search, setSearch] = useState(filters.search || '');
+    const debounceTimer = useMemo(() => ({ current: null as ReturnType<typeof setTimeout> | null }), []);
 
-    const formatGender = (jk?: string) => {
-        if (!jk) return '-';
-        const val = jk.trim().toUpperCase();
-        if (val === 'L' || val === 'LAKI-LAKI' || val === 'LAKI LAKI') return 'Laki-Laki';
-        if (val === 'P' || val === 'PEREMPUAN') return 'Perempuan';
-        return jk;
+    const handleSearch = useCallback(
+        (value: string) => {
+            setSearch(value);
+            if (debounceTimer.current) clearTimeout(debounceTimer.current);
+            debounceTimer.current = setTimeout(() => {
+                router.get('/laporan/pelanggan', { search: value }, { preserveState: true, replace: true });
+            }, 300);
+        },
+        [debounceTimer],
+    );
+
+    const formatDate = (date: string) => {
+        return new Date(date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
     };
 
     return (
-        <AdminLayout title="Laporan Data Pelanggan">
-            <motion.div 
-                initial={{ opacity: 0, scale: 0.98 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5 }}
-                className="card shadow-sm border-0 overflow-hidden" 
-                style={{ borderRadius: '15px' }}
-            >
-                <div className="card-header bg-white border-0 py-4 px-4 d-flex flex-wrap justify-content-between align-items-center print:hidden">
-                    <div>
-                        <h5 className="font-weight-bold mb-1 text-dark">
-                            <Users className="inline-block mr-2 text-primary" size={24} /> Laporan Master Pelanggan
-                        </h5>
-                        <p className="text-muted small mb-0">Cari dan cetak data pelanggan rental</p>
-                    </div>
-                    <button onClick={handlePrint} className="btn btn-dark px-4 py-2 d-flex align-items-center gap-2" style={{ borderRadius: '10px', fontWeight: 600 }}>
-                        <Printer size={18} /> Cetak Laporan
-                    </button>
-                </div>
+        <AppLayout breadcrumbs={breadcrumbs}>
+            <Head title="Laporan Pelanggan" />
 
-                <div className="px-4 pb-2 print:hidden">
-                    <SearchFilter routeName="/laporan/pelanggan" placeholder="Cari ID, nama, atau email pelanggan..." filters={filters} showDate={false} />
-                </div>
-
-                <div className="card-body p-3 p-md-5 bg-white">
-                    <div className="position-relative mb-4 pb-3 border-bottom" style={{ borderColor: '#222831', minHeight: '115px' }}>
-                        <div className="position-absolute" style={{ top: 0, left: 0 }}>
-                            <img 
-                                src="/storage/logo/logo.jpg" 
-                                alt="Logo" 
-                                style={{ height: '110px', width: 'auto', objectFit: 'contain', borderRadius: '8px' }} 
-                            />
+            <div className="flex flex-col gap-6 p-4">
+                <Card>
+                    <CardHeader>
+                        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                                <CardTitle className="flex items-center gap-2">
+                                    <Users className="h-5 w-5" />
+                                    Laporan Data Pelanggan
+                                </CardTitle>
+                                <CardDescription>Cari dan cetak data pelanggan rental</CardDescription>
+                            </div>
+                            <Button onClick={() => window.print()}>
+                                <Printer className="h-4 w-4" />
+                                Cetak Laporan
+                            </Button>
                         </div>
-                        <div className="text-center" style={{ paddingLeft: '130px', paddingRight: '130px' }}>
-                            <h2 className="font-weight-bold mb-1" style={{ color: '#222831', fontSize: '24px', letterSpacing: '0.5px' }}>
-                                PT. NABIL RENTAL MOBIL PADANG
-                            </h2>
-                            <p className="mb-2 text-muted small font-weight-bold">
-                                Kompek Perumdam/III/4, Tunggul Hitam, Kota Padang
-                            </p>
-                            <span className="badge px-3 py-2 text-uppercase" style={{ backgroundColor: '#fff4e5', color: '#f96d00', border: '1px solid #fde8d8', fontSize: '12px', fontWeight: 700 }}>
-                                LAPORAN PELANGGAN - SELURUH DATA PELANGGAN TERDAFTAR
-                            </span>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="mb-4 flex items-center gap-2">
+                            <div className="relative max-w-sm flex-1">
+                                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                <Input
+                                    placeholder="Cari ID, nama, atau email pelanggan..."
+                                    value={search}
+                                    onChange={(e) => handleSearch(e.target.value)}
+                                    className="pl-9"
+                                />
+                            </div>
                         </div>
-                    </div>
 
-                    <div className="table-responsive shadow-none overflow-visible">
-                        <table className="table table-striped table-hover w-100" style={{ fontSize: '11px' }}>
-                            <thead style={{ backgroundColor: '#222831', color: '#fff' }}>
-                                <tr>
-                                    <th className="py-3 px-3 border-0 text-center">NO</th>
-                                    <th className="py-3 px-3 border-0">ID</th>
-                                    <th className="py-3 px-3 border-0">NAMA LENGKAP</th>
-                                    <th className="py-3 px-3 border-0 text-center">JENIS KELAMIN</th>
-                                    <th className="py-3 px-3 border-0">USERNAME</th>
-                                    <th className="py-3 px-3 border-0">EMAIL</th>
-                                    <th className="py-3 px-3 border-0">NO. HP</th>
-                                    <th className="py-3 px-3 border-0">ALAMAT</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {pelanggans.length > 0 ? pelanggans.map((p, index) => (
-                                    <tr key={p.id}>
-                                        <td className="py-3 px-3 text-center text-muted font-weight-bold">{index + 1}</td>
-                                        <td className="py-3 px-3 font-weight-bold text-primary">#{p.id}</td>
-                                        <td className="py-3 px-3 font-weight-bold text-dark">{p.nama_lengkap}</td>
-                                        <td className="py-3 px-3 text-center">{formatGender(p.jenis_kelamin)}</td>
-                                        <td className="py-3 px-3"><code>@{p.username}</code></td>
-                                        <td className="py-3 px-3 text-muted">{p.email}</td>
-                                        <td className="py-3 px-3">{p.nohp || '-'}</td>
-                                        <td className="py-3 px-3 text-muted small" style={{ maxWidth: '250px' }}>{p.alamat}</td>
-                                    </tr>
-                                )) : (
-                                    <tr>
-                                        <td colSpan={8} className="text-center py-5 text-muted">Data pelanggan tidak ditemukan.</td>
-                                    </tr>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead className="w-12 text-center">No</TableHead>
+                                    <TableHead>Nama</TableHead>
+                                    <TableHead>Username</TableHead>
+                                    <TableHead>Email</TableHead>
+                                    <TableHead>No HP</TableHead>
+                                    <TableHead>Terdaftar</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {pelanggans.length > 0 ? (
+                                    pelanggans.map((p, i) => (
+                                        <TableRow key={p.id}>
+                                            <TableCell className="text-center font-medium">{i + 1}</TableCell>
+                                            <TableCell className="font-medium">{p.nama_lengkap}</TableCell>
+                                            <TableCell>
+                                                <Badge variant="secondary">@{p.username}</Badge>
+                                            </TableCell>
+                                            <TableCell>{p.email}</TableCell>
+                                            <TableCell>{p.nohp || '-'}</TableCell>
+                                            <TableCell>{formatDate(p.created_at)}</TableCell>
+                                        </TableRow>
+                                    ))
+                                ) : (
+                                    <TableRow>
+                                        <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                                            Data pelanggan tidak ditemukan.
+                                        </TableCell>
+                                    </TableRow>
                                 )}
-                            </tbody>
-                            <tfoot className="bg-light">
-                                <tr className="font-weight-bold" style={{ fontSize: '11px' }}>
-                                    <td colSpan={7} className="text-right py-3 text-uppercase">TOTAL SELURUH PELANGGAN</td>
-                                    <td className="text-left py-3 text-primary font-weight-bold px-3">
-                                        {pelanggans.length} Pelanggan
-                                    </td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-
-                    <div className="mt-3 p-3 border rounded bg-light d-flex justify-content-between align-items-center">
-                        <span className="font-weight-bold text-uppercase small text-muted">Jumlah Seluruh Data Pelanggan:</span>
-                        <span className="badge badge-primary px-3 py-2" style={{ fontSize: '14px', backgroundColor: '#222831' }}>{pelanggans.length} Pelanggan</span>
-                    </div>
-
-                    <div className="mt-5 text-right opacity-75 small italic print:block d-none">
-                        Laporan Data Pelanggan - Dicetak pada: {new Date().toLocaleString('id-ID')}
-                    </div>
-                </div>
-            </motion.div>
-        </AdminLayout>
+                            </TableBody>
+                            <TableFooter>
+                                <TableRow>
+                                    <TableCell colSpan={5} className="text-right font-medium uppercase">
+                                        Total Seluruh Pelanggan
+                                    </TableCell>
+                                    <TableCell className="font-bold">{pelanggans.length} Pelanggan</TableCell>
+                                </TableRow>
+                            </TableFooter>
+                        </Table>
+                    </CardContent>
+                </Card>
+            </div>
+        </AppLayout>
     );
 }

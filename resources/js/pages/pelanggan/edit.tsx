@@ -1,6 +1,17 @@
-import AdminLayout from '@/layouts/AdminLayout';
-import { useForm } from '@inertiajs/react';
+import AppLayout from '@/layouts/app-layout';
+import { type BreadcrumbItem } from '@/types';
+import { Head, Link, useForm } from '@inertiajs/react';
 import { FormEventHandler, useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ArrowLeft, Camera } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface Pelanggan {
     id: number;
@@ -11,7 +22,8 @@ interface Pelanggan {
     alamat: string;
     nohp: string;
     role: string;
-    foto?: string;
+    foto: string | null;
+    created_at: string;
 }
 
 interface Props {
@@ -19,6 +31,12 @@ interface Props {
 }
 
 export default function Edit({ pelanggan }: Props) {
+    const breadcrumbs: BreadcrumbItem[] = [
+        { title: 'Dashboard', href: '/dashboard' },
+        { title: 'Pelanggan', href: '/pelanggan' },
+        { title: `Edit ${pelanggan.nama_lengkap}`, href: `/pelanggan/${pelanggan.id}/edit` },
+    ];
+
     const { data, setData, post, processing, errors } = useForm({
         nama_lengkap: pelanggan.nama_lengkap,
         username: pelanggan.username,
@@ -34,6 +52,7 @@ export default function Edit({ pelanggan }: Props) {
     });
 
     const [preview, setPreview] = useState<string | null>(pelanggan.foto ? `/storage/${pelanggan.foto}` : null);
+    const [showConfirm, setShowConfirm] = useState(false);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -45,176 +64,163 @@ export default function Edit({ pelanggan }: Props) {
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
-        post(`/pelanggan/${pelanggan.id}`);
+        setShowConfirm(true);
     };
 
-    const forceNavigate = (path: string) => {
-        window.location.href = path;
+    const confirmSubmit = () => {
+        post(`/pelanggan/${pelanggan.id}`, {
+            onSuccess: () => toast.success('Data pelanggan berhasil diperbarui'),
+            onError: () => toast.error('Gagal memperbarui data pelanggan'),
+            onFinish: () => setShowConfirm(false),
+        });
     };
 
     return (
-        <AdminLayout title={`Edit Profil: ${pelanggan.nama_lengkap}`}>
-            <div className="row justify-content-center">
-                <div className="col-lg-10">
-                    <div className="card shadow-sm border-0 p-4 p-md-5" style={{ borderRadius: '15px' }}>
-                        <div className="mb-4 d-flex align-items-center">
-                            <button onClick={() => forceNavigate('/pelanggan')} className="btn btn-link text-muted p-0 mr-3">
-                                <i className="ion-ios-arrow-back" style={{ fontSize: '24px' }}></i>
-                            </button>
-                            <h4 className="font-weight-bold mb-0">Perbarui Informasi Pengguna</h4>
-                        </div>
+        <AppLayout breadcrumbs={breadcrumbs}>
+            <Head title={`Edit ${pelanggan.nama_lengkap}`} />
 
-                        <form onSubmit={submit}>
-                            <div className="row">
-                                <div className="col-md-3 mb-4 text-center">
-                                    <label className="font-weight-bold text-dark small text-uppercase d-block mb-3">Foto Profil</label>
-                                    <div className="position-relative mx-auto" style={{ width: '150px', height: '150px' }}>
-                                        <div className="rounded-circle border d-flex align-items-center justify-content-center overflow-hidden bg-light" style={{ width: '100%', height: '100%', border: '2px dashed #ddd' }}>
-                                            {preview ? (
-                                                <img src={preview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                            ) : (
-                                                <i className="ion-ios-person text-muted" style={{ fontSize: '60px' }}></i>
-                                            )}
-                                        </div>
-                                        <input 
-                                            type="file" 
-                                            className="position-absolute w-100 h-100" 
-                                            style={{ top: 0, left: 0, opacity: 0, cursor: 'pointer' }}
-                                            onChange={handleFileChange}
-                                            accept="image/*"
-                                        />
-                                        <div className="position-absolute bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style={{ bottom: '5px', right: '5px', width: '35px', height: '35px', border: '3px solid #fff' }}>
-                                            <i className="ion-ios-camera"></i>
-                                        </div>
-                                    </div>
-                                    <small className="text-muted d-block mt-2 italic">Klik foto untuk mengganti</small>
-                                </div>
-
-                                <div className="col-md-9">
-                                    <div className="row">
-                                        <div className="col-md-6 form-group mb-4">
-                                            <label className="font-weight-bold text-dark small text-uppercase">Nama Lengkap</label>
-                                            <input 
-                                                type="text" 
-                                                className={`form-control ${errors.nama_lengkap ? 'is-invalid' : ''}`}
-                                                value={data.nama_lengkap}
-                                                onChange={e => setData('nama_lengkap', e.target.value)}
-                                                required
-                                            />
-                                            {errors.nama_lengkap && <div className="invalid-feedback">{errors.nama_lengkap}</div>}
-                                        </div>
-                                        <div className="col-md-6 form-group mb-4">
-                                            <label className="font-weight-bold text-dark small text-uppercase">Role / Akses</label>
-                                            <select 
-                                                className={`form-control ${errors.role ? 'is-invalid' : ''}`}
-                                                value={data.role}
-                                                onChange={e => setData('role', e.target.value)}
-                                                required
-                                            >
-                                                <option value="pelanggan">Pelanggan</option>
-                                                <option value="admin">Administrator</option>
-                                                <option value="pimpinan">Pimpinan</option>
-                                            </select>
-                                            {errors.role && <div className="invalid-feedback">{errors.role}</div>}
-                                        </div>
-                                        <div className="col-md-6 form-group mb-4">
-                                            <label className="font-weight-bold text-dark small text-uppercase">Username</label>
-                                            <input 
-                                                type="text" 
-                                                className={`form-control ${errors.username ? 'is-invalid' : ''}`} 
-                                                value={data.username} 
-                                                onChange={e => setData('username', e.target.value)} 
-                                                required 
-                                            />
-                                            {errors.username && <div className="invalid-feedback">{errors.username}</div>}
-                                        </div>
-                                        <div className="col-md-6 form-group mb-4">
-                                            <label className="font-weight-bold text-dark small text-uppercase">Email</label>
-                                            <input 
-                                                type="email" 
-                                                className={`form-control ${errors.email ? 'is-invalid' : ''}`} 
-                                                value={data.email} 
-                                                onChange={e => setData('email', e.target.value)} 
-                                                required 
-                                            />
-                                            {errors.email && <div className="invalid-feedback">{errors.email}</div>}
-                                        </div>
-                                        <div className="col-md-6 form-group mb-4">
-                                            <label className="font-weight-bold text-dark small text-uppercase">Jenis Kelamin</label>
-                                            <select 
-                                                className={`form-control ${errors.jenis_kelamin ? 'is-invalid' : ''}`} 
-                                                value={data.jenis_kelamin} 
-                                                onChange={e => setData('jenis_kelamin', e.target.value)} 
-                                                required
-                                            >
-                                                <option value="L">Laki-laki</option>
-                                                <option value="P">Perempuan</option>
-                                            </select>
-                                            {errors.jenis_kelamin && <div className="invalid-feedback">{errors.jenis_kelamin}</div>}
-                                        </div>
-                                        <div className="col-md-6 form-group mb-4">
-                                            <label className="font-weight-bold text-dark small text-uppercase">Nomor WhatsApp</label>
-                                            <input 
-                                                type="text" 
-                                                className={`form-control ${errors.nohp ? 'is-invalid' : ''}`} 
-                                                value={data.nohp} 
-                                                onChange={e => setData('nohp', e.target.value)} 
-                                                required 
-                                            />
-                                            {errors.nohp && <div className="invalid-feedback">{errors.nohp}</div>}
-                                        </div>
-                                        <div className="col-md-12 p-3 mb-4 bg-light rounded small text-muted">
-                                            <i className="ion-ios-information-circle mr-2 text-primary"></i> Kosongkan password jika tidak ingin mengubahnya.
-                                        </div>
-                                        <div className="col-md-6 form-group mb-4">
-                                            <label className="font-weight-bold text-dark small text-uppercase">Password Baru</label>
-                                            <input 
-                                                type="password" 
-                                                className={`form-control ${errors.password ? 'is-invalid' : ''}`} 
-                                                value={data.password} 
-                                                onChange={e => setData('password', e.target.value)} 
-                                            />
-                                            {errors.password && <div className="invalid-feedback">{errors.password}</div>}
-                                        </div>
-                                        <div className="col-md-6 form-group mb-4">
-                                            <label className="font-weight-bold text-dark small text-uppercase">Konfirmasi Password</label>
-                                            <input 
-                                                type="password" 
-                                                className="form-control" 
-                                                value={data.password_confirmation} 
-                                                onChange={e => setData('password_confirmation', e.target.value)} 
-                                            />
-                                        </div>
-                                        <div className="col-md-12 form-group mb-4">
-                                            <label className="font-weight-bold text-dark small text-uppercase">Alamat Lengkap</label>
-                                            <textarea 
-                                                className={`form-control ${errors.alamat ? 'is-invalid' : ''}`} 
-                                                rows={3} 
-                                                value={data.alamat} 
-                                                onChange={e => setData('alamat', e.target.value)} 
-                                                required
-                                            ></textarea>
-                                            {errors.alamat && <div className="invalid-feedback">{errors.alamat}</div>}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="mt-5 pt-4 border-top d-flex justify-content-end">
-                                <button type="button" onClick={() => forceNavigate('/pelanggan')} className="btn btn-light px-4 mr-2">Batal</button>
-                                <button type="submit" className="btn btn-primary px-5 py-2 font-weight-bold" disabled={processing} style={{ backgroundColor: '#f96d00', borderColor: '#f96d00' }}>
-                                    {processing ? 'Memperbarui...' : 'Simpan Perubahan'}
-                                </button>
-                            </div>
-                        </form>
+            <div className="flex flex-col gap-6 p-4">
+                <div className="flex items-center gap-4">
+                    <Button variant="outline" size="icon" asChild>
+                        <Link href="/pelanggan">
+                            <ArrowLeft className="h-4 w-4" />
+                        </Link>
+                    </Button>
+                    <div>
+                        <h1 className="text-2xl font-bold">Edit Pelanggan</h1>
+                        <p className="text-sm text-muted-foreground">Perbarui informasi {pelanggan.nama_lengkap}</p>
                     </div>
                 </div>
+
+                <form onSubmit={submit}>
+                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="text-base">Foto Profil</CardTitle>
+                                <CardDescription>Klik foto untuk mengganti</CardDescription>
+                            </CardHeader>
+                            <CardContent className="flex flex-col items-center gap-4">
+                                <label className="relative cursor-pointer">
+                                    <Avatar className="h-32 w-32 border-2 border-dashed border-muted-foreground/25">
+                                        <AvatarImage src={preview || undefined} alt="Preview" />
+                                        <AvatarFallback className="text-3xl">
+                                            <Camera className="h-10 w-10 text-muted-foreground" />
+                                        </AvatarFallback>
+                                    </Avatar>
+                                    <input type="file" className="hidden" onChange={handleFileChange} accept="image/*" />
+                                    <div className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm">
+                                        <Camera className="h-4 w-4" />
+                                    </div>
+                                </label>
+                                {errors.foto && <p className="text-sm text-destructive">{errors.foto}</p>}
+                            </CardContent>
+                        </Card>
+
+                        <Card className="lg:col-span-2">
+                            <CardHeader>
+                                <CardTitle className="text-base">Informasi Pengguna</CardTitle>
+                            </CardHeader>
+                            <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                <div className="space-y-2">
+                                    <Label htmlFor="nama_lengkap">Nama Lengkap</Label>
+                                    <Input id="nama_lengkap" value={data.nama_lengkap} onChange={(e) => setData('nama_lengkap', e.target.value)} required />
+                                    {errors.nama_lengkap && <p className="text-sm text-destructive">{errors.nama_lengkap}</p>}
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="role">Role</Label>
+                                    <Select value={data.role} onValueChange={(v) => setData('role', v)}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Pilih role" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="pelanggan">Pelanggan</SelectItem>
+                                            <SelectItem value="admin">Administrator</SelectItem>
+                                            <SelectItem value="pimpinan">Pimpinan</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    {errors.role && <p className="text-sm text-destructive">{errors.role}</p>}
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="username">Username</Label>
+                                    <Input id="username" value={data.username} onChange={(e) => setData('username', e.target.value)} required />
+                                    {errors.username && <p className="text-sm text-destructive">{errors.username}</p>}
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="email">Email</Label>
+                                    <Input id="email" type="email" value={data.email} onChange={(e) => setData('email', e.target.value)} required />
+                                    {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="nohp">Nomor HP / WhatsApp</Label>
+                                    <Input id="nohp" value={data.nohp} onChange={(e) => setData('nohp', e.target.value)} required />
+                                    {errors.nohp && <p className="text-sm text-destructive">{errors.nohp}</p>}
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="jenis_kelamin">Jenis Kelamin</Label>
+                                    <Select value={data.jenis_kelamin} onValueChange={(v) => setData('jenis_kelamin', v)}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Pilih jenis kelamin" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="L">Laki-laki</SelectItem>
+                                            <SelectItem value="P">Perempuan</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    {errors.jenis_kelamin && <p className="text-sm text-destructive">{errors.jenis_kelamin}</p>}
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="password">Password Baru</Label>
+                                    <Input id="password" type="password" value={data.password} onChange={(e) => setData('password', e.target.value)} placeholder="Kosongkan jika tidak diubah" />
+                                    {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="password_confirmation">Konfirmasi Password</Label>
+                                    <Input id="password_confirmation" type="password" value={data.password_confirmation} onChange={(e) => setData('password_confirmation', e.target.value)} />
+                                </div>
+
+                                <div className="space-y-2 sm:col-span-2">
+                                    <Label htmlFor="alamat">Alamat Lengkap</Label>
+                                    <Textarea id="alamat" rows={3} value={data.alamat} onChange={(e) => setData('alamat', e.target.value)} required />
+                                    {errors.alamat && <p className="text-sm text-destructive">{errors.alamat}</p>}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    <div className="mt-6 flex justify-end gap-3">
+                        <Button variant="outline" asChild>
+                            <Link href="/pelanggan">Batal</Link>
+                        </Button>
+                        <Button type="submit" disabled={processing}>
+                            {processing ? 'Memperbarui...' : 'Simpan Perubahan'}
+                        </Button>
+                    </div>
+                </form>
             </div>
-            
-            <style dangerouslySetInnerHTML={{ __html: `
-                .form-control { border-radius: 8px; padding: 12px 15px; border: 1px solid #ddd; height: auto; }
-                .form-control:focus { border-color: #f96d00; box-shadow: 0 0 0 0.2rem rgba(249, 109, 0, 0.1); }
-            `}} />
-        </AdminLayout>
+
+            <Dialog open={showConfirm} onOpenChange={setShowConfirm}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Simpan Perubahan</DialogTitle>
+                        <DialogDescription>Perubahan data pelanggan akan disimpan.</DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowConfirm(false)}>
+                            Batal
+                        </Button>
+                        <Button onClick={confirmSubmit} disabled={processing}>
+                            {processing ? 'Menyimpan...' : 'Ya, Simpan'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </AppLayout>
     );
 }

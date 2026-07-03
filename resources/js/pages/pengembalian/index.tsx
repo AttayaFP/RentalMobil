@@ -1,18 +1,32 @@
-import AdminLayout from '@/layouts/AdminLayout';
-import { router } from '@inertiajs/react';
-import Swal from 'sweetalert2';
-import SearchFilter from '@/components/SearchFilter';
-import { motion } from 'framer-motion';
-import { RefreshCcw, Plus, Calendar, Receipt, User, AlertCircle, Edit, Trash2, CheckCircle2 } from 'lucide-react';
+import AppLayout from '@/layouts/app-layout';
+import { type BreadcrumbItem } from '@/types';
+import { Head, router } from '@inertiajs/react';
+import { useCallback, useMemo, useState } from 'react';
+import { toast } from 'sonner';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { RotateCcw, Plus, Pencil, Trash2, Search, ChevronLeft, ChevronRight, AlertTriangle, CheckCircle } from 'lucide-react';
+
+const breadcrumbs: BreadcrumbItem[] = [
+    { title: 'Dashboard', href: '/dashboard' },
+    { title: 'Pengembalian', href: '/pengembalian' },
+];
 
 interface Pengembalian {
     kdpengembalian: string;
     kdbooking: string;
     iduser: number;
+    tglmulai: string;
+    tglselesai: string;
     tglpengembalian: string;
     keterlambatan: number;
     denda: number;
-    user?: { nama_lengkap: string };
+    user: { nama_lengkap: string };
+    booking: { kdbooking: string; mobil: { nama_mobil: string; plat_mobil: string } };
 }
 
 interface Props {
@@ -23,135 +37,208 @@ interface Props {
     };
 }
 
+const PER_PAGE = 10;
+
 export default function Index({ pengembalians, filters }: Props) {
-    const handleDelete = (id: string) => {
-        Swal.fire({
-            title: 'Hapus Data Pengembalian?',
-            text: "Status booking dan ketersediaan mobil akan dikembalikan otomatis!",
-            icon: 'info',
-            showCancelButton: true,
-            confirmButtonColor: '#ef4444',
-            cancelButtonColor: '#3b82f6',
-            confirmButtonText: 'Ya, hapus!',
-            cancelButtonText: 'Batal'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                router.delete(`/pengembalian/${id}`, {
-                    onSuccess: () => {
-                        Swal.fire({
-                            title: 'Data Dihapus!',
-                            text: 'Riwayat pengembalian berhasil dihapus dan status mobil telah diperbarui.',
-                            icon: 'success',
-                            confirmButtonColor: '#f96d00'
-                        });
-                    }
-                });
-            }
+    const [search, setSearch] = useState(filters.search || '');
+    const [page, setPage] = useState(1);
+    const [deleteId, setDeleteId] = useState<string | null>(null);
+
+    const debounceTimer = useMemo(() => ({ current: null as ReturnType<typeof setTimeout> | null }), []);
+
+    const handleSearch = useCallback(
+        (value: string) => {
+            setSearch(value);
+            setPage(1);
+            if (debounceTimer.current) clearTimeout(debounceTimer.current);
+            debounceTimer.current = setTimeout(() => {
+                router.get('/pengembalian', { search: value }, { preserveState: true, replace: true });
+            }, 300);
+        },
+        [debounceTimer],
+    );
+
+    const filtered = useMemo(() => {
+        if (!search) return pengembalians;
+        const q = search.toLowerCase();
+        return pengembalians.filter(
+            (p) =>
+                p.kdpengembalian.toLowerCase().includes(q) ||
+                p.kdbooking.toLowerCase().includes(q) ||
+                p.user?.nama_lengkap?.toLowerCase().includes(q) ||
+                p.booking?.mobil?.nama_mobil?.toLowerCase().includes(q),
+        );
+    }, [pengembalians, search]);
+
+    const totalPages = Math.ceil(filtered.length / PER_PAGE);
+    const paginated = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+
+    const formatCurrency = (amount: number) =>
+        new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
+
+    const handleDelete = () => {
+        if (!deleteId) return;
+        router.delete(`/pengembalian/${deleteId}`, {
+            onSuccess: () => {
+                toast.success('Pengembalian berhasil dihapus dan status mobil telah diperbarui.');
+                setDeleteId(null);
+            },
+            onError: () => {
+                toast.error('Gagal menghapus pengembalian.');
+            },
         });
     };
 
-    const forceNavigate = (path: string) => {
-        window.location.href = path;
-    };
-
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
-    };
-
     return (
-        <AdminLayout title="Kelola Pengembalian">
-            <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="card shadow-sm border-0 overflow-hidden" 
-                style={{ borderRadius: '15px' }}
-            >
-                <div className="card-header bg-white border-0 py-4 px-4 d-flex flex-wrap justify-content-between align-items-center">
-                    <div>
-                        <h5 className="font-weight-bold mb-1 text-dark">
-                            <RefreshCcw className="inline-block mr-2 text-primary" size={24} /> Data Pengembalian Mobil
-                        </h5>
-                        <p className="text-muted small mb-0">Kelola pengembalian unit dan denda</p>
-                    </div>
-                    <button onClick={() => forceNavigate('/pengembalian/create')} className="btn btn-primary px-4 py-2 mt-3 mt-md-0 d-flex align-items-center gap-2" style={{ borderRadius: '10px', fontWeight: 600 }}>
-                        <Plus size={18} /> Input Pengembalian
-                    </button>
-                </div>
+        <AppLayout breadcrumbs={breadcrumbs}>
+            <Head title="Kelola Pengembalian" />
 
-                <div className="px-4 pb-2">
-                    <SearchFilter routeName="/pengembalian" placeholder="Cari kode kembali, booking, atau nama..." filters={filters} />
-                </div>
+            <div className="flex flex-col gap-6 p-4">
+                <Card>
+                    <CardHeader>
+                        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                                <CardTitle className="flex items-center gap-2">
+                                    <RotateCcw className="h-5 w-5" />
+                                    Data Pengembalian Mobil
+                                </CardTitle>
+                                <CardDescription>Kelola pengembalian unit dan denda</CardDescription>
+                            </div>
+                            <Button onClick={() => router.visit('/pengembalian/create')}>
+                                <Plus className="h-4 w-4" />
+                                Input Pengembalian
+                            </Button>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="mb-4 flex items-center gap-2">
+                            <div className="relative max-w-sm flex-1">
+                                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                <Input
+                                    placeholder="Cari kode kembali, booking, atau nama..."
+                                    value={search}
+                                    onChange={(e) => handleSearch(e.target.value)}
+                                    className="pl-9"
+                                />
+                            </div>
+                        </div>
 
-                <div className="table-responsive">
-                    <table className="table table-hover mb-0">
-                        <thead style={{ backgroundColor: '#f8f9fa' }}>
-                            <tr>
-                                <th className="border-0 px-4 py-3 text-muted small text-uppercase font-weight-bold">Kode Kembali</th>
-                                <th className="border-0 py-3 text-muted small text-uppercase font-weight-bold">Ref. Booking</th>
-                                <th className="border-0 py-3 text-muted small text-uppercase font-weight-bold">Tgl Kembali</th>
-                                <th className="border-0 py-3 text-muted small text-uppercase font-weight-bold">Keterlambatan</th>
-                                <th className="border-0 py-3 text-muted small text-uppercase font-weight-bold">Denda</th>
-                                <th className="border-0 px-4 py-3 text-muted small text-uppercase font-weight-bold text-right">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {pengembalians && pengembalians.length > 0 ? pengembalians.map((p) => (
-                                <tr key={p.kdpengembalian}>
-                                    <td className="px-4 py-4 font-weight-bold text-dark">
-                                        <span className="flex items-center gap-2">
-                                            <Receipt size={16} className="text-muted" /> {p.kdpengembalian}
-                                        </span>
-                                    </td>
-                                    <td className="py-4">
-                                        <div className="font-weight-bold text-primary mb-0">{p.kdbooking}</div>
-                                        <small className="text-muted flex items-center gap-1">
-                                            <User size={12} /> {p.user?.nama_lengkap || `ID: #${p.iduser}`}
-                                        </small>
-                                    </td>
-                                    <td className="py-4 text-muted">
-                                        <span className="flex items-center gap-1 text-sm">
-                                            <Calendar size={14} /> {p.tglpengembalian}
-                                        </span>
-                                    </td>
-                                    <td className="py-4">
-                                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider`} style={{ 
-                                            backgroundColor: p.keterlambatan > 0 ? '#fef2f2' : '#ecfdf5',
-                                            color: p.keterlambatan > 0 ? '#dc2626' : '#059669',
-                                            border: '1px solid currentColor'
-                                        }}>
-                                            {p.keterlambatan > 0 ? <AlertCircle size={10} className="mr-1" /> : <CheckCircle2 size={10} className="mr-1" />}
-                                            {p.keterlambatan} Hari
-                                        </span>
-                                    </td>
-                                    <td className="py-4 font-weight-bold" style={{ fontSize: '15px', color: p.denda > 0 ? '#dc2626' : '#059669' }}>
-                                        {p.denda > 0 ? formatCurrency(p.denda) : 'Gratis / Tepat Waktu'}
-                                    </td>
-                                    <td className="px-4 py-4 text-right">
-                                        <div className="flex justify-end gap-2">
-                                            <button onClick={() => forceNavigate(`/pengembalian/${p.kdpengembalian}/edit`)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Edit">
-                                                <Edit size={18} />
-                                            </button>
-                                            <button onClick={() => handleDelete(p.kdpengembalian)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Hapus">
-                                                <Trash2 size={18} />
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            )) : (
-                                <tr>
-                                    <td colSpan={6} className="text-center py-5 text-muted">
-                                        <div className="flex flex-column items-center gap-2">
-                                            <RefreshCcw size={40} className="opacity-20" />
-                                            <span>Belum ada data pengembalian.</span>
-                                        </div>
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-            </motion.div>
-        </AdminLayout>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead className="w-12">No</TableHead>
+                                    <TableHead>Kode</TableHead>
+                                    <TableHead>Booking</TableHead>
+                                    <TableHead>Pelanggan</TableHead>
+                                    <TableHead>Mobil</TableHead>
+                                    <TableHead>Tanggal Kembali</TableHead>
+                                    <TableHead>Keterlambatan</TableHead>
+                                    <TableHead>Denda</TableHead>
+                                    <TableHead className="text-right">Aksi</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {paginated.length > 0 ? (
+                                    paginated.map((p, i) => (
+                                        <TableRow key={p.kdpengembalian}>
+                                            <TableCell className="font-medium">{(page - 1) * PER_PAGE + i + 1}</TableCell>
+                                            <TableCell>
+                                                <Badge variant="secondary">{p.kdpengembalian}</Badge>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Badge variant="outline">{p.kdbooking}</Badge>
+                                            </TableCell>
+                                            <TableCell className="font-medium">{p.user?.nama_lengkap || `#${p.iduser}`}</TableCell>
+                                            <TableCell>
+                                                <div className="flex flex-col">
+                                                    <span className="font-medium">{p.booking?.mobil?.nama_mobil || '-'}</span>
+                                                    <span className="text-xs text-muted-foreground">{p.booking?.mobil?.plat_mobil || ''}</span>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>{p.tglpengembalian}</TableCell>
+                                            <TableCell>
+                                                {p.keterlambatan > 0 ? (
+                                                    <Badge variant="destructive" className="gap-1">
+                                                        <AlertTriangle className="h-3 w-3" />
+                                                        {p.keterlambatan} Hari
+                                                    </Badge>
+                                                ) : (
+                                                    <Badge variant="default" className="gap-1 bg-green-600 hover:bg-green-700">
+                                                        <CheckCircle className="h-3 w-3" />
+                                                        Tepat Waktu
+                                                    </Badge>
+                                                )}
+                                            </TableCell>
+                                            <TableCell className={p.denda > 0 ? 'font-semibold text-destructive' : 'text-green-600'}>
+                                                {p.denda > 0 ? formatCurrency(p.denda) : 'Gratis'}
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <div className="flex justify-end gap-1">
+                                                    <Button variant="ghost" size="icon" onClick={() => router.visit(`/pengembalian/${p.kdpengembalian}/edit`)}>
+                                                        <Pencil className="h-4 w-4" />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="text-destructive hover:text-destructive"
+                                                        onClick={() => setDeleteId(p.kdpengembalian)}
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                ) : (
+                                    <TableRow>
+                                        <TableCell colSpan={9} className="h-24 text-center text-muted-foreground">
+                                            Belum ada data pengembalian.
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+
+                        {totalPages > 1 && (
+                            <div className="mt-4 flex items-center justify-between">
+                                <p className="text-sm text-muted-foreground">
+                                    Menampilkan {(page - 1) * PER_PAGE + 1}–{Math.min(page * PER_PAGE, filtered.length)} dari {filtered.length} data
+                                </p>
+                                <div className="flex items-center gap-2">
+                                    <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>
+                                        <ChevronLeft className="h-4 w-4" />
+                                    </Button>
+                                    <span className="text-sm">
+                                        {page} / {totalPages}
+                                    </span>
+                                    <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages}>
+                                        <ChevronRight className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            </div>
+
+            <Dialog open={deleteId !== null} onOpenChange={(open) => !open && setDeleteId(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Hapus Pengembalian?</DialogTitle>
+                        <DialogDescription>
+                            Status booking dan ketersediaan mobil akan dikembalikan otomatis. Tindakan ini tidak dapat dibatalkan.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setDeleteId(null)}>
+                            Batal
+                        </Button>
+                        <Button variant="destructive" onClick={handleDelete}>
+                            Ya, Hapus
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </AppLayout>
     );
 }

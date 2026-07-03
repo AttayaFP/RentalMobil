@@ -1,12 +1,23 @@
-import AdminLayout from '@/layouts/AdminLayout';
+import AppLayout from '@/layouts/app-layout';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Head, useForm } from '@inertiajs/react';
+import { Loader2, Save } from 'lucide-react';
 import { FormEventHandler, useRef } from 'react';
+import { toast } from 'sonner';
+
+const breadcrumbs = [
+    { title: 'Dashboard', href: '/dashboard' },
+    { title: 'Settings', href: '#' },
+];
 
 export default function Password() {
     const passwordInput = useRef<HTMLInputElement>(null);
     const currentPasswordInput = useRef<HTMLInputElement>(null);
 
-    const { data, setData, errors, put, reset, processing, recentlySuccessful } = useForm({
+    const { data, setData, errors, put, reset, processing } = useForm({
         current_password: '',
         password: '',
         password_confirmation: '',
@@ -17,7 +28,10 @@ export default function Password() {
 
         put('/settings/password', {
             preserveScroll: true,
-            onSuccess: () => reset(),
+            onSuccess: () => {
+                reset();
+                toast.success('Kata sandi berhasil diperbarui.');
+            },
             onError: (errors) => {
                 if (errors.password) {
                     reset('password', 'password_confirmation');
@@ -32,79 +46,69 @@ export default function Password() {
     };
 
     return (
-        <AdminLayout title="Keamanan Akun">
+        <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Ganti Password" />
-            
-            <div className="row justify-content-center">
-                <div className="col-lg-8">
-                    <div className="card shadow-sm border-0 p-4 p-md-5" style={{ borderRadius: '15px' }}>
-                        <div className="mb-4">
-                            <h4 className="font-weight-bold mb-1">Perbarui Kata Sandi</h4>
-                            <p className="text-muted small">Pastikan akun Anda menggunakan kata sandi yang panjang dan acak agar tetap aman.</p>
-                        </div>
 
-                        {recentlySuccessful && (
-                            <div className="alert alert-success border-0 mb-4" style={{ borderRadius: '10px' }}>
-                                <i className="ion-ios-checkmark-circle mr-2"></i> Kata sandi Anda berhasil diperbarui.
-                            </div>
-                        )}
+            <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
+                <Card className="max-w-2xl">
+                    <CardHeader>
+                        <CardTitle>Perbarui Kata Sandi</CardTitle>
+                        <CardDescription>Pastikan akun Anda menggunakan kata sandi yang panjang dan acak agar tetap aman.</CardDescription>
+                    </CardHeader>
 
-                        <form onSubmit={updatePassword}>
-                            <div className="form-group mb-4">
-                                <label className="font-weight-bold text-dark small text-uppercase">Kata Sandi Saat Ini</label>
-                                <input 
-                                    type="password" 
-                                    className={`form-control ${errors.current_password ? 'is-invalid' : ''}`}
+                    <CardContent>
+                        <form onSubmit={updatePassword} className="space-y-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="current_password">Kata Sandi Saat Ini</Label>
+                                <Input
+                                    id="current_password"
+                                    type="password"
                                     ref={currentPasswordInput}
                                     value={data.current_password}
                                     onChange={(e) => setData('current_password', e.target.value)}
                                     required
                                     autoComplete="current-password"
                                 />
-                                {errors.current_password && <div className="invalid-feedback">{errors.current_password}</div>}
+                                {errors.current_password && <p className="text-sm text-destructive">{errors.current_password}</p>}
                             </div>
 
-                            <div className="form-group mb-4">
-                                <label className="font-weight-bold text-dark small text-uppercase">Kata Sandi Baru</label>
-                                <input 
-                                    type="password" 
-                                    className={`form-control ${errors.password ? 'is-invalid' : ''}`}
+                            <div className="space-y-2">
+                                <Label htmlFor="password">Kata Sandi Baru</Label>
+                                <Input
+                                    id="password"
+                                    type="password"
                                     ref={passwordInput}
                                     value={data.password}
                                     onChange={(e) => setData('password', e.target.value)}
                                     required
                                     autoComplete="new-password"
                                 />
-                                {errors.password && <div className="invalid-feedback">{errors.password}</div>}
+                                {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
                             </div>
 
-                            <div className="form-group mb-4">
-                                <label className="font-weight-bold text-dark small text-uppercase">Konfirmasi Kata Sandi Baru</label>
-                                <input 
-                                    type="password" 
-                                    className={`form-control ${errors.password_confirmation ? 'is-invalid' : ''}`}
+                            <div className="space-y-2">
+                                <Label htmlFor="password_confirmation">Konfirmasi Kata Sandi Baru</Label>
+                                <Input
+                                    id="password_confirmation"
+                                    type="password"
                                     value={data.password_confirmation}
                                     onChange={(e) => setData('password_confirmation', e.target.value)}
                                     required
                                     autoComplete="new-password"
                                 />
-                                {errors.password_confirmation && <div className="invalid-feedback">{errors.password_confirmation}</div>}
+                                {errors.password_confirmation && <p className="text-sm text-destructive">{errors.password_confirmation}</p>}
                             </div>
 
-                            <div className="mt-5 pt-4 border-top">
-                                <button type="submit" className="btn btn-dark px-5 py-3 font-weight-bold shadow-sm" disabled={processing} style={{ borderRadius: '10px' }}>
+                            <div className="pt-2">
+                                <Button type="submit" disabled={processing}>
+                                    {processing ? <Loader2 className="animate-spin" /> : <Save />}
                                     {processing ? 'Menyimpan...' : 'Perbarui Kata Sandi'}
-                                </button>
+                                </Button>
                             </div>
                         </form>
-                    </div>
-                </div>
+                    </CardContent>
+                </Card>
             </div>
-
-            <style dangerouslySetInnerHTML={{ __html: `
-                .form-control { border-radius: 8px; padding: 12px 15px; border: 1px solid #ddd; height: auto; }
-                .form-control:focus { border-color: #f96d00; box-shadow: 0 0 0 0.2rem rgba(249, 109, 0, 0.1); }
-            `}} />
-        </AdminLayout>
+        </AppLayout>
     );
 }

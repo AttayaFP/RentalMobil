@@ -1,6 +1,15 @@
-import AdminLayout from '@/layouts/AdminLayout';
-import { useForm } from '@inertiajs/react';
+import AppLayout from '@/layouts/app-layout';
+import { type BreadcrumbItem } from '@/types';
+import { Head, Link, router, useForm } from '@inertiajs/react';
 import { FormEventHandler, useState } from 'react';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ArrowLeft, Upload } from 'lucide-react';
 
 interface Kategori {
     kdkategori: string;
@@ -26,8 +35,14 @@ interface Props {
 }
 
 export default function Edit({ mobil, kategoris }: Props) {
+    const breadcrumbs: BreadcrumbItem[] = [
+        { title: 'Dashboard', href: '/dashboard' },
+        { title: 'Mobil', href: '/mobil' },
+        { title: mobil.nama_mobil, href: `/mobil/${mobil.kdmobil}/edit` },
+    ];
+
     const { data, setData, post, processing, errors } = useForm({
-        _method: 'PUT',
+        _method: 'PUT' as const,
         nama_mobil: mobil.nama_mobil,
         thn_mobil: mobil.thn_mobil,
         plat_mobil: mobil.plat_mobil,
@@ -40,6 +55,7 @@ export default function Edit({ mobil, kategoris }: Props) {
     });
 
     const [preview, setPreview] = useState<string | null>(mobil.foto ? `/storage/${mobil.foto}` : null);
+    const [showConfirm, setShowConfirm] = useState(false);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -51,169 +67,192 @@ export default function Edit({ mobil, kategoris }: Props) {
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
-        post(`/mobil/${mobil.kdmobil}`);
+        setShowConfirm(true);
     };
 
-    const forceNavigate = (path: string) => {
-        window.location.href = path;
+    const confirmSubmit = () => {
+        post(`/mobil/${mobil.kdmobil}`, {
+            onSuccess: () => {
+                toast.success('Data mobil berhasil diperbarui.');
+            },
+            onError: () => {
+                toast.error('Gagal memperbarui data mobil. Periksa kembali data Anda.');
+            },
+            onFinish: () => {
+                setShowConfirm(false);
+            },
+        });
     };
 
     return (
-        <AdminLayout title={`Edit Mobil: ${mobil.nama_mobil}`}>
-            <div className="row justify-content-center">
-                <div className="col-lg-10">
-                    <div className="card shadow-sm border-0 p-4 p-md-5" style={{ borderRadius: '15px' }}>
-                        <div className="mb-4 d-flex align-items-center">
-                            <button onClick={() => forceNavigate('/mobil')} className="btn btn-link text-muted p-0 mr-3">
-                                <i className="ion-ios-arrow-back" style={{ fontSize: '24px' }}></i>
-                            </button>
-                            <h4 className="font-weight-bold mb-0">Ubah Informasi Mobil</h4>
+        <AppLayout breadcrumbs={breadcrumbs}>
+            <Head title={`Edit ${mobil.nama_mobil}`} />
+            <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
+                <Card>
+                    <CardHeader>
+                        <div className="flex items-center gap-3">
+                            <Button variant="ghost" size="icon" asChild>
+                                <Link href="/mobil">
+                                    <ArrowLeft className="h-4 w-4" />
+                                </Link>
+                            </Button>
+                            <div>
+                                <CardTitle>Edit Mobil: {mobil.nama_mobil}</CardTitle>
+                                <CardDescription>Ubah informasi mobil {mobil.kdmobil}</CardDescription>
+                            </div>
                         </div>
-
-                        <form onSubmit={submit}>
-                            <div className="row">
-                                <div className="col-md-4 mb-4">
-                                    <label className="font-weight-bold text-dark small text-uppercase">Foto Mobil</label>
-                                    <div className="image-upload-wrapper mt-2 position-relative" style={{ 
-                                        height: '220px', 
-                                        border: '2px dashed #ddd', 
-                                        borderRadius: '12px',
-                                        backgroundColor: '#fbfbfb',
-                                        overflow: 'hidden'
-                                    }}>
+                    </CardHeader>
+                    <CardContent>
+                        <form onSubmit={submit} className="space-y-6">
+                            <div className="grid gap-6 md:grid-cols-3">
+                                <div className="space-y-2">
+                                    <Label htmlFor="foto">Foto Mobil</Label>
+                                    <div className="relative flex h-48 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed bg-muted/50 transition-colors hover:border-primary/50">
                                         {preview ? (
-                                            <img src={preview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                            <img src={preview} alt="Preview" className="h-full w-full rounded-lg object-cover" />
                                         ) : (
-                                            <div className="h-100 d-flex flex-column align-items-center justify-content-center text-muted">
-                                                <i className="ion-ios-camera mb-2" style={{ fontSize: '40px' }}></i>
-                                                <small>Klik untuk ganti foto</small>
+                                            <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                                                <Upload className="h-8 w-8" />
+                                                <span className="text-sm">Klik untuk ganti foto</span>
                                             </div>
                                         )}
-                                        <input 
-                                            type="file" 
-                                            className="position-absolute w-100 h-100" 
-                                            style={{ top: 0, left: 0, opacity: 0, cursor: 'pointer' }}
+                                        <input
+                                            type="file"
+                                            className="absolute inset-0 cursor-pointer opacity-0"
                                             onChange={handleFileChange}
                                             accept="image/*"
                                         />
                                     </div>
-                                    <small className="text-muted mt-2 d-block text-center italic">Kosongkan jika tidak ingin ganti foto</small>
+                                    <p className="text-center text-xs text-muted-foreground">Kosongkan jika tidak ingin ganti foto</p>
+                                    {errors.foto && <p className="text-sm text-destructive">{errors.foto}</p>}
                                 </div>
 
-                                <div className="col-md-8">
-                                    <div className="row">
-                                        <div className="col-md-6 form-group mb-4">
-                                            <label className="font-weight-bold text-dark small text-uppercase">Kode Mobil (Tetap)</label>
-                                            <div className="form-control bg-light d-flex align-items-center font-weight-bold" style={{ cursor: 'default', userSelect: 'none', minHeight: '50px' }}>
-                                                {mobil.kdmobil}
-                                            </div>
+                                <div className="space-y-4 md:col-span-2">
+                                    <div className="grid gap-4 sm:grid-cols-2">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="kdmobil">Kode Mobil</Label>
+                                            <Input id="kdmobil" value={mobil.kdmobil} readOnly className="bg-muted font-semibold" />
                                         </div>
-                                        <div className="col-md-6 form-group mb-4">
-                                            <label className="font-weight-bold text-dark small text-uppercase">Nama Mobil</label>
-                                            <input 
-                                                type="text" 
-                                                className={`form-control ${errors.nama_mobil ? 'is-invalid' : ''}`}
+                                        <div className="space-y-2">
+                                            <Label htmlFor="nama_mobil">Nama Mobil</Label>
+                                            <Input
+                                                id="nama_mobil"
                                                 value={data.nama_mobil}
-                                                onChange={e => setData('nama_mobil', e.target.value)}
-                                                required
+                                                onChange={(e) => setData('nama_mobil', e.target.value)}
                                             />
-                                            {errors.nama_mobil && <div className="invalid-feedback">{errors.nama_mobil}</div>}
+                                            {errors.nama_mobil && <p className="text-sm text-destructive">{errors.nama_mobil}</p>}
                                         </div>
-                                        <div className="col-md-6 form-group mb-4">
-                                            <label className="font-weight-bold text-dark small text-uppercase">Plat Nomor</label>
-                                            <input 
-                                                type="text" 
-                                                className={`form-control ${errors.plat_mobil ? 'is-invalid' : ''}`}
+                                        <div className="space-y-2">
+                                            <Label htmlFor="plat_mobil">Plat Nomor</Label>
+                                            <Input
+                                                id="plat_mobil"
                                                 value={data.plat_mobil}
-                                                onChange={e => setData('plat_mobil', e.target.value)}
-                                                required
+                                                onChange={(e) => setData('plat_mobil', e.target.value)}
                                             />
+                                            {errors.plat_mobil && <p className="text-sm text-destructive">{errors.plat_mobil}</p>}
                                         </div>
-                                        <div className="col-md-6 form-group mb-4">
-                                            <label className="font-weight-bold text-dark small text-uppercase">Warna Mobil</label>
-                                            <input 
-                                                type="text" 
-                                                className={`form-control ${errors.warna_mobil ? 'is-invalid' : ''}`}
+                                        <div className="space-y-2">
+                                            <Label htmlFor="warna_mobil">Warna Mobil</Label>
+                                            <Input
+                                                id="warna_mobil"
                                                 value={data.warna_mobil}
-                                                onChange={e => setData('warna_mobil', e.target.value)}
-                                                required
+                                                onChange={(e) => setData('warna_mobil', e.target.value)}
                                             />
+                                            {errors.warna_mobil && <p className="text-sm text-destructive">{errors.warna_mobil}</p>}
                                         </div>
-                                        <div className="col-md-6 form-group mb-4">
-                                            <label className="font-weight-bold text-dark small text-uppercase">Nomor STNK</label>
-                                            <input 
-                                                type="text" 
-                                                className={`form-control ${errors.stnk_mobil ? 'is-invalid' : ''}`}
+                                        <div className="space-y-2">
+                                            <Label htmlFor="stnk_mobil">Nomor STNK</Label>
+                                            <Input
+                                                id="stnk_mobil"
                                                 value={data.stnk_mobil}
-                                                onChange={e => setData('stnk_mobil', e.target.value)}
-                                                required
+                                                onChange={(e) => setData('stnk_mobil', e.target.value)}
                                             />
+                                            {errors.stnk_mobil && <p className="text-sm text-destructive">{errors.stnk_mobil}</p>}
                                         </div>
-                                        <div className="col-md-6 form-group mb-4">
-                                            <label className="font-weight-bold text-dark small text-uppercase">Kategori</label>
-                                            <select 
-                                                className="form-control"
-                                                value={data.kdkategori}
-                                                onChange={e => setData('kdkategori', e.target.value)}
-                                                required
-                                            >
-                                                {kategoris.map(k => (
-                                                    <option key={k.kdkategori} value={k.kdkategori}>{k.nama_kategori}</option>
-                                                ))}
-                                            </select>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="kdkategori">Kategori</Label>
+                                            <Select value={data.kdkategori} onValueChange={(value) => setData('kdkategori', value)}>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Pilih Kategori" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {kategoris.map((k) => (
+                                                        <SelectItem key={k.kdkategori} value={k.kdkategori}>
+                                                            {k.nama_kategori}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                            {errors.kdkategori && <p className="text-sm text-destructive">{errors.kdkategori}</p>}
                                         </div>
-                                        <div className="col-md-6 form-group mb-4">
-                                            <label className="font-weight-bold text-dark small text-uppercase">Status</label>
-                                            <select 
-                                                className="form-control"
-                                                value={data.status}
-                                                onChange={e => setData('status', e.target.value)}
-                                                required
-                                            >
-                                                <option value="Tersedia">Tersedia</option>
-                                                <option value="Disewa">Disewa</option>
-                                                <option value="Perawatan">Perawatan</option>
-                                            </select>
-                                        </div>
-                                        <div className="col-md-6 form-group mb-4">
-                                            <label className="font-weight-bold text-dark small text-uppercase">Harga Sewa / Hari</label>
-                                            <input 
-                                                type="number" 
-                                                className="form-control font-weight-bold text-primary"
+                                        <div className="space-y-2">
+                                            <Label htmlFor="harga">Harga Sewa / Hari (Rp)</Label>
+                                            <Input
+                                                id="harga"
+                                                type="number"
                                                 value={data.harga}
-                                                onChange={e => setData('harga', e.target.value ? parseInt(e.target.value) : 0)}
-                                                required
+                                                onChange={(e) => setData('harga', e.target.value ? parseInt(e.target.value) : 0)}
                                             />
+                                            {errors.harga && <p className="text-sm text-destructive">{errors.harga}</p>}
                                         </div>
-                                        <div className="col-md-6 form-group mb-4">
-                                            <label className="font-weight-bold text-dark small text-uppercase">Tahun</label>
-                                            <input 
-                                                type="number" 
-                                                className="form-control"
+                                        <div className="space-y-2">
+                                            <Label htmlFor="thn_mobil">Tahun</Label>
+                                            <Input
+                                                id="thn_mobil"
+                                                type="number"
                                                 value={data.thn_mobil}
-                                                onChange={e => setData('thn_mobil', e.target.value ? parseInt(e.target.value) : new Date().getFullYear())}
-                                                required
+                                                onChange={(e) => setData('thn_mobil', e.target.value ? parseInt(e.target.value) : new Date().getFullYear())}
                                             />
+                                            {errors.thn_mobil && <p className="text-sm text-destructive">{errors.thn_mobil}</p>}
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="status">Status</Label>
+                                            <Select value={data.status} onValueChange={(value) => setData('status', value)}>
+                                                <SelectTrigger>
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="Tersedia">Tersedia</SelectItem>
+                                                    <SelectItem value="Perawatan">Perawatan</SelectItem>
+                                                    <SelectItem value="Disewa">Disewa</SelectItem>
+                                                </SelectContent>
+                                            </Select>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="mt-5 pt-4 border-top d-flex justify-content-end">
-                                <button type="button" onClick={() => forceNavigate('/mobil')} className="btn btn-light px-4 mr-2">Batal</button>
-                                <button type="submit" className="btn btn-primary px-5 py-2 font-weight-bold" disabled={processing} style={{ backgroundColor: '#f96d00', borderColor: '#f96d00' }}>
+                            <div className="flex justify-end gap-3 border-t pt-6">
+                                <Button variant="outline" asChild>
+                                    <Link href="/mobil">Batal</Link>
+                                </Button>
+                                <Button type="submit" disabled={processing}>
                                     {processing ? 'Memperbarui...' : 'Simpan Perubahan'}
-                                </button>
+                                </Button>
                             </div>
                         </form>
-                    </div>
-                </div>
+                    </CardContent>
+                </Card>
             </div>
-            
-            <style dangerouslySetInnerHTML={{ __html: `
-                .form-control { border-radius: 8px; padding: 12px 15px; border: 1px solid #ddd; height: auto; }
-                .form-control:focus { border-color: #f96d00; box-shadow: 0 0 0 0.2rem rgba(249, 109, 0, 0.1); }
-            `}} />
-        </AdminLayout>
+
+            <Dialog open={showConfirm} onOpenChange={setShowConfirm}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Simpan Perubahan?</DialogTitle>
+                        <DialogDescription>
+                            Data mobil <span className="font-semibold">{mobil.nama_mobil}</span> akan diperbarui. Pastikan perubahan yang Anda buat sudah benar.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowConfirm(false)}>
+                            Batal
+                        </Button>
+                        <Button onClick={confirmSubmit} disabled={processing}>
+                            {processing ? 'Menyimpan...' : 'Ya, Simpan'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </AppLayout>
     );
 }

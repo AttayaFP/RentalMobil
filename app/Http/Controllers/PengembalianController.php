@@ -33,7 +33,7 @@ class PengembalianController extends Controller
         }
 
         return Inertia::render('pengembalian/index', [
-            'pengembalians' => $query->with(['user', 'booking'])->latest()->get(),
+            'pengembalians' => $query->with(['user', 'booking.mobil'])->latest()->get(),
             'filters' => $request->only(['search', 'date']),
         ]);
     }
@@ -56,7 +56,7 @@ class PengembalianController extends Controller
     public function create()
     {
         return Inertia::render('pengembalian/create', [
-            'bookings' => BookingMobil::where('status', '!=', 'Selesai')->get(),
+            'bookings' => BookingMobil::with(['user', 'mobil'])->where('status', '!=', 'Selesai')->get(),
             'users' => User::all(),
             'next_kdpengembalian' => $this->generateKdPengembalian(),
         ]);
@@ -97,8 +97,9 @@ class PengembalianController extends Controller
         $pengembalian = KembaliMobil::findOrFail($id);
 
         return Inertia::render('pengembalian/edit', [
-            'pengembalian' => $pengembalian,
-            'bookings' => BookingMobil::where('status', '!=', 'Selesai')
+            'pengembalian' => $pengembalian->load('booking.mobil'),
+            'bookings' => BookingMobil::with(['user', 'mobil'])
+                ->where('status', '!=', 'Selesai')
                 ->orWhere('kdbooking', $pengembalian->kdbooking)
                 ->get(),
             'users' => User::all(),

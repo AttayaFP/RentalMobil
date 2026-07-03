@@ -1,5 +1,13 @@
-import AdminLayout from '@/layouts/AdminLayout';
-import { useForm } from '@inertiajs/react';
+import AppLayout from '@/layouts/app-layout';
+import { type BreadcrumbItem } from '@/types';
+import { Head, Link, useForm } from '@inertiajs/react';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ArrowLeft, Save, Loader2 } from 'lucide-react';
 
 interface User {
     id: number;
@@ -32,6 +40,12 @@ interface Props {
 }
 
 export default function Edit({ booking, users, mobils }: Props) {
+    const breadcrumbs: BreadcrumbItem[] = [
+        { title: 'Dashboard', href: '/dashboard' },
+        { title: 'Booking', href: '/booking' },
+        { title: `Edit ${booking.kdbooking}`, href: `/booking/${booking.kdbooking}/edit` },
+    ];
+
     const { data, setData, put, processing } = useForm({
         tglbooking: booking.tglbooking,
         iduser: booking.iduser.toString(),
@@ -46,112 +60,171 @@ export default function Edit({ booking, users, mobils }: Props) {
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
-        put(`/booking/${booking.kdbooking}`);
+        put(`/booking/${booking.kdbooking}`, {
+            onSuccess: () => toast.success('Booking berhasil diperbarui.'),
+            onError: () => toast.error('Gagal memperbarui booking.'),
+        });
     };
 
-    const forceNavigate = (path: string) => {
-        window.location.href = path;
-    };
-
-    const formatCurrency = (amount: number | string) => {
-        return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(Number(amount) || 0);
-    };
+    const formatCurrency = (amount: number | string) =>
+        new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(Number(amount) || 0);
 
     return (
-        <AdminLayout title={`Edit Transaksi: ${booking.kdbooking}`}>
-            <div className="row justify-content-center">
-                <div className="col-lg-11">
-                    <form onSubmit={submit}>
-                        <div className="row">
-                            <div className="col-md-7">
-                                <div className="card shadow-sm border-0 p-4 mb-4" style={{ borderRadius: '15px' }}>
-                                    <div className="d-flex align-items-center mb-4">
-                                        <button type="button" onClick={() => forceNavigate('/booking')} className="btn btn-link text-muted p-0 mr-3">
-                                            <i className="ion-ios-arrow-back" style={{ fontSize: '24px' }}></i>
-                                        </button>
-                                        <h5 className="font-weight-bold mb-0">Ubah Informasi Sewa</h5>
-                                    </div>
-                                    
-                                    <div className="row">
-                                        <div className="col-md-6 form-group mb-4">
-                                            <label className="small font-weight-bold text-uppercase">Kode Booking</label>
-                                            <div className="form-control bg-light d-flex align-items-center font-weight-bold" style={{ cursor: 'default', userSelect: 'none', minHeight: '50px' }}>
-                                                {booking.kdbooking}
-                                            </div>
-                                        </div>
-                                        <div className="col-md-6 form-group mb-4">
-                                            <label className="small font-weight-bold text-uppercase">Tanggal Transaksi</label>
-                                            <input type="date" className="form-control" value={data.tglbooking} onChange={e => setData('tglbooking', e.target.value)} required />
-                                        </div>
-                                        <div className="col-md-12 form-group mb-4">
-                                            <label className="small font-weight-bold text-uppercase">Pelanggan</label>
-                                            <select className="form-control" value={data.iduser} onChange={e => setData('iduser', e.target.value)} required>
-                                                {users.map(u => <option key={u.id} value={u.id}>{u.nama_lengkap}</option>)}
-                                            </select>
-                                        </div>
-                                        <div className="col-md-12 form-group mb-4">
-                                            <label className="small font-weight-bold text-uppercase">Mobil</label>
-                                            <select className="form-control" value={data.kdmobil} onChange={e => setData('kdmobil', e.target.value)} required>
-                                                {mobils.map(m => <option key={m.kdmobil} value={m.kdmobil}>{m.nama_mobil}</option>)}
-                                            </select>
-                                        </div>
-                                        <div className="col-md-6 form-group mb-4">
-                                            <label className="small font-weight-bold text-uppercase">Tgl Mulai</label>
-                                            <input type="date" className="form-control" value={data.tglmulai} onChange={e => setData('tglmulai', e.target.value)} required />
-                                        </div>
-                                        <div className="col-md-6 form-group mb-4">
-                                            <label className="small font-weight-bold text-uppercase">Tgl Selesai</label>
-                                            <input type="date" className="form-control" value={data.tglselesai} onChange={e => setData('tglselesai', e.target.value)} required />
-                                        </div>
-                                        <div className="col-md-12 form-group mb-4">
-                                            <label className="small font-weight-bold text-uppercase text-primary">Status Transaksi</label>
-                                            <select className="form-control font-weight-bold" value={data.status} onChange={e => setData('status', e.target.value)} required style={{ border: '2px solid #ddd' }}>
-                                                <option value="Pending">PENDING</option>
-                                                <option value="Proses">PROSES</option>
-                                                <option value="Selesai">SELESAI</option>
-                                                <option value="Batal">BATAL</option>
-                                            </select>
+        <AppLayout breadcrumbs={breadcrumbs}>
+            <Head title={`Edit ${booking.kdbooking}`} />
+            <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
+                <form onSubmit={submit}>
+                    <div className="grid gap-6 lg:grid-cols-7">
+                        <div className="lg:col-span-4">
+                            <Card>
+                                <CardHeader>
+                                    <div className="flex items-center gap-3">
+                                        <Button variant="ghost" size="icon" asChild>
+                                            <Link href="/booking">
+                                                <ArrowLeft className="h-4 w-4" />
+                                            </Link>
+                                        </Button>
+                                        <div>
+                                            <CardTitle>Ubah Informasi Sewa</CardTitle>
+                                            <CardDescription>Edit detail transaksi booking {booking.kdbooking}</CardDescription>
                                         </div>
                                     </div>
-                                </div>
-                            </div>
+                                </CardHeader>
+                                <CardContent className="space-y-5">
+                                    <div className="grid gap-4 sm:grid-cols-2">
+                                        <div className="space-y-2">
+                                            <Label>Kode Booking</Label>
+                                            <Input value={booking.kdbooking} readOnly className="bg-muted font-semibold" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="tglbooking">Tanggal Transaksi</Label>
+                                            <Input
+                                                id="tglbooking"
+                                                type="date"
+                                                value={data.tglbooking}
+                                                onChange={(e) => setData('tglbooking', e.target.value)}
+                                                required
+                                            />
+                                        </div>
+                                    </div>
 
-                            <div className="col-md-5">
-                                <div className="card shadow-sm border-0 p-4 bg-dark text-white mb-4" style={{ borderRadius: '15px' }}>
-                                    <h5 className="font-weight-bold mb-4" style={{ color: '#f96d00' }}>Rincian Biaya</h5>
-                                    <div className="d-flex justify-content-between mb-3">
-                                        <span className="opacity-75">Harga / Hari</span>
-                                        <span className="font-weight-bold">{formatCurrency(data.harga)}</span>
+                                    <div className="space-y-2">
+                                        <Label>Pelanggan</Label>
+                                        <Select value={data.iduser} onValueChange={(value) => setData('iduser', value)}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Pilih Pelanggan" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {users.map((u) => (
+                                                    <SelectItem key={u.id} value={u.id.toString()}>
+                                                        {u.nama_lengkap}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
                                     </div>
-                                    <div className="d-flex justify-content-between mb-3">
-                                        <span className="opacity-75">Lama Sewa</span>
-                                        <span className="font-weight-bold">{data.lama_sewa} Hari</span>
-                                    </div>
-                                    <hr className="bg-white opacity-25" />
-                                    <div className="d-flex justify-content-between align-items-center mt-3">
-                                        <h4 className="mb-0 font-weight-bold">Total Akhir</h4>
-                                        <h3 className="mb-0 font-weight-bold" style={{ color: '#f96d00' }}>{formatCurrency(data.total_bayar)}</h3>
-                                    </div>
-                                </div>
 
-                                <div className="card shadow-sm border-0 p-4" style={{ borderRadius: '15px' }}>
-                                    <button type="submit" className="btn btn-primary btn-block py-3 font-weight-bold shadow-sm" disabled={processing} style={{ backgroundColor: '#f96d00', borderColor: '#f96d00', borderRadius: '10px' }}>
-                                        <i className="ion-ios-save mr-2"></i> {processing ? 'Menyimpan...' : 'Perbarui Transaksi'}
-                                    </button>
-                                    <button type="button" onClick={() => forceNavigate('/booking')} className="btn btn-link btn-block text-muted small mt-2">Batal & Kembali</button>
-                                </div>
-                            </div>
+                                    <div className="space-y-2">
+                                        <Label>Mobil</Label>
+                                        <Select value={data.kdmobil} onValueChange={(value) => setData('kdmobil', value)}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Pilih Mobil" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {mobils.map((m) => (
+                                                    <SelectItem key={m.kdmobil} value={m.kdmobil}>
+                                                        {m.nama_mobil}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+
+                                    <div className="grid gap-4 sm:grid-cols-2">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="tglmulai">Tanggal Mulai</Label>
+                                            <Input
+                                                id="tglmulai"
+                                                type="date"
+                                                value={data.tglmulai}
+                                                onChange={(e) => setData('tglmulai', e.target.value)}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="tglselesai">Tanggal Selesai</Label>
+                                            <Input
+                                                id="tglselesai"
+                                                type="date"
+                                                value={data.tglselesai}
+                                                onChange={(e) => setData('tglselesai', e.target.value)}
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label>Status Transaksi</Label>
+                                        <Select value={data.status} onValueChange={(value) => setData('status', value)}>
+                                            <SelectTrigger>
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="Pending">Pending</SelectItem>
+                                                <SelectItem value="Proses">Proses</SelectItem>
+                                                <SelectItem value="Selesai">Selesai</SelectItem>
+                                                <SelectItem value="Batal">Batal</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </CardContent>
+                            </Card>
                         </div>
-                    </form>
-                </div>
+
+                        <div className="lg:col-span-3 space-y-6">
+                            <Card className="sticky top-4">
+                                <CardHeader>
+                                    <CardTitle>Rincian Biaya</CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <div className="space-y-3">
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-muted-foreground">Harga / Hari</span>
+                                            <span className="font-semibold">{formatCurrency(data.harga)}</span>
+                                        </div>
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-muted-foreground">Lama Sewa</span>
+                                            <span className="font-semibold">{data.lama_sewa} Hari</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center justify-between rounded-lg bg-primary p-4 text-primary-foreground">
+                                        <span className="font-semibold">Total Akhir</span>
+                                        <span className="text-xl font-bold">{formatCurrency(data.total_bayar)}</span>
+                                    </div>
+
+                                    <Button type="submit" className="w-full" size="lg" disabled={processing}>
+                                        {processing ? (
+                                            <>
+                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                Menyimpan...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Save className="mr-2 h-4 w-4" />
+                                                Perbarui Transaksi
+                                            </>
+                                        )}
+                                    </Button>
+                                    <Button type="button" variant="ghost" className="w-full" asChild>
+                                        <Link href="/booking">Batal & Kembali</Link>
+                                    </Button>
+                                </CardContent>
+                            </Card>
+                        </div>
+                    </div>
+                </form>
             </div>
-            
-            <style dangerouslySetInnerHTML={{ __html: `
-                .form-control { border-radius: 8px; padding: 12px 15px; border: 1px solid #ddd; height: auto; font-size: 14px; }
-                .form-control:focus { border-color: #f96d00; box-shadow: 0 0 0 0.2rem rgba(249, 109, 0, 0.1); }
-                .opacity-75 { opacity: 0.75; }
-                .opacity-25 { opacity: 0.25; }
-            `}} />
-        </AdminLayout>
+        </AppLayout>
     );
 }

@@ -1,7 +1,18 @@
-import AdminLayout from '@/layouts/AdminLayout';
-import { usePage, router } from '@inertiajs/react';
-import { useEffect } from 'react';
-import Swal from 'sweetalert2';
+import AppLayout from '@/layouts/app-layout';
+import { type BreadcrumbItem } from '@/types';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart';
+import { Head, Link, usePage } from '@inertiajs/react';
+import { Car, Users, CalendarCheck, DollarSign, ArrowRight, TrendingUp, BarChart3 } from 'lucide-react';
+import { Bar, BarChart, CartesianGrid, XAxis, Pie, PieChart, Cell } from 'recharts';
+import { useCountUp, useStaggerReveal, useScrollReveal } from '@/hooks/use-animation';
+
+const breadcrumbs: BreadcrumbItem[] = [
+    { title: 'Dashboard', href: '/dashboard' },
+];
 
 interface StatProps {
     total_mobil: number;
@@ -23,168 +34,262 @@ interface Booking {
     mobil: { nama_mobil: string };
 }
 
-interface MobilSelesaiRawat {
-    kdmobil: string;
-    nama_mobil: string;
-    plat_mobil: string;
+interface ChartData {
+    monthly_revenue: { month: string; revenue: number }[];
+    booking_by_status: { status: string; total: number }[];
+    monthly_bookings: { month: string; bookings: number }[];
 }
 
 interface Props {
     stats: StatProps;
     recent_bookings: Booking[];
-    mobil_selesai_rawat?: MobilSelesaiRawat[];
+    mobil_selesai_rawat?: { kdmobil: string; nama_mobil: string; plat_mobil: string }[];
+    chart_data: ChartData;
 }
 
-export default function Dashboard({ stats, recent_bookings, mobil_selesai_rawat = [] }: Props) {
+const revenueChartConfig = {
+    revenue: {
+        label: 'Pendapatan',
+        color: 'var(--chart-1)',
+    },
+} satisfies ChartConfig;
+
+const bookingChartConfig = {
+    bookings: {
+        label: 'Booking',
+        color: 'var(--chart-2)',
+    },
+} satisfies ChartConfig;
+
+const mobilStatusData = (stats: StatProps) => [
+    { name: 'Tersedia', value: stats.mobil_tersedia, fill: 'var(--chart-2)' },
+    { name: 'Disewa', value: stats.mobil_disewa, fill: 'var(--chart-1)' },
+    { name: 'Perawatan', value: stats.mobil_perawatan, fill: 'var(--chart-4)' },
+];
+
+const mobilChartConfig = {
+    tersedia: { label: 'Tersedia', color: 'var(--chart-2)' },
+    disewa: { label: 'Disewa', color: 'var(--chart-1)' },
+    perawatan: { label: 'Perawatan', color: 'var(--chart-4)' },
+} satisfies ChartConfig;
+
+function formatCurrency(amount: number) {
+    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
+}
+
+function getStatusBadgeVariant(status: string) {
+    if (['Selesai', 'Sukses', 'Success', 'Berhasil'].includes(status)) return 'default';
+    if (status === 'Pending') return 'secondary';
+    if (['Batal', 'Gagal', 'Expired'].includes(status)) return 'destructive';
+    return 'outline';
+}
+
+export default function Dashboard({ stats, recent_bookings, chart_data }: Props) {
     const { auth } = usePage<{ auth: { user: { role: string; nama_lengkap?: string; name?: string } } }>().props;
     const user = auth.user;
     const userName = user?.nama_lengkap || user?.name || 'User';
     const isPimpinan = user?.role === 'pimpinan';
 
-    // Swalled popup removed here and moved to AdminLayout.tsx to show on all admin pages
+    const statsRef = useStaggerReveal();
+    const chartsRef = useScrollReveal();
+    const tablesRef = useScrollReveal();
 
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
-    };
+    const totalMobilRef = useCountUp(stats.total_mobil);
+    const totalPelangganRef = useCountUp(stats.total_pelanggan);
+    const bookingAktifRef = useCountUp(stats.booking_aktif);
+    const totalPendapatanRef = useCountUp(stats.total_pendapatan, { prefix: 'Rp ' });
 
     return (
-        <AdminLayout title={`Selamat Datang, ${userName}`}>
-            <div className="row mb-5">
-                <div className="col-md-12">
-                    <div className="p-4 bg-white shadow-sm border-0" style={{ borderRadius: '15px', borderLeft: '5px solid #f96d00' }}>
-                        <h4 className="font-weight-bold mb-1">Ringkasan Sistem RentalMobil</h4>
-                        <p className="text-muted mb-0">Pantau seluruh aktivitas operasional Anda dari sini secara real-time.</p>
-                    </div>
-                </div>
-            </div>
+        <AppLayout breadcrumbs={breadcrumbs}>
+            <Head title="Dashboard" />
 
-            <div className="row">
-                <div className="col-md-3 mb-4">
-                    <div className="card shadow-sm border-0 p-4 text-white" style={{ borderRadius: '15px', backgroundColor: '#222831' }}>
-                        <div className="d-flex justify-content-between align-items-center mb-2">
-                            <i className="ion-ios-car" style={{ fontSize: '32px', color: '#f96d00' }}></i>
-                            <h3 className="font-weight-bold mb-0">{stats.total_mobil}</h3>
-                        </div>
-                        <div className="small text-uppercase opacity-75 font-weight-bold">Total Mobil</div>
+            <div className="flex flex-col gap-6 p-4">
+                <div className="reveal flex items-center justify-between">
+                    <div>
+                        <h1 className="text-2xl font-bold">Selamat Datang, {userName}</h1>
+                        <p className="text-muted-foreground text-sm">Pantau seluruh aktivitas operasional rental Anda.</p>
                     </div>
                 </div>
-                <div className="col-md-3 mb-4">
-                    <div className="card shadow-sm border-0 p-4 text-white" style={{ borderRadius: '15px', backgroundColor: '#393e46' }}>
-                        <div className="d-flex justify-content-between align-items-center mb-2">
-                            <i className="ion-ios-people" style={{ fontSize: '32px', color: '#f96d00' }}></i>
-                            <h3 className="font-weight-bold mb-0">{stats.total_pelanggan}</h3>
-                        </div>
-                        <div className="small text-uppercase opacity-75 font-weight-bold">Total Pelanggan</div>
-                    </div>
-                </div>
-                <div className="col-md-3 mb-4">
-                    <div className="card shadow-sm border-0 p-4 bg-white" style={{ borderRadius: '15px' }}>
-                        <div className="d-flex justify-content-between align-items-center mb-2">
-                            <i className="ion-ios-calendar" style={{ fontSize: '32px', color: '#f96d00' }}></i>
-                            <h3 className="font-weight-bold mb-0 text-dark">{stats.booking_aktif}</h3>
-                        </div>
-                        <div className="small text-uppercase text-muted font-weight-bold">Booking Aktif</div>
-                    </div>
-                </div>
-                <div className="col-md-3 mb-4">
-                    <div className="card shadow-sm border-0 p-4 bg-white" style={{ borderRadius: '15px' }}>
-                        <div className="d-flex justify-content-between align-items-center mb-2">
-                            <i className="ion-ios-cash" style={{ fontSize: '32px', color: '#2ecc71' }}></i>
-                            <h3 className="font-weight-bold mb-0 text-dark">{formatCurrency(stats.total_pendapatan)}</h3>
-                        </div>
-                        <div className="small text-uppercase text-muted font-weight-bold">Total Pendapatan</div>
-                    </div>
-                </div>
-            </div>
 
-            <div className="row mt-4">
-                <div className="col-md-8 mb-4">
-                    <div className="card shadow-sm border-0 p-4" style={{ borderRadius: '15px', minHeight: '400px' }}>
-                        <div className="d-flex justify-content-between align-items-center mb-4">
-                            <h5 className="font-weight-bold mb-0">Pemesanan Terbaru</h5>
-                            {!isPimpinan && (
-                                <button onClick={() => window.location.href = '/booking'} className="btn btn-link btn-sm text-primary p-0">Lihat Semua</button>
-                            )}
-                        </div>
-                        <div className="table-responsive">
-                            <table className="table table-borderless">
-                                <thead>
-                                    <tr className="text-muted small text-uppercase">
-                                        <th className="pb-3 border-bottom">Pelanggan</th>
-                                        <th className="pb-3 border-bottom">Mobil</th>
-                                        <th className="pb-3 border-bottom">Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
+                <div ref={statsRef} className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <Card className="stagger-item">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Total Mobil</CardTitle>
+                            <Car className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div ref={totalMobilRef} className="text-2xl font-bold">0</div>
+                            <p className="text-xs text-muted-foreground">Armada rental</p>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="stagger-item">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Total Pelanggan</CardTitle>
+                            <Users className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div ref={totalPelangganRef} className="text-2xl font-bold">0</div>
+                            <p className="text-xs text-muted-foreground">Pengguna terdaftar</p>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="stagger-item">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Booking Aktif</CardTitle>
+                            <CalendarCheck className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div ref={bookingAktifRef} className="text-2xl font-bold">0</div>
+                            <p className="text-xs text-muted-foreground">Transaksi berjalan</p>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="stagger-item">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Total Pendapatan</CardTitle>
+                            <DollarSign className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div ref={totalPendapatanRef} className="text-2xl font-bold">Rp 0</div>
+                            <p className="text-xs text-muted-foreground">Dari booking selesai</p>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                <div ref={chartsRef} className="grid grid-cols-1 gap-6 lg:grid-cols-7">
+                    <Card className="reveal lg:col-span-4">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <TrendingUp className="h-5 w-5" />
+                                Pendapatan Bulanan
+                            </CardTitle>
+                            <CardDescription className="mt-1">Pendapatan 6 bulan terakhir</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <ChartContainer config={revenueChartConfig} className="h-[250px] w-full">
+                                <BarChart accessibilityLayer data={chart_data.monthly_revenue} margin={{ left: 12, right: 12 }}>
+                                    <CartesianGrid vertical={false} />
+                                    <XAxis dataKey="month" tickLine={false} tickMargin={10} axisLine={false} tickFormatter={(value) => value.slice(0, 6)} />
+                                    <ChartTooltip content={<ChartTooltipContent formatter={(value) => formatCurrency(Number(value))} />} />
+                                    <Bar dataKey="revenue" fill="var(--color-revenue)" radius={[4, 4, 0, 0]} />
+                                </BarChart>
+                            </ChartContainer>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="reveal lg:col-span-3">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <Car className="h-5 w-5" />
+                                Status Armada
+                            </CardTitle>
+                            <CardDescription className="mt-1">Distribusi status mobil</CardDescription>
+                        </CardHeader>
+                        <CardContent className="flex items-center justify-center">
+                            <ChartContainer config={mobilChartConfig} className="h-[250px] w-full">
+                                <PieChart>
+                                    <ChartTooltip content={<ChartTooltipContent hideLabel />} />
+                                    <Pie data={mobilStatusData(stats)} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={100} strokeWidth={2}>
+                                        {mobilStatusData(stats).map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={entry.fill} />
+                                        ))}
+                                    </Pie>
+                                </PieChart>
+                            </ChartContainer>
+                        </CardContent>
+                        <CardContent className="pt-0">
+                            <div className="flex justify-center gap-4 text-sm">
+                                <div className="flex items-center gap-1.5">
+                                    <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: 'var(--chart-2)' }} />
+                                    Tersedia ({stats.mobil_tersedia})
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                    <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: 'var(--chart-1)' }} />
+                                    Disewa ({stats.mobil_disewa})
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                    <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: 'var(--chart-4)' }} />
+                                    Perawatan ({stats.mobil_perawatan})
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                <div ref={tablesRef} className="grid grid-cols-1 gap-6 lg:grid-cols-7">
+                    <Card className="reveal lg:col-span-4">
+                        <CardHeader>
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <CardTitle>Pemesanan Terbaru</CardTitle>
+                                    <CardDescription className="mt-1">5 transaksi terakhir</CardDescription>
+                                </div>
+                                {!isPimpinan && (
+                                    <Button variant="outline" size="sm" asChild>
+                                        <Link href="/booking">
+                                            Lihat Semua
+                                            <ArrowRight className="ml-1 h-4 w-4" />
+                                        </Link>
+                                    </Button>
+                                )}
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Pelanggan</TableHead>
+                                        <TableHead>Mobil</TableHead>
+                                        <TableHead>Status</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
                                     {recent_bookings.length > 0 ? (
                                         recent_bookings.map((booking) => (
-                                            <tr key={booking.kdbooking} className="border-bottom">
-                                                <td className="py-3 font-weight-bold">{booking.user?.nama_lengkap}</td>
-                                                <td className="py-3">{booking.mobil?.nama_mobil}</td>
-                                                <td className="py-3">
-                                                    <span className={`badge px-2 py-1 ${
-                                                        booking.status === 'Selesai' ? 'badge-success' : 
-                                                        booking.status === 'Pending' ? 'badge-warning text-white' : 
-                                                        'badge-info text-white'
-                                                    }`}>
-                                                        {booking.status.toUpperCase()}
-                                                    </span>
-                                                </td>
-                                            </tr>
+                                            <TableRow key={booking.kdbooking}>
+                                                <TableCell className="font-medium">{booking.user?.nama_lengkap}</TableCell>
+                                                <TableCell>{booking.mobil?.nama_mobil}</TableCell>
+                                                <TableCell>
+                                                    <Badge variant={getStatusBadgeVariant(booking.status)}>
+                                                        {booking.status}
+                                                    </Badge>
+                                                </TableCell>
+                                            </TableRow>
                                         ))
                                     ) : (
-                                        <tr>
-                                            <td colSpan={3} className="text-center py-5 text-muted">Belum ada pemesanan terbaru</td>
-                                        </tr>
+                                        <TableRow>
+                                            <TableCell colSpan={3} className="h-24 text-center text-muted-foreground">
+                                                Belum ada pemesanan
+                                            </TableCell>
+                                        </TableRow>
                                     )}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-                <div className="col-md-4 mb-4">
-                    <div className="card shadow-sm border-0 p-4 text-white text-center h-100" style={{ borderRadius: '15px', backgroundColor: '#f96d00' }}>
-                        <h5 className="font-weight-bold mb-4">Status Mobil</h5>
-                        
-                        <div className="d-flex justify-content-between align-items-center mb-3 p-3" style={{ background: 'rgba(255,255,255,0.1)', borderRadius: '10px' }}>
-                            <div className="text-left">
-                                <div className="small font-weight-bold text-uppercase">Tersedia</div>
-                                <h4 className="mb-0 font-weight-bold">{stats.mobil_tersedia}</h4>
-                            </div>
-                            <i className="ion-ios-checkmark-circle" style={{ fontSize: '24px' }}></i>
-                        </div>
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
 
-                        <div className="d-flex justify-content-between align-items-center mb-3 p-3" style={{ background: 'rgba(255,255,255,0.1)', borderRadius: '10px' }}>
-                            <div className="text-left">
-                                <div className="small font-weight-bold text-uppercase">Sedang Disewa</div>
-                                <h4 className="mb-0 font-weight-bold">{stats.mobil_disewa}</h4>
-                            </div>
-                            <i className="ion-ios-timer" style={{ fontSize: '24px' }}></i>
-                        </div>
-
-                        <div className="d-flex justify-content-between align-items-center p-3" style={{ background: 'rgba(255,255,255,0.1)', borderRadius: '10px' }}>
-                            <div className="text-left">
-                                <div className="small font-weight-bold text-uppercase">Perawatan</div>
-                                <h4 className="mb-0 font-weight-bold">{stats.mobil_perawatan}</h4>
-                            </div>
-                            <i className="ion-ios-build" style={{ fontSize: '24px' }}></i>
-                        </div>
-
-                        {!isPimpinan && (
-                            <div className="mt-auto pt-4">
-                                <button onClick={() => window.location.href = '/mobil'} className="btn btn-white btn-block font-weight-bold text-primary py-2" style={{ borderRadius: '10px', backgroundColor: '#fff' }}>
-                                    Kelola Mobil
-                                </button>
-                            </div>
-                        )}
-                    </div>
+                    <Card className="reveal lg:col-span-3">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <BarChart3 className="h-5 w-5" />
+                                Booking per Bulan
+                            </CardTitle>
+                            <CardDescription className="mt-1">Jumlah booking 6 bulan terakhir</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <ChartContainer config={bookingChartConfig} className="h-[250px] w-full">
+                                <BarChart accessibilityLayer data={chart_data.monthly_bookings} margin={{ left: 12, right: 12 }}>
+                                    <CartesianGrid vertical={false} />
+                                    <XAxis dataKey="month" tickLine={false} tickMargin={10} axisLine={false} tickFormatter={(value) => value.slice(0, 6)} />
+                                    <ChartTooltip content={<ChartTooltipContent />} />
+                                    <Bar dataKey="bookings" fill="var(--color-bookings)" radius={[4, 4, 0, 0]} />
+                                </BarChart>
+                            </ChartContainer>
+                        </CardContent>
+                    </Card>
                 </div>
             </div>
-
-            <style dangerouslySetInnerHTML={{ __html: `
-                .opacity-75 { opacity: 0.75; }
-                .btn-white:hover { background-color: #f8f9fa !important; }
-            `}} />
-        </AdminLayout>
+        </AppLayout>
     );
 }

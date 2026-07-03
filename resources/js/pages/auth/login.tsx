@@ -1,5 +1,10 @@
-import TemplateLayout from '@/layouts/TemplateLayout';
-import { Head, useForm } from '@inertiajs/react';
+import GuestLayout from '@/layouts/guest-layout';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Head, Link, useForm } from '@inertiajs/react';
+import { LogIn, Loader2 } from 'lucide-react';
 import { FormEventHandler } from 'react';
 
 interface LoginProps {
@@ -19,167 +24,95 @@ export default function Login({ status, canResetPassword }: LoginProps) {
         post('/login', { onFinish: () => reset('password') });
     };
 
-    const inputStyle: React.CSSProperties = {
-        borderRadius: '10px',
-        padding: '12px 15px',
-        height: 'auto',
-        border: '1px solid #ddd',
-        fontSize: '14px',
-    };
-
     return (
-        <TemplateLayout showHero={false}>
+        <GuestLayout>
             <Head title="Masuk Akun" />
 
-            <section
-                className="ftco-section"
-                style={{
-                    minHeight: '100vh',
-                    display: 'flex',
-                    alignItems: 'center',
-                    backgroundImage: "url('/assets/template/images/bg_3.jpg')",
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                    position: 'relative',
-                }}
-            >
-                <div
-                    style={{
-                        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-                        backgroundColor: 'rgba(0,0,0,0.62)', zIndex: 0,
-                    }}
-                />
+            <div className="flex min-h-[calc(100vh-10rem)] items-center justify-center px-4 py-12">
+                <Card className="w-full max-w-md">
+                    <CardHeader className="text-center">
+                        <CardTitle className="text-2xl">Selamat Datang</CardTitle>
+                        <CardDescription>Masuk untuk mengelola pesanan Anda</CardDescription>
+                    </CardHeader>
 
-                <div className="container" style={{ position: 'relative', zIndex: 1 }}>
-                    <div className="row justify-content-center">
-                        <div className="col-md-5 col-lg-4">
-                            <div className="bg-white shadow-lg p-5" style={{ borderRadius: '20px' }}>
-                                <div className="text-center mb-4">
-                                    <div style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '0.5px', color: '#222831' }}>
-                                        Rental Mobil <span style={{ color: '#f96d00' }}>Nabil Padang</span>
-                                    </div>
-                                    <h5 className="font-weight-bold mt-2 mb-1" style={{ color: '#222831' }}>
-                                        Selamat Datang
-                                    </h5>
-                                    <p className="text-muted small mb-0">Masuk untuk mengelola pesanan Anda</p>
-                                    <div className="mx-auto mt-2" style={{ height: '3px', width: '36px', backgroundColor: '#f96d00', borderRadius: '2px' }} />
-                                </div>
-
-                                {status && (
-                                    <div className="alert alert-success small py-2 mb-3" style={{ borderRadius: '8px' }}>
-                                        {status}
-                                    </div>
-                                )}
-                                <form onSubmit={submit}>
-                                    <div className="form-group mb-3">
-                                        <label className="font-weight-bold text-dark small text-uppercase mb-1">
-                                            Username atau Email
-                                        </label>
-                                        <div style={{ position: 'relative' }}>
-                                            <i
-                                                className="ion-ios-person"
-                                                style={{
-                                                    position: 'absolute', left: '14px', top: '50%',
-                                                    transform: 'translateY(-50%)', color: '#aaa', fontSize: '18px',
-                                                }}
-                                            />
-                                            <input
-                                                id="login"
-                                                type="text"
-                                                className={`form-control pl-5 ${errors.login ? 'is-invalid' : ''}`}
-                                                value={data.login}
-                                                onChange={(e) => setData('login', e.target.value)}
-                                                required
-                                                autoFocus
-                                                autoComplete="username"
-                                                style={{ ...inputStyle, paddingLeft: '40px' }}
-                                                placeholder="username atau email@anda.com"
-                                            />
-                                        </div>
-                                        {errors.login && (
-                                            <div className="invalid-feedback d-block font-weight-bold small mt-1">
-                                                {errors.login}
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className="form-group mb-4">
-                                        <label className="font-weight-bold text-dark small text-uppercase mb-1">
-                                            Kata Sandi
-                                        </label>
-                                        <div style={{ position: 'relative' }}>
-                                            <i
-                                                className="ion-ios-lock"
-                                                style={{
-                                                    position: 'absolute', left: '14px', top: '50%',
-                                                    transform: 'translateY(-50%)', color: '#aaa', fontSize: '18px',
-                                                }}
-                                            />
-                                            <input
-                                                id="password"
-                                                type="password"
-                                                className={`form-control ${errors.password ? 'is-invalid' : ''}`}
-                                                value={data.password}
-                                                onChange={(e) => setData('password', e.target.value)}
-                                                required
-                                                autoComplete="current-password"
-                                                style={{ ...inputStyle, paddingLeft: '40px' }}
-                                                placeholder="••••••••"
-                                            />
-                                        </div>
-                                        {errors.password && (
-                                            <div className="invalid-feedback d-block font-weight-bold small mt-1">
-                                                {errors.password}
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className="d-flex justify-content-between align-items-center mb-4">
-                                        <div className="custom-control custom-checkbox">
-                                            <input
-                                                type="checkbox"
-                                                className="custom-control-input"
-                                                id="remember"
-                                                checked={data.remember}
-                                                onChange={(e) => setData('remember', e.target.checked)}
-                                            />
-                                            <label className="custom-control-label small text-muted" htmlFor="remember">
-                                                Ingat Saya
-                                            </label>
-                                        </div>
-                                        {canResetPassword && (
-                                            <a href="/forgot-password" className="small" style={{ color: '#f96d00' }}>
-                                                Lupa sandi?
-                                            </a>
-                                        )}
-                                    </div>
-
-                                    <button
-                                        type="submit"
-                                        className="btn btn-block py-3 font-weight-bold shadow-sm"
-                                        disabled={processing}
-                                        style={{
-                                            backgroundColor: '#f96d00', borderColor: '#f96d00',
-                                            color: '#fff', borderRadius: '10px', fontSize: '15px',
-                                        }}
-                                    >
-                                        {processing ? (
-                                            <><i className="ion-ios-refresh mr-2" />Menyambungkan...</>
-                                        ) : (
-                                            <><i className="ion-ios-log-in mr-2" />MASUK SEKARANG</>
-                                        )}
-                                    </button>
-                                </form>
-
-                                <div className="text-center mt-4">
-                                    <p className="text-muted small mb-1">Belum memiliki akun?</p>
-                                    <a href="/register" className="font-weight-bold" style={{ color: '#f96d00' }}>
-                                        Daftar Akun Baru
-                                    </a>
-                                </div>
+                    <CardContent>
+                        {status && (
+                            <div className="mb-4 rounded-md bg-emerald-50 p-3 text-center text-sm text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+                                {status}
                             </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-        </TemplateLayout>
+                        )}
+
+                        <form onSubmit={submit} className="space-y-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="login">Username atau Email</Label>
+                                <Input
+                                    id="login"
+                                    type="text"
+                                    value={data.login}
+                                    onChange={(e) => setData('login', e.target.value)}
+                                    required
+                                    autoFocus
+                                    autoComplete="username"
+                                    placeholder="username atau email@anda.com"
+                                />
+                                {errors.login && <p className="text-sm text-destructive">{errors.login}</p>}
+                            </div>
+
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <Label htmlFor="password">Kata Sandi</Label>
+                                    {canResetPassword && (
+                                        <Link href="/forgot-password" className="text-xs text-muted-foreground hover:text-primary">
+                                            Lupa sandi?
+                                        </Link>
+                                    )}
+                                </div>
+                                <Input
+                                    id="password"
+                                    type="password"
+                                    value={data.password}
+                                    onChange={(e) => setData('password', e.target.value)}
+                                    required
+                                    autoComplete="current-password"
+                                    placeholder="••••••••"
+                                />
+                                {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
+                            </div>
+
+                            <div className="flex items-center space-x-2">
+                                <input
+                                    id="remember"
+                                    type="checkbox"
+                                    checked={data.remember}
+                                    onChange={(e) => setData('remember', e.target.checked)}
+                                    className="h-4 w-4 rounded border-input"
+                                />
+                                <Label htmlFor="remember" className="text-sm font-normal text-muted-foreground">
+                                    Ingat Saya
+                                </Label>
+                            </div>
+
+                            <Button type="submit" className="w-full" disabled={processing}>
+                                {processing ? (
+                                    <Loader2 className="animate-spin" />
+                                ) : (
+                                    <LogIn />
+                                )}
+                                {processing ? 'Menyambungkan...' : 'MASUK SEKARANG'}
+                            </Button>
+                        </form>
+                    </CardContent>
+
+                    <CardFooter className="flex justify-center">
+                        <p className="text-sm text-muted-foreground">
+                            Belum memiliki akun?{' '}
+                            <Link href="/register" className="font-semibold text-primary hover:underline">
+                                Daftar Akun Baru
+                            </Link>
+                        </p>
+                    </CardFooter>
+                </Card>
+            </div>
+        </GuestLayout>
     );
 }

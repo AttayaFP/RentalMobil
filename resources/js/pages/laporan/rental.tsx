@@ -1,7 +1,19 @@
-import AdminLayout from '@/layouts/AdminLayout';
-import SearchFilter from '@/components/SearchFilter';
-import { motion } from 'framer-motion';
-import { Printer, TrendingUp } from 'lucide-react';
+import AppLayout from '@/layouts/app-layout';
+import { type BreadcrumbItem } from '@/types';
+import { Head, router } from '@inertiajs/react';
+import { useCallback, useMemo, useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { TrendingUp, Printer, Search } from 'lucide-react';
+
+const breadcrumbs: BreadcrumbItem[] = [
+    { title: 'Dashboard', href: '/dashboard' },
+    { title: 'Laporan Rental', href: '/laporan/rental' },
+];
 
 interface Rental {
     koderental: string;
@@ -17,7 +29,7 @@ interface Rental {
     totalsewa: number;
     total_seluruh: number;
     status: string;
-    status_mobil?: string;
+    status_mobil: string;
 }
 
 interface Props {
@@ -30,160 +42,189 @@ interface Props {
 }
 
 export default function RentalReport({ rentals, filters }: Props) {
-    const handlePrint = () => window.print();
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
+    const [search, setSearch] = useState(filters.search || '');
+    const [startDate, setStartDate] = useState(filters.start_date || '');
+    const [endDate, setEndDate] = useState(filters.end_date || '');
+    const debounceTimer = useMemo(() => ({ current: null as ReturnType<typeof setTimeout> | null }), []);
+
+    const handleSearch = useCallback(
+        (value: string) => {
+            setSearch(value);
+            if (debounceTimer.current) clearTimeout(debounceTimer.current);
+            debounceTimer.current = setTimeout(() => {
+                router.get(
+                    '/laporan/rental',
+                    { search: value, start_date: startDate, end_date: endDate },
+                    { preserveState: true, replace: true },
+                );
+            }, 300);
+        },
+        [debounceTimer, startDate, endDate],
+    );
+
+    const handleFilter = () => {
+        router.get(
+            '/laporan/rental',
+            { search, start_date: startDate, end_date: endDate },
+            { preserveState: true, replace: true },
+        );
     };
 
+    const formatCurrency = (amount: number) =>
+        new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
+
     const grandTotal = rentals.reduce((acc, curr) => acc + curr.total_seluruh, 0);
-    const mobilDisewaCount = rentals.filter(r => (r.status_mobil || '').toLowerCase() === 'disewa').length;
-    const mobilKembaliCount = rentals.filter(r => (r.status_mobil || '').toLowerCase() === 'tersedia').length;
-    const mobilPerawatanCount = rentals.filter(r => (r.status_mobil || '').toLowerCase() === 'perawatan').length;
+    const mobilDisewaCount = rentals.filter((r) => (r.status_mobil || '').toLowerCase() === 'disewa').length;
+    const mobilKembaliCount = rentals.filter((r) => (r.status_mobil || '').toLowerCase() === 'tersedia').length;
+    const mobilPerawatanCount = rentals.filter((r) => (r.status_mobil || '').toLowerCase() === 'perawatan').length;
+
+    const getStatusMobilVariant = (status: string) => {
+        const s = (status || '').toLowerCase();
+        if (s === 'tersedia') return 'success';
+        if (s === 'disewa') return 'warning';
+        return 'destructive';
+    };
 
     return (
-        <AdminLayout title="Laporan Pendapatan">
-            <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="card shadow-sm border-0 overflow-hidden" 
-                style={{ borderRadius: '15px' }}
-            >
-                <div className="card-header bg-white border-0 py-4 px-4 d-flex flex-wrap justify-content-between align-items-center print:hidden">
-                    <div>
-                        <h5 className="font-weight-bold mb-1 text-dark">
-                            <TrendingUp className="inline-block mr-2 text-primary" size={24} /> Laporan Pendapatan (Omzet)
-                        </h5>
-                        <p className="text-muted small mb-0">Rekapitulasi finansial dari penyewaan mobil</p>
-                    </div>
-                    <button onClick={handlePrint} className="btn btn-dark px-4 py-2 d-flex align-items-center gap-2" style={{ borderRadius: '10px', fontWeight: 600 }}>
-                        <Printer size={18} /> Cetak Laporan
-                    </button>
-                </div>
+        <AppLayout breadcrumbs={breadcrumbs}>
+            <Head title="Laporan Rental" />
 
-                <div className="px-4 pb-2 print:hidden">
-                    <SearchFilter routeName="/laporan/rental" placeholder="Cari kode, pelanggan, atau mobil..." filters={filters} showDate={true} />
-                </div>
-
-                <div className="card-body p-3 p-md-5 bg-white">
-                    <div className="position-relative mb-4 pb-3 border-bottom" style={{ borderColor: '#222831', minHeight: '115px' }}>
-                        <div className="position-absolute" style={{ top: 0, left: 0 }}>
-                            <img 
-                                src="/storage/logo/logo.jpg" 
-                                alt="Logo" 
-                                style={{ height: '110px', width: 'auto', objectFit: 'contain', borderRadius: '8px' }} 
-                            />
+            <div className="flex flex-col gap-6 p-4">
+                <Card>
+                    <CardHeader>
+                        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                                <CardTitle className="flex items-center gap-2">
+                                    <TrendingUp className="h-5 w-5" />
+                                    Laporan Pendapatan (Omzet)
+                                </CardTitle>
+                                <CardDescription>Rekapitulasi finansial dari penyewaan mobil</CardDescription>
+                            </div>
+                            <Button onClick={() => window.print()}>
+                                <Printer className="h-4 w-4" />
+                                Cetak Laporan
+                            </Button>
                         </div>
-                        <div className="text-center" style={{ paddingLeft: '130px', paddingRight: '130px' }}>
-                            <h2 className="font-weight-bold mb-1" style={{ color: '#222831', fontSize: '24px', letterSpacing: '0.5px' }}>
-                                PT. NABIL RENTAL MOBIL PADANG
-                            </h2>
-                            <p className="mb-2 text-muted small font-weight-bold">
-                                Kompek Perumdam/III/4, Tunggul Hitam, Kota Padang
-                            </p>
-                            <span className="badge px-3 py-2 text-uppercase" style={{ backgroundColor: '#fff4e5', color: '#f96d00', border: '1px solid #fde8d8', fontSize: '12px', fontWeight: 700 }}>
-                                LAPORAN PENDAPATAN - REKAPITULASI PENDAPATAN SEWA & DENDA
-                            </span>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end">
+                            <div className="relative max-w-sm flex-1">
+                                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                <Input
+                                    placeholder="Cari kode, pelanggan, atau mobil..."
+                                    value={search}
+                                    onChange={(e) => handleSearch(e.target.value)}
+                                    className="pl-9"
+                                />
+                            </div>
+                            <div className="flex items-end gap-2">
+                                <div className="flex flex-col gap-1">
+                                    <Label className="text-xs">Dari Tanggal</Label>
+                                    <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-40" />
+                                </div>
+                                <div className="flex flex-col gap-1">
+                                    <Label className="text-xs">Sampai Tanggal</Label>
+                                    <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-40" />
+                                </div>
+                                <Button onClick={handleFilter}>Filter</Button>
+                            </div>
                         </div>
-                    </div>
 
-                    <div className="table-responsive shadow-none overflow-visible">
-                        <table className="table table-striped table-hover table-sm w-100" style={{ fontSize: '8px' }}>
-                            <thead style={{ backgroundColor: '#222831', color: '#fff' }}>
-                                <tr>
-                                    <th className="py-2 px-1 border-0 text-center">NO</th>
-                                    <th className="py-2 px-1 border-0">KODE RENTAL</th>
-                                    <th className="py-2 px-1 border-0">PELANGGAN</th>
-                                    <th className="py-2 px-1 border-0">MOBIL</th>
-                                    <th className="py-2 px-1 border-0 text-center">PLAT</th>
-                                    <th className="py-2 px-1 border-0 text-center">TGL MULAI</th>
-                                    <th className="py-2 px-1 border-0 text-center">TGL SELESAI</th>
-                                    <th className="py-2 px-1 border-0 text-center">TGL KEMBALI</th>
-                                    <th className="py-2 px-1 border-0 text-center">TELAT</th>
-                                    <th className="py-2 px-1 border-0 text-right">BIAYA SEWA</th>
-                                    <th className="py-2 px-1 border-0 text-right">DENDA</th>
-                                    <th className="py-2 px-2 border-0 text-right">TOTAL</th>
-                                    <th className="py-2 px-1 border-0 text-center">STATUS MOBIL</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {rentals.length > 0 ? rentals.map((r, index) => (
-                                    <tr key={r.koderental}>
-                                        <td className="py-2 px-1 text-center text-muted font-weight-bold">{index + 1}</td>
-                                        <td className="py-2 px-1 font-weight-bold text-primary" style={{ whiteSpace: 'normal', wordBreak: 'break-all' }}>{r.koderental}</td>
-                                        <td className="py-2 px-1" style={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>{r.nama_pelanggan}</td>
-                                        <td className="py-2 px-1" style={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>{r.nama_mobil}</td>
-                                        <td className="py-2 px-1 text-center"><code>{r.plat_mobil}</code></td>
-                                        <td className="py-2 px-1 text-center text-muted" style={{ whiteSpace: 'normal' }}>{r.tglmulai}</td>
-                                        <td className="py-2 px-1 text-center text-muted" style={{ whiteSpace: 'normal' }}>{r.tglselesai}</td>
-                                        <td className="py-2 px-1 text-center text-muted" style={{ whiteSpace: 'normal' }}>{r.tglpengembalian || '-'}</td>
-                                        <td className="py-2 px-1 text-center font-weight-bold">{r.keterlambatan || 0}</td>
-                                        <td className="py-2 px-1 text-right">{new Intl.NumberFormat('id-ID').format(r.totalsewa)}</td>
-                                        <td className="py-2 px-1 text-right text-danger">{new Intl.NumberFormat('id-ID').format(r.denda)}</td>
-                                        <td className="py-2 px-2 text-right font-weight-bold text-primary">{new Intl.NumberFormat('id-ID').format(r.total_seluruh)}</td>
-                                        <td className="py-2 px-1 text-center">
-                                            <span className={`badge ${
-                                                (r.status_mobil || '').toLowerCase() === 'tersedia' ? 'badge-success' :
-                                                (r.status_mobil || '').toLowerCase() === 'disewa' ? 'badge-warning' :
-                                                'badge-danger'
-                                            }`}>
-                                                {r.status_mobil || 'Tersedia'}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                )) : (
-                                    <tr>
-                                        <td colSpan={13} className="text-center py-4">Data tidak ditemukan.</td>
-                                    </tr>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead className="w-12 text-center">No</TableHead>
+                                    <TableHead>Kode</TableHead>
+                                    <TableHead>Booking</TableHead>
+                                    <TableHead>Pelanggan</TableHead>
+                                    <TableHead>Mobil</TableHead>
+                                    <TableHead>Tanggal</TableHead>
+                                    <TableHead>Kembali</TableHead>
+                                    <TableHead className="text-center">Terlambat</TableHead>
+                                    <TableHead className="text-right">Denda</TableHead>
+                                    <TableHead className="text-right">Sewa</TableHead>
+                                    <TableHead className="text-right">Total</TableHead>
+                                    <TableHead className="text-center">Status</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {rentals.length > 0 ? (
+                                    rentals.map((r, i) => (
+                                        <TableRow key={r.koderental}>
+                                            <TableCell className="text-center font-medium">{i + 1}</TableCell>
+                                            <TableCell className="font-medium">{r.koderental}</TableCell>
+                                            <TableCell>{r.kdbooking}</TableCell>
+                                            <TableCell>{r.nama_pelanggan}</TableCell>
+                                            <TableCell>{r.nama_mobil}</TableCell>
+                                            <TableCell>
+                                                <span className="text-xs">
+                                                    {r.tglmulai} s/d {r.tglselesai}
+                                                </span>
+                                            </TableCell>
+                                            <TableCell>{r.tglpengembalian || '-'}</TableCell>
+                                            <TableCell className="text-center">{r.keterlambatan || '0'}</TableCell>
+                                            <TableCell className="text-right text-destructive">
+                                                {new Intl.NumberFormat('id-ID').format(r.denda)}
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                {new Intl.NumberFormat('id-ID').format(r.totalsewa)}
+                                            </TableCell>
+                                            <TableCell className="text-right font-bold">
+                                                {new Intl.NumberFormat('id-ID').format(r.total_seluruh)}
+                                            </TableCell>
+                                            <TableCell className="text-center">
+                                                <Badge variant={getStatusMobilVariant(r.status_mobil)}>
+                                                    {r.status_mobil || 'Tersedia'}
+                                                </Badge>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                ) : (
+                                    <TableRow>
+                                        <TableCell colSpan={12} className="h-24 text-center text-muted-foreground">
+                                            Data rental tidak ditemukan.
+                                        </TableCell>
+                                    </TableRow>
                                 )}
-                            </tbody>
-                            <tfoot className="bg-light">
-                                <tr className="font-weight-bold" style={{ fontSize: '11px' }}>
-                                    <td colSpan={11} className="text-right py-3">GRAND TOTAL PENDAPATAN</td>
-                                    <td className="text-right py-3 text-primary">{formatCurrency(grandTotal)}</td>
-                                    <td></td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
+                            </TableBody>
+                            <TableFooter>
+                                <TableRow>
+                                    <TableCell colSpan={10} className="text-right font-medium uppercase">
+                                        Grand Total Pendapatan
+                                    </TableCell>
+                                    <TableCell className="text-right font-bold">{formatCurrency(grandTotal)}</TableCell>
+                                    <TableCell />
+                                </TableRow>
+                            </TableFooter>
+                        </Table>
 
-                    <div className="mt-4 p-4 border rounded bg-light">
-                        <h6 className="font-weight-bold text-dark mb-3 border-bottom pb-2">
-                            Rangkuman Status Armada & Total Pendapatan
-                        </h6>
-                        <div className="row g-3">
-                            <div className="col-md-3 mb-2">
-                                <div className="p-3 bg-white border rounded text-center shadow-sm">
-                                    <span className="font-weight-bold text-uppercase small text-muted d-block mb-1">Total Pendapatan Keseluruhan</span>
-                                    <span className="h5 font-weight-bold mb-0 text-primary">{formatCurrency(grandTotal)}</span>
-                                </div>
+                        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-4">
+                            <div className="rounded-lg border bg-muted/50 p-4 text-center">
+                                <p className="text-xs font-medium uppercase text-muted-foreground">Total Pendapatan</p>
+                                <p className="mt-1 text-lg font-bold text-primary">{formatCurrency(grandTotal)}</p>
                             </div>
-                            <div className="col-md-3 mb-2">
-                                <div className="p-3 bg-white border rounded text-center shadow-sm">
-                                    <span className="font-weight-bold text-uppercase small text-muted d-block mb-1">Total Mobil Disewa</span>
-                                    <span className="badge badge-warning px-3 py-2 text-dark mt-1" style={{ fontSize: '13px' }}>{mobilDisewaCount} Unit Mobil</span>
-                                </div>
+                            <div className="rounded-lg border bg-muted/50 p-4 text-center">
+                                <p className="text-xs font-medium uppercase text-muted-foreground">Mobil Disewa</p>
+                                <Badge variant="warning" className="mt-1 text-sm">
+                                    {mobilDisewaCount} Unit
+                                </Badge>
                             </div>
-                            <div className="col-md-3 mb-2">
-                                <div className="p-3 bg-white border rounded text-center shadow-sm">
-                                    <span className="font-weight-bold text-uppercase small text-muted d-block mb-1">Total Mobil Sudah Dikembalikan</span>
-                                    <span className="badge badge-success px-3 py-2 mt-1" style={{ fontSize: '13px' }}>{mobilKembaliCount} Unit Mobil</span>
-                                </div>
+                            <div className="rounded-lg border bg-muted/50 p-4 text-center">
+                                <p className="text-xs font-medium uppercase text-muted-foreground">Mobil Dikembalikan</p>
+                                <Badge variant="success" className="mt-1 text-sm">
+                                    {mobilKembaliCount} Unit
+                                </Badge>
                             </div>
-                            <div className="col-md-3 mb-2">
-                                <div className="p-3 bg-white border rounded text-center shadow-sm">
-                                    <span className="font-weight-bold text-uppercase small text-muted d-block mb-1">Total Mobil Dalam Perawatan</span>
-                                    <span className="badge badge-danger px-3 py-2 mt-1" style={{ fontSize: '13px' }}>{mobilPerawatanCount} Unit Mobil</span>
-                                </div>
+                            <div className="rounded-lg border bg-muted/50 p-4 text-center">
+                                <p className="text-xs font-medium uppercase text-muted-foreground">Dalam Perawatan</p>
+                                <Badge variant="destructive" className="mt-1 text-sm">
+                                    {mobilPerawatanCount} Unit
+                                </Badge>
                             </div>
                         </div>
-                    </div>
-
-                    <div className="mt-5 text-right opacity-75 small italic print:block d-none">
-                        Dicetak pada: {new Date().toLocaleString('id-ID')}
-                    </div>
-                </div>
-            </motion.div>
-        </AdminLayout>
+                    </CardContent>
+                </Card>
+            </div>
+        </AppLayout>
     );
 }

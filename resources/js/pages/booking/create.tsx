@@ -1,7 +1,15 @@
-import AdminLayout from '@/layouts/AdminLayout';
-import TemplateLayout from '@/layouts/TemplateLayout';
-import { useForm, usePage, router } from '@inertiajs/react';
+import BookingLayout from '@/layouts/booking-layout';
+import { type BreadcrumbItem } from '@/types';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { ArrowLeft, Car, User, CreditCard, CalendarDays, AlertTriangle, Bell, Loader2 } from 'lucide-react';
 
 interface AuthUser {
     id: number;
@@ -30,24 +38,30 @@ interface Props {
     next_kdbooking: string;
 }
 
+const breadcrumbs: BreadcrumbItem[] = [
+    { title: 'Dashboard', href: '/dashboard' },
+    { title: 'Booking', href: '/booking' },
+    { title: 'Buat Booking', href: '/booking/create' },
+];
+
 export default function Create({ users, mobils, selected_kdmobil, next_kdbooking }: Props) {
     const { auth } = usePage<{ auth: { user: AuthUser } }>().props;
-    const user: AuthUser = auth.user;
-    const isPelanggan = user.role === 'pelanggan';
+    const user = auth.user;
 
     const { data, setData, post, processing, errors } = useForm({
-        kdbooking:      next_kdbooking,
-        tglbooking:     new Date().toISOString().split('T')[0],
-        iduser:         isPelanggan ? user.id.toString() : '',
-        kdmobil:        selected_kdmobil || '',
-        harga:          '',
-        tglmulai:       '',
-        tglselesai:     '',
-        lama_sewa:      '',
-        total_bayar:    '',
+        kdbooking: next_kdbooking,
+        tglbooking: new Date().toISOString().split('T')[0],
+        iduser: user.role === 'pelanggan' ? user.id.toString() : '',
+        kdmobil: selected_kdmobil || '',
+        harga: '',
+        tglmulai: '',
+        tglselesai: '',
+        lama_sewa: '',
+        total_bayar: '',
         payment_method: 'Midtrans',
-        status:         'Pending',
+        status: 'Pending',
     });
+
     const [availableMobils, setAvailableMobils] = useState<MobilItem[]>(mobils);
     const [isLoadingAvailable, setIsLoadingAvailable] = useState(false);
     const [isReminderRequested, setIsReminderRequested] = useState(false);
@@ -59,21 +73,22 @@ export default function Create({ users, mobils, selected_kdmobil, next_kdbooking
 
     const handleReminderRequest = () => {
         if (!data.kdmobil || !data.tglmulai || !data.tglselesai) return;
-
         setIsReminderProcessing(true);
         router.post('/booking/request-reminder', {
             kdmobil: data.kdmobil,
             tglmulai: data.tglmulai,
-            tglselesai: data.tglselesai
+            tglselesai: data.tglselesai,
         }, {
             preserveScroll: true,
             onSuccess: () => {
                 setIsReminderRequested(true);
                 setIsReminderProcessing(false);
+                toast.success('Pengingat berhasil diaktifkan.');
             },
             onError: () => {
                 setIsReminderProcessing(false);
-            }
+                toast.error('Gagal mengaktifkan pengingat.');
+            },
         });
     };
 
@@ -81,13 +96,12 @@ export default function Create({ users, mobils, selected_kdmobil, next_kdbooking
         if (data.tglmulai && data.tglselesai) {
             setIsLoadingAvailable(true);
             fetch(`/booking/available-cars?tglmulai=${data.tglmulai}&tglselesai=${data.tglselesai}`)
-                .then(res => res.json())
-                .then(resData => {
+                .then((res) => res.json())
+                .then((resData) => {
                     setAvailableMobils(resData);
                     setIsLoadingAvailable(false);
                 })
-                .catch(err => {
-                    console.error("Gagal memuat mobil yang tersedia", err);
+                .catch(() => {
                     setIsLoadingAvailable(false);
                 });
         } else {
@@ -95,416 +109,316 @@ export default function Create({ users, mobils, selected_kdmobil, next_kdbooking
         }
     }, [data.tglmulai, data.tglselesai, mobils]);
 
-    const isSelectedMobilUnavailable = data.kdmobil && !isLoadingAvailable && !availableMobils.some(m => m.kdmobil?.toString().trim() === data.kdmobil?.toString().trim());
+    const isSelectedMobilUnavailable =
+        data.kdmobil && !isLoadingAvailable && !availableMobils.some((m) => m.kdmobil?.toString().trim() === data.kdmobil?.toString().trim());
 
-    const selectedMobil: MobilItem | null = mobils.find(m => m.kdmobil?.toString().trim() === data.kdmobil?.toString().trim()) ?? null;
+    const selectedMobil: MobilItem | null =
+        mobils.find((m) => m.kdmobil?.toString().trim() === data.kdmobil?.toString().trim()) ?? null;
+
     useEffect(() => {
-        const m = mobils.find(x => x.kdmobil?.toString().trim() === data.kdmobil?.toString().trim()) ?? null;
+        const m = mobils.find((x) => x.kdmobil?.toString().trim() === data.kdmobil?.toString().trim()) ?? null;
         setData('harga', m ? m.harga.toString() : '');
     }, [data.kdmobil, mobils, setData]);
+
     useEffect(() => {
         if (data.tglmulai && data.tglselesai && data.harga) {
             const start = new Date(data.tglmulai);
-            const end   = new Date(data.tglselesai);
+            const end = new Date(data.tglselesai);
             if (end >= start) {
-                const days  = Math.round((end.getTime() - start.getTime()) / 86400000) + 1;
+                const days = Math.round((end.getTime() - start.getTime()) / 86400000) + 1;
                 const total = days * parseFloat(data.harga);
-                setData(prev => ({ ...prev, lama_sewa: days.toString(), total_bayar: total.toString() }));
+                setData((prev) => ({ ...prev, lama_sewa: days.toString(), total_bayar: total.toString() }));
             } else {
-                setData(prev => ({ ...prev, lama_sewa: '', total_bayar: '' }));
+                setData((prev) => ({ ...prev, lama_sewa: '', total_bayar: '' }));
             }
         }
     }, [data.tglmulai, data.tglselesai, data.harga, setData]);
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
-        post('/booking');
+        post('/booking', {
+            onSuccess: () => toast.success('Booking berhasil dibuat.'),
+            onError: () => toast.error('Gagal membuat booking. Periksa kembali data Anda.'),
+        });
     };
 
     const formatCurrency = (v: string | number | undefined) =>
         new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(Number(v) || 0);
 
     const today = new Date().toISOString().split('T')[0];
-    if (isPelanggan) {
-        return (
-            <TemplateLayout showHero={false}>
-                <section className="ftco-section bg-light py-5">
-                    <div className="container">
-                        <div className="row justify-content-center mb-4">
-                            <div className="col-md-10 text-center" data-aos="fade-up">
-                                <span className="subheading" style={{ color: '#f96d00', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '2px' }}>Konfirmasi Pesanan</span>
-                                <h2 className="mb-2 font-weight-bold" style={{ color: '#222831' }}>Lengkapi Detail Sewa Anda</h2>
-                                <p className="text-muted">Pastikan data perjalanan Anda sudah benar sebelum melanjutkan ke pembayaran.</p>
-                            </div>
-                        </div>
-
-                        <form onSubmit={submit}>
-                            <div className="row">
-                                <div className="col-lg-7" data-aos="fade-right">
-                                    <div className="bg-white p-4 p-md-5 shadow-sm mb-4" style={{ borderRadius: '20px' }}>
-                                        <h4 className="mb-4 font-weight-bold" style={{ color: '#222831', borderLeft: '5px solid #f96d00', paddingLeft: '15px' }}>Data Perjalanan</h4>
-                                        
-                                        <div className="row">
-                                            <div className="col-md-12">
-                                                <FormField label="Pilihan Mobil">
-                                                    <div style={{ position: 'relative' }}>
-                                                        <i className="ion-ios-car" style={iconSt} />
-                                                        <select
-                                                            className={`form-control ${errors.kdmobil ? 'is-invalid' : ''}`}
-                                                            value={data.kdmobil}
-                                                            onChange={e => setData('kdmobil', e.target.value)}
-                                                            required
-                                                            style={selectSt}
-                                                        >
-                                                            <option value="">-- Pilih Mobil --</option>
-                                                            {mobils.map(m => {
-                                                                const isAvailable = availableMobils.some(am => am.kdmobil?.toString().trim() === m.kdmobil?.toString().trim());
-                                                                if (!isAvailable && m.kdmobil?.toString().trim() !== data.kdmobil?.toString().trim()) {
-                                                                    return null;
-                                                                }
-                                                                return (
-                                                                    <option key={m.kdmobil} value={m.kdmobil} disabled={!isAvailable && !isLoadingAvailable}>
-                                                                        {m.nama_mobil} ({formatCurrency(m.harga)} / hari) {!isAvailable && !isLoadingAvailable ? '— [TIDAK TERSEDIA PADA TANGGAL INI]' : ''}
-                                                                    </option>
-                                                                );
-                                                            })}
-                                                        </select>
-                                                    </div>
-                                                    {isLoadingAvailable && <span className="small text-muted mt-1 d-block">Memeriksa ketersediaan mobil...</span>}
-                                                    {errors.kdmobil && <Err msg={errors.kdmobil} />}
-
-                                                    {isSelectedMobilUnavailable && (
-                                                        <div className="alert alert-warning mt-3 p-3" style={{ borderRadius: '12px', borderLeft: '5px solid #ffc107', backgroundColor: '#fff3cd', color: '#856404' }}>
-                                                            <h6 className="font-weight-bold mb-1">⚠️ Mobil Tidak Tersedia</h6>
-                                                            <p className="small mb-2">Mobil <strong>{selectedMobil?.nama_mobil}</strong> sudah dipesan pada tanggal {data.tglmulai} s/d {data.tglselesai}.</p>
-                                                            {availableMobils.length > 0 ? (
-                                                                <div>
-                                                                    <p className="small font-weight-bold mb-1 text-uppercase" style={{ fontSize: '10px' }}>Rekomendasi Mobil Lain yang Tersedia:</p>
-                                                                    <div className="d-flex flex-wrap mb-2" style={{ gap: '5px' }}>
-                                                                        {availableMobils.map(am => (
-                                                                            <button 
-                                                                                key={am.kdmobil} 
-                                                                                type="button" 
-                                                                                onClick={() => setData('kdmobil', am.kdmobil)}
-                                                                                className="btn btn-sm btn-outline-warning"
-                                                                                style={{ borderRadius: '20px', fontSize: '11px', padding: '4px 10px', textTransform: 'none' }}
-                                                                            >
-                                                                                {am.nama_mobil}
-                                                                            </button>
-                                                                        ))}
-                                                                    </div>
-                                                                </div>
-                                                            ) : (
-                                                                <p className="small mb-2">Tidak ada mobil lain yang tersedia pada rentang tanggal ini.</p>
-                                                            )}
-                                                            <div className="mt-3 border-top pt-2 d-flex justify-content-between align-items-center">
-                                                                <span className="small font-weight-bold text-dark">Ingin sewa mobil ini jika tersedia kembali?</span>
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={handleReminderRequest}
-                                                                    disabled={isReminderRequested || isReminderProcessing}
-                                                                    className={`btn btn-xs ${isReminderRequested ? 'btn-success' : 'btn-warning'} font-weight-bold text-white`}
-                                                                    style={{ borderRadius: '5px', fontSize: '11px', padding: '4px 10px', backgroundColor: isReminderRequested ? '#28a745' : '#f96d00', borderColor: isReminderRequested ? '#28a745' : '#f96d00' }}
-                                                                >
-                                                                    <i className="ion-ios-notifications mr-1"></i>
-                                                                    {isReminderProcessing ? 'Memproses...' : (isReminderRequested ? '✓ Pengingat Aktif' : 'Beri Tahu Saya Jika Tersedia')}
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                </FormField>
-                                            </div>
-
-                                            <div className="col-md-6 mt-3">
-                                                <FormField label="Mulai Rental">
-                                                    <div style={{ position: 'relative' }}>
-                                                        <i className="ion-ios-calendar" style={iconSt} />
-                                                        <input
-                                                            type="date"
-                                                            className={`form-control ${errors.tglmulai ? 'is-invalid' : ''}`}
-                                                            value={data.tglmulai}
-                                                            min={today}
-                                                            onChange={e => setData('tglmulai', e.target.value)}
-                                                            required
-                                                            style={inputSt}
-                                                        />
-                                                    </div>
-                                                    {errors.tglmulai && <Err msg={errors.tglmulai} />}
-                                                </FormField>
-                                            </div>
-
-                                            <div className="col-md-6 mt-3">
-                                                <FormField label="Selesai Rental">
-                                                    <div style={{ position: 'relative' }}>
-                                                        <i className="ion-ios-calendar" style={iconSt} />
-                                                        <input
-                                                            type="date"
-                                                            className={`form-control ${errors.tglselesai ? 'is-invalid' : ''}`}
-                                                            value={data.tglselesai}
-                                                            min={data.tglmulai || today}
-                                                            onChange={e => setData('tglselesai', e.target.value)}
-                                                            required
-                                                            style={inputSt}
-                                                        />
-                                                    </div>
-                                                    {errors.tglselesai && <Err msg={errors.tglselesai} />}
-                                                </FormField>
-                                            </div>
-                                        </div>
-
-                                        <div className="mt-5">
-                                            <h4 className="mb-4 font-weight-bold" style={{ color: '#222831', borderLeft: '5px solid #f96d00', paddingLeft: '15px' }}>Informasi Pelanggan</h4>
-                                            <div className="p-3 rounded bg-light border d-flex align-items-center mb-3">
-                                                <div className="mr-3 bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style={{ width: '40px', height: '40px' }}>
-                                                    <i className="ion-ios-person" />
-                                                </div>
-                                                <div>
-                                                    <p className="mb-0 small text-muted">Atas Nama</p>
-                                                    <p className="mb-0 font-weight-bold">{user.nama_lengkap}</p>
-                                                </div>
-                                            </div>
-                                            <p className="small text-muted"><i className="ion-ios-information-circle mr-1" /> Data ini akan digunakan untuk dokumen penyewaan Anda.</p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="col-lg-5" data-aos="fade-left">
-                                    <div className="bg-white shadow-sm overflow-hidden" style={{ borderRadius: '20px', position: 'sticky', top: '20px' }}>
-                                        <div style={{ height: '240px', background: '#eee', position: 'relative' }}>
-                                            {selectedMobil?.foto ? (
-                                                <img 
-                                                    src={`/storage/${selectedMobil.foto}`} 
-                                                    alt={selectedMobil.nama_mobil}
-                                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                                />
-                                            ) : (
-                                                <div className="w-100 h-100 d-flex flex-column align-items-center justify-content-center text-muted">
-                                                    <i className="ion-ios-car" style={{ fontSize: '60px' }} />
-                                                    <p className="small mt-2">Pratinjau Mobil</p>
-                                                </div>
-                                            )}
-                                            {selectedMobil && (
-                                                <div style={{ position: 'absolute', bottom: '15px', right: '15px', background: 'rgba(0,0,0,0.6)', color: '#fff', padding: '5px 12px', borderRadius: '20px', fontSize: '12px' }}>
-                                                    {selectedMobil.plat_mobil}
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        <div className="p-4 p-md-5">
-                                            <h5 className="font-weight-bold mb-1" style={{ color: '#222831' }}>{selectedMobil?.nama_mobil || 'Belum Memilih Mobil'}</h5>
-                                            <p className="text-primary small font-weight-bold mb-4">{selectedMobil ? formatCurrency(selectedMobil.harga) + ' / hari' : '-'}</p>
-                                            
-                                            <hr />
-                                            
-                                            <div className="d-flex justify-content-between mb-2">
-                                                <span className="text-muted">Durasi Sewa</span>
-                                                <span className="font-weight-bold text-dark">{data.lama_sewa || 0} Hari</span>
-                                            </div>
-                                            <div className="d-flex justify-content-between mb-4">
-                                                <span className="text-muted">Metode Pembayaran</span>
-                                                <span className="badge badge-info px-3 py-2" style={{ borderRadius: '10px' }}>Otomatis (Midtrans)</span>
-                                            </div>
-
-                                            <div className="p-3 mb-4 d-flex justify-content-between align-items-center" style={{ background: '#f96d00', color: '#fff', borderRadius: '12px' }}>
-                                                <span className="font-weight-bold">Total Pembayaran</span>
-                                                <span className="h4 mb-0 font-weight-bold">{formatCurrency(data.total_bayar)}</span>
-                                            </div>
-
-                                            <button 
-                                                type="submit" 
-                                                disabled={processing || !data.kdmobil || !data.tglmulai || !data.tglselesai || isSelectedMobilUnavailable || isLoadingAvailable}
-                                                className="btn btn-primary btn-block py-3 font-weight-bold"
-                                                style={{ borderRadius: '12px', fontSize: '16px', boxShadow: '0 5px 15px rgba(249, 109, 0, 0.3)' }}
-                                            >
-                                                {processing ? 'Sedang Memproses...' : 'SEWA SEKARANG'}
-                                            </button>
-                                            <button type="button" onClick={() => window.location.href = '/'} className="btn btn-link btn-block text-muted small mt-2">
-                                                Kembali ke Beranda
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
-                </section>
-                <style dangerouslySetInnerHTML={{ __html: `
-                    .form-control { border-radius: 12px; padding: 15px 15px 15px 45px; height: auto; border: 1px solid #eee; background: #fbfbfb; transition: all 0.3s; }
-                    .form-control:focus { background: #fff; border-color: #f96d00; box-shadow: none; }
-                    .label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #888; font-weight: bold; margin-bottom: 8px; display: block; }
-                ` }} />
-            </TemplateLayout>
-        );
-    }
 
     return (
-        <AdminLayout title="Buat Pesanan Baru">
-            <div className="row justify-content-center">
-                <div className="col-lg-11">
-                    <form onSubmit={submit}>
-                        <div className="row">
-                            <div className="col-md-7">
-                                <div className="card shadow-sm border-0 p-4 mb-4" style={{ borderRadius: '15px' }}>
-                                    <h5 className="font-weight-bold mb-4">Informasi Penyewaan</h5>
-                                    <div className="row">
-                                        <div className="col-md-6 form-group mb-4">
-                                            <label className="small font-weight-bold text-uppercase">Kode Booking</label>
-                                            <div className="form-control bg-light d-flex align-items-center font-weight-bold" style={{ cursor: 'default', userSelect: 'none', minHeight: '50px' }}>
-                                                {data.kdbooking}
-                                            </div>
+        <BookingLayout breadcrumbs={breadcrumbs} title="Buat Booking">
+            <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
+                <form onSubmit={submit}>
+                    <div className="grid gap-6 lg:grid-cols-7">
+                        <div className="lg:col-span-4 space-y-6">
+                            <Card>
+                                <CardHeader>
+                                    <div className="flex items-center gap-3">
+                                        <Button variant="ghost" size="icon" asChild>
+                                            <Link href="/booking">
+                                                <ArrowLeft className="h-4 w-4" />
+                                            </Link>
+                                        </Button>
+                                        <div>
+                                            <CardTitle>Informasi Penyewaan</CardTitle>
+                                            <CardDescription>Lengkapi detail booking di bawah ini</CardDescription>
                                         </div>
-                                        <div className="col-md-6 form-group mb-4">
-                                            <label className="small font-weight-bold text-uppercase">Tanggal Transaksi</label>
-                                            <input type="date" className="form-control" value={data.tglbooking} onChange={e => setData('tglbooking', e.target.value)} required />
+                                    </div>
+                                </CardHeader>
+                                <CardContent className="space-y-5">
+                                    <div className="grid gap-4 sm:grid-cols-2">
+                                        <div className="space-y-2">
+                                            <Label>Kode Booking</Label>
+                                            <Input value={data.kdbooking} readOnly className="bg-muted font-semibold" />
                                         </div>
-                                        <div className="col-md-12 form-group mb-4">
-                                            <label className="small font-weight-bold text-uppercase">Pilih Pelanggan</label>
-                                            <select className="form-control" value={data.iduser} onChange={e => setData('iduser', e.target.value)} required>
-                                                <option value="">-- Pilih Pelanggan --</option>
-                                                {users.map(u => <option key={u.id} value={u.id}>{u.nama_lengkap}</option>)}
-                                            </select>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="tglbooking">Tanggal Transaksi</Label>
+                                            <Input
+                                                id="tglbooking"
+                                                type="date"
+                                                value={data.tglbooking}
+                                                onChange={(e) => setData('tglbooking', e.target.value)}
+                                                required
+                                            />
+                                            {errors.tglbooking && <p className="text-sm text-destructive">{errors.tglbooking}</p>}
                                         </div>
-                                        <div className="col-md-12 form-group mb-4">
-                                            <label className="small font-weight-bold text-uppercase">Pilih Mobil</label>
-                                            <select className="form-control" value={data.kdmobil} onChange={e => setData('kdmobil', e.target.value)} required>
-                                                <option value="">-- Pilih Mobil --</option>
-                                                {mobils.map(m => {
-                                                    const isAvailable = availableMobils.some(am => am.kdmobil?.toString().trim() === m.kdmobil?.toString().trim());
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label>Pelanggan</Label>
+                                        {user.role === 'pelanggan' ? (
+                                            <Input value={user.nama_lengkap} readOnly className="bg-muted font-semibold" />
+                                        ) : (
+                                            <Select value={data.iduser} onValueChange={(value) => setData('iduser', value)}>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Pilih Pelanggan" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {users.map((u) => (
+                                                        <SelectItem key={u.id} value={u.id.toString()}>
+                                                            {u.nama_lengkap}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        )}
+                                        {errors.iduser && <p className="text-sm text-destructive">{errors.iduser}</p>}
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label>Pilih Mobil</Label>
+                                        <Select value={data.kdmobil} onValueChange={(value) => setData('kdmobil', value)}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Pilih Mobil" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {mobils.map((m) => {
+                                                    const isAvailable = availableMobils.some(
+                                                        (am) => am.kdmobil?.toString().trim() === m.kdmobil?.toString().trim(),
+                                                    );
                                                     if (!isAvailable && m.kdmobil?.toString().trim() !== data.kdmobil?.toString().trim()) {
                                                         return null;
                                                     }
                                                     return (
-                                                        <option key={m.kdmobil} value={m.kdmobil} disabled={!isAvailable && !isLoadingAvailable}>
-                                                            {m.nama_mobil} — {m.plat_mobil} ({formatCurrency(m.harga)}/hari) {!isAvailable && !isLoadingAvailable ? '— [TIDAK TERSEDIA PADA TANGGAL INI]' : ''}
-                                                        </option>
+                                                        <SelectItem
+                                                            key={m.kdmobil}
+                                                            value={m.kdmobil}
+                                                            disabled={!isAvailable && !isLoadingAvailable}
+                                                        >
+                                                            {m.nama_mobil} — {m.plat_mobil} ({formatCurrency(m.harga)}/hari)
+                                                            {!isAvailable && !isLoadingAvailable ? ' [TIDAK TERSEDIA]' : ''}
+                                                        </SelectItem>
                                                     );
                                                 })}
-                                            </select>
-                                            {isLoadingAvailable && <span className="small text-muted mt-1 d-block">Memeriksa ketersediaan mobil...</span>}
-                                            
-                                            {isSelectedMobilUnavailable && (
-                                                <div className="alert alert-danger mt-2 p-3" style={{ borderRadius: '10px' }}>
-                                                    <h6 className="font-weight-bold mb-1">⚠️ Mobil Tidak Tersedia</h6>
-                                                    <p className="small mb-2">Mobil <strong>{selectedMobil?.nama_mobil}</strong> sudah dipesan pada tanggal {data.tglmulai} s/d {data.tglselesai}.</p>
-                                                    {availableMobils.length > 0 ? (
-                                                        <div>
-                                                            <p className="small font-weight-bold mb-1 text-uppercase" style={{ fontSize: '10px' }}>Alternatif Tersedia:</p>
-                                                            <div className="d-flex flex-wrap mb-2" style={{ gap: '5px' }}>
-                                                                {availableMobils.map(am => (
-                                                                    <button 
-                                                                        key={am.kdmobil} 
-                                                                        type="button" 
-                                                                        onClick={() => setData('kdmobil', am.kdmobil)}
-                                                                        className="btn btn-xs btn-outline-danger"
-                                                                        style={{ borderRadius: '5px', fontSize: '11px', padding: '2px 8px' }}
-                                                                    >
-                                                                        {am.nama_mobil}
-                                                                    </button>
-                                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        {isLoadingAvailable && (
+                                            <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                                <Loader2 className="h-3 w-3 animate-spin" />
+                                                Memeriksa ketersediaan mobil...
+                                            </p>
+                                        )}
+                                        {errors.kdmobil && <p className="text-sm text-destructive">{errors.kdmobil}</p>}
+
+                                        {isSelectedMobilUnavailable && (
+                                            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950">
+                                                <div className="flex items-start gap-2">
+                                                    <AlertTriangle className="mt-0.5 h-4 w-4 text-amber-600" />
+                                                    <div className="flex-1 space-y-2">
+                                                        <p className="text-sm font-semibold text-amber-800 dark:text-amber-200">
+                                                            Mobil Tidak Tersedia
+                                                        </p>
+                                                        <p className="text-xs text-amber-700 dark:text-amber-300">
+                                                            Mobil <strong>{selectedMobil?.nama_mobil}</strong> sudah dipesan pada tanggal{' '}
+                                                            {data.tglmulai} s/d {data.tglselesai}.
+                                                        </p>
+                                                        {availableMobils.length > 0 && (
+                                                            <div className="space-y-1">
+                                                                <p className="text-xs font-semibold uppercase text-amber-800 dark:text-amber-200">
+                                                                    Alternatif Tersedia:
+                                                                </p>
+                                                                <div className="flex flex-wrap gap-1">
+                                                                    {availableMobils.map((am) => (
+                                                                        <Button
+                                                                            key={am.kdmobil}
+                                                                            type="button"
+                                                                            variant="outline"
+                                                                            size="sm"
+                                                                            className="h-7 text-xs"
+                                                                            onClick={() => setData('kdmobil', am.kdmobil)}
+                                                                        >
+                                                                            {am.nama_mobil}
+                                                                        </Button>
+                                                                    ))}
+                                                                </div>
                                                             </div>
+                                                        )}
+                                                        <div className="flex items-center justify-between border-t border-amber-200 pt-2 dark:border-amber-800">
+                                                            <span className="text-xs font-medium text-amber-800 dark:text-amber-200">
+                                                                Ingin sewa mobil ini jika tersedia kembali?
+                                                            </span>
+                                                            <Button
+                                                                type="button"
+                                                                variant={isReminderRequested ? 'default' : 'secondary'}
+                                                                size="sm"
+                                                                className="h-7 text-xs"
+                                                                onClick={handleReminderRequest}
+                                                                disabled={isReminderRequested || isReminderProcessing}
+                                                            >
+                                                                {isReminderProcessing ? (
+                                                                    <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                                                                ) : (
+                                                                    <Bell className="mr-1 h-3 w-3" />
+                                                                )}
+                                                                {isReminderRequested ? 'Pengingat Aktif' : 'Beri Tahu Saya'}
+                                                            </Button>
                                                         </div>
-                                                    ) : (
-                                                        <p className="small mb-2">Tidak ada mobil lain yang tersedia pada rentang tanggal ini.</p>
-                                                    )}
-                                                    <div className="mt-3 border-top pt-2 d-flex justify-content-between align-items-center">
-                                                        <span className="small font-weight-bold text-dark">Ingin sewa mobil ini jika tersedia kembali?</span>
-                                                        <button
-                                                            type="button"
-                                                            onClick={handleReminderRequest}
-                                                            disabled={isReminderRequested || isReminderProcessing}
-                                                            className={`btn btn-xs ${isReminderRequested ? 'btn-success' : 'btn-warning'} font-weight-bold text-white`}
-                                                            style={{ borderRadius: '5px', fontSize: '11px', padding: '4px 10px', backgroundColor: isReminderRequested ? '#28a745' : '#f96d00', borderColor: isReminderRequested ? '#28a745' : '#f96d00' }}
-                                                        >
-                                                            <i className="ion-ios-notifications mr-1"></i>
-                                                            {isReminderProcessing ? 'Memproses...' : (isReminderRequested ? '✓ Pengingat Aktif' : 'Beri Tahu Saya Jika Tersedia')}
-                                                        </button>
                                                     </div>
                                                 </div>
-                                            )}
-                                        </div>
-                                        <div className="col-md-6 form-group mb-4">
-                                            <label className="small font-weight-bold text-uppercase text-primary">Tanggal Mulai</label>
-                                            <input type="date" className="form-control" value={data.tglmulai} onChange={e => setData('tglmulai', e.target.value)} required />
-                                        </div>
-                                        <div className="col-md-6 form-group mb-4">
-                                            <label className="small font-weight-bold text-uppercase text-danger">Tanggal Selesai</label>
-                                            <input type="date" className="form-control" value={data.tglselesai} onChange={e => setData('tglselesai', e.target.value)} required />
-                                        </div>
+                                            </div>
+                                        )}
                                     </div>
-                                </div>
-                            </div>
 
-                            <div className="col-md-5">
-                                <div className="card shadow-sm border-0 p-4 bg-dark text-white mb-4" style={{ borderRadius: '15px' }}>
-                                    <h5 className="font-weight-bold mb-4" style={{ color: '#f96d00' }}>Ringkasan Pembayaran</h5>
-                                    <div className="d-flex justify-content-between mb-3">
-                                        <span className="opacity-75">Harga Unit / Hari</span>
-                                        <span className="font-weight-bold">{formatCurrency(data.harga)}</span>
+                                    <div className="grid gap-4 sm:grid-cols-2">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="tglmulai">Tanggal Mulai</Label>
+                                            <Input
+                                                id="tglmulai"
+                                                type="date"
+                                                value={data.tglmulai}
+                                                min={today}
+                                                onChange={(e) => setData('tglmulai', e.target.value)}
+                                                required
+                                            />
+                                            {errors.tglmulai && <p className="text-sm text-destructive">{errors.tglmulai}</p>}
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="tglselesai">Tanggal Selesai</Label>
+                                            <Input
+                                                id="tglselesai"
+                                                type="date"
+                                                value={data.tglselesai}
+                                                min={data.tglmulai || today}
+                                                onChange={(e) => setData('tglselesai', e.target.value)}
+                                                required
+                                            />
+                                            {errors.tglselesai && <p className="text-sm text-destructive">{errors.tglselesai}</p>}
+                                        </div>
                                     </div>
-                                    <div className="d-flex justify-content-between mb-3">
-                                        <span className="opacity-75">Durasi Sewa</span>
-                                        <span className="font-weight-bold">{data.lama_sewa || 0} Hari</span>
-                                    </div>
-                                    <hr className="bg-white opacity-25" />
-                                    <div className="d-flex justify-content-between align-items-center mt-3">
-                                        <h4 className="mb-0 font-weight-bold">Total Bayar</h4>
-                                        <h3 className="mb-0 font-weight-bold" style={{ color: '#f96d00' }}>{formatCurrency(data.total_bayar)}</h3>
-                                    </div>
-                                    <div className="mt-4 p-3 rounded" style={{ backgroundColor: 'rgba(255,255,255,0.05)', fontSize: '12px' }}>
-                                        <i className="ion-ios-information-circle mr-2"></i> Pembayaran akan diproses secara otomatis melalui gerbang pembayaran Midtrans.
-                                    </div>
-                                </div>
 
-                                <div className="card shadow-sm border-0 p-4" style={{ borderRadius: '15px' }}>
-                                    <button type="submit" className="btn btn-primary btn-block py-3 font-weight-bold shadow-sm" disabled={processing || isSelectedMobilUnavailable || isLoadingAvailable} style={{ backgroundColor: '#f96d00', borderColor: '#f96d00', borderRadius: '10px' }}>
-                                        <i className="ion-ios-checkmark-circle mr-2"></i>
-                                        {processing ? 'Memproses...' : 'Konfirmasi Booking'}
-                                    </button>
-                                    <button type="button" onClick={() => window.location.href = '/booking'} className="btn btn-link btn-block text-muted small mt-2">
-                                        Batal &amp; Kembali
-                                    </button>
-                                </div>
-                            </div>
+                                    <div className="space-y-2">
+                                        <Label>Metode Pembayaran</Label>
+                                        <Input value="Midtrans (Otomatis)" readOnly className="bg-muted" />
+                                    </div>
+                                </CardContent>
+                            </Card>
                         </div>
-                    </form>
-                </div>
+
+                        <div className="lg:col-span-3 space-y-6">
+                            <Card className="sticky top-4">
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2">
+                                        <Car className="h-5 w-5" />
+                                        Pratinjau Mobil
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <div className="relative aspect-video overflow-hidden rounded-lg bg-muted">
+                                        {selectedMobil?.foto ? (
+                                            <img
+                                                src={`/storage/${selectedMobil.foto}`}
+                                                alt={selectedMobil.nama_mobil}
+                                                className="h-full w-full object-cover"
+                                            />
+                                        ) : (
+                                            <div className="flex h-full flex-col items-center justify-center text-muted-foreground">
+                                                <Car className="h-12 w-12" />
+                                                <p className="mt-2 text-sm">Pratinjau Mobil</p>
+                                            </div>
+                                        )}
+                                        {selectedMobil && (
+                                            <Badge className="absolute bottom-2 right-2" variant="secondary">
+                                                {selectedMobil.plat_mobil}
+                                            </Badge>
+                                        )}
+                                    </div>
+
+                                    <div>
+                                        <h3 className="text-lg font-bold">{selectedMobil?.nama_mobil || 'Belum Memilih Mobil'}</h3>
+                                        <p className="text-sm font-semibold text-primary">
+                                            {selectedMobil ? formatCurrency(selectedMobil.harga) + ' / hari' : '-'}
+                                        </p>
+                                    </div>
+
+                                    <div className="space-y-2 border-t pt-4">
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-muted-foreground">Harga / Hari</span>
+                                            <span className="font-semibold">{formatCurrency(data.harga)}</span>
+                                        </div>
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-muted-foreground">Durasi Sewa</span>
+                                            <span className="font-semibold">{data.lama_sewa || 0} Hari</span>
+                                        </div>
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-muted-foreground">Metode Pembayaran</span>
+                                            <Badge variant="secondary">Midtrans</Badge>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center justify-between rounded-lg bg-primary p-4 text-primary-foreground">
+                                        <span className="font-semibold">Total Pembayaran</span>
+                                        <span className="text-xl font-bold">{formatCurrency(data.total_bayar)}</span>
+                                    </div>
+
+                                    <Button
+                                        type="submit"
+                                        className="w-full"
+                                        size="lg"
+                                        disabled={processing || !data.kdmobil || !data.tglmulai || !data.tglselesai || !!isSelectedMobilUnavailable || isLoadingAvailable}
+                                    >
+                                        {processing ? (
+                                            <>
+                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                Memproses...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <CreditCard className="mr-2 h-4 w-4" />
+                                                Sewa Sekarang
+                                            </>
+                                        )}
+                                    </Button>
+                                    <Button type="button" variant="ghost" className="w-full" asChild>
+                                        <Link href="/booking">Batal & Kembali</Link>
+                                    </Button>
+                                </CardContent>
+                            </Card>
+                        </div>
+                    </div>
+                </form>
             </div>
-
-            <style dangerouslySetInnerHTML={{ __html: `
-                .form-control { border-radius: 8px; padding: 12px 15px; border: 1px solid #ddd; height: auto; font-size: 14px; }
-                .form-control:focus { border-color: #f96d00; box-shadow: 0 0 0 0.2rem rgba(249,109,0,0.1); }
-                .opacity-75 { opacity: 0.75; }
-                .opacity-25 { opacity: 0.25; }
-            `}} />
-        </AdminLayout>
+        </BookingLayout>
     );
-}
-
-
-const inputSt: React.CSSProperties = {
-    borderRadius: '12px', padding: '11px 14px 11px 40px',
-    height: 'auto', border: '1px solid #eee', fontSize: '14px',
-};
-const selectSt: React.CSSProperties = {
-    ...{ borderRadius: '12px', padding: '11px 14px 11px 40px', height: 'auto', border: '1px solid #eee', fontSize: '14px' },
-};
-const iconSt: React.CSSProperties = {
-    position: 'absolute', left: '13px', top: '50%',
-    transform: 'translateY(-50%)', color: '#f96d00', fontSize: '17px', zIndex: 1,
-};
-
-
-function FormField({ label, children }: { label: string; children: React.ReactNode }) {
-    return (
-        <div className="form-group mb-0">
-            <label className="label">
-                {label}
-            </label>
-            {children}
-        </div>
-    );
-}
-
-function Err({ msg }: { msg: string }) {
-    return <div style={{ color: '#dc3545', fontSize: '11px', fontWeight: 600, marginTop: '4px' }}>{msg}</div>;
 }

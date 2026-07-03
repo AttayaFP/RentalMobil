@@ -1,7 +1,11 @@
-import AdminLayout from '@/layouts/AdminLayout';
-import TemplateLayout from '@/layouts/TemplateLayout';
-import { Head, Link, router, usePage } from '@inertiajs/react';
+import BookingLayout from '@/layouts/booking-layout';
+import { type BreadcrumbItem } from '@/types';
+import { Head, Link, router } from '@inertiajs/react';
 import { useEffect, useState, useCallback } from 'react';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { CreditCard, CheckCircle2, XCircle, Loader2, ArrowLeft, Clock } from 'lucide-react';
 import axios from 'axios';
 
 interface Booking {
@@ -20,30 +24,35 @@ interface Props {
 declare global {
     interface Window {
         snap: {
-            pay: (token: string, options?: {
-                onSuccess?: (result: unknown) => void;
-                onPending?: (result: unknown) => void;
-                onError?: (result: unknown) => void;
-                onClose?: () => void;
-            }) => void;
+            pay: (
+                token: string,
+                options?: {
+                    onSuccess?: (result: unknown) => void;
+                    onPending?: (result: unknown) => void;
+                    onError?: (result: unknown) => void;
+                    onClose?: () => void;
+                },
+            ) => void;
         };
     }
 }
 
-export default function Checkout({ booking, snap_token, client_key, is_production }: Props) {
-    const { auth } = usePage<{ auth: { user: { role: string } } }>().props;
-    const user = auth?.user;
-    const isPelanggan = user?.role === 'pelanggan';
+const breadcrumbs: BreadcrumbItem[] = [
+    { title: 'Dashboard', href: '/dashboard' },
+    { title: 'Booking', href: '/booking' },
+    { title: 'Checkout', href: '#' },
+];
 
+export default function Checkout({ booking, snap_token, client_key, is_production }: Props) {
     const [paymentStatus, setPaymentStatus] = useState<'pending' | 'success' | 'error' | 'none'>('none');
-    const [isScriptLoaded, setIsScriptLoaded] = useState<boolean>(false);
+    const [isScriptLoaded, setIsScriptLoaded] = useState(false);
 
     useEffect(() => {
         const midtransScriptUrl = is_production
             ? 'https://app.midtrans.com/snap/snap.js'
             : 'https://app.sandbox.midtrans.com/snap/snap.js';
 
-        let script = document.querySelector(`script[id="midtrans-script"]`) as HTMLScriptElement;
+        let script = document.querySelector('script[id="midtrans-script"]') as HTMLScriptElement;
         if (!script) {
             script = document.createElement('script');
             script.id = 'midtrans-script';
@@ -62,109 +71,124 @@ export default function Checkout({ booking, snap_token, client_key, is_productio
             window.snap.pay(snap_token, {
                 onSuccess: function (result: unknown) {
                     setPaymentStatus('success');
-                    axios.post(`/booking/${booking.kdbooking}/success`, result)
-                        .then(() => { router.get(`/booking/${booking.kdbooking}/invoice`); });
+                    toast.success('Pembayaran berhasil!');
+                    axios.post(`/booking/${booking.kdbooking}/success`, result).then(() => {
+                        router.get(`/booking/${booking.kdbooking}/invoice`);
+                    });
                 },
-                onPending: function () { setPaymentStatus('pending'); },
-                onError: function () { setPaymentStatus('error'); },
-                onClose: function () { setPaymentStatus('none'); },
+                onPending: function () {
+                    setPaymentStatus('pending');
+                    toast.info('Menunggu konfirmasi pembayaran.');
+                },
+                onError: function () {
+                    setPaymentStatus('error');
+                    toast.error('Pembayaran gagal.');
+                },
+                onClose: function () {
+                    setPaymentStatus('none');
+                },
             });
         } else {
-            alert('Gerbang pembayaran Midtrans belum siap. Silakan tunggu sebentar dan coba lagi.');
+            toast.error('Gerbang pembayaran Midtrans belum siap. Silakan tunggu sebentar.');
         }
     }, [snap_token, booking.kdbooking]);
 
     useEffect(() => {
         if (isScriptLoaded) {
-            const timer = setTimeout(() => { handlePay(); }, 800);
+            const timer = setTimeout(() => {
+                handlePay();
+            }, 800);
             return () => clearTimeout(timer);
         }
     }, [isScriptLoaded, handlePay]);
 
-    const content = (
-        <div className="row justify-content-center">
-            <div className="col-lg-6" data-aos="zoom-in">
-                <div className="card shadow-lg border-0 text-center overflow-hidden" style={{ borderRadius: '20px' }}>
-                    <div className="p-5 bg-dark text-white">
-                        <div className="mx-auto mb-4 d-flex align-items-center justify-content-center" style={{ width: '80px', height: '80px', borderRadius: '50%', backgroundColor: 'rgba(249, 109, 0, 0.1)', border: '2px solid #f96d00' }}>
-                            <i className="ion-ios-card" style={{ fontSize: '40px', color: '#f96d00' }}></i>
+    const formatCurrency = (amount: number) =>
+        new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
+
+    return (
+        <BookingLayout breadcrumbs={breadcrumbs} title="Checkout Pembayaran">
+            <div className="flex h-full flex-1 items-center justify-center p-4">
+                <Card className="w-full max-w-lg">
+                    <CardHeader className="text-center">
+                        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+                            <CreditCard className="h-8 w-8 text-primary" />
                         </div>
-                        <h3 className="font-weight-bold mb-1">Konfirmasi Pembayaran</h3>
-                        <p className="opacity-75 small">Kode Transaksi: <span className="font-weight-bold" style={{ color: '#f96d00' }}>{booking.kdbooking}</span></p>
-                    </div>
-                    
-                    <div className="card-body p-5 bg-white">
-                        <div className="p-4 mb-5 rounded-xl" style={{ backgroundColor: '#f8f9fa', border: '1px dashed #ddd' }}>
-                            <p className="text-muted small text-uppercase font-weight-bold mb-2">Total yang Harus Dibayar</p>
-                            <h2 className="font-weight-bold mb-0" style={{ color: '#222831' }}>
-                                {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(booking.total_bayar)}
-                            </h2>
+                        <CardTitle>Konfirmasi Pembayaran</CardTitle>
+                        <CardDescription>
+                            Kode Transaksi: <span className="font-bold text-foreground">{booking.kdbooking}</span>
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        <div className="rounded-lg border border-dashed bg-muted/50 p-6 text-center">
+                            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                                Total yang Harus Dibayar
+                            </p>
+                            <p className="mt-2 text-3xl font-bold">{formatCurrency(booking.total_bayar)}</p>
                         </div>
 
                         {paymentStatus === 'none' && (
-                            <div className="animate__animated animate__fadeIn">
-                                <p className="text-muted small mb-4">
-                                    {isScriptLoaded ? 'Gerbang pembayaran Midtrans siap.' : 'Memuat gerbang pembayaran Midtrans...'}
+                            <div className="space-y-4 text-center">
+                                <p className="text-sm text-muted-foreground">
+                                    {isScriptLoaded
+                                        ? 'Gerbang pembayaran Midtrans siap.'
+                                        : 'Memuat gerbang pembayaran Midtrans...'}
                                 </p>
-                                <button onClick={handlePay} className="btn btn-primary btn-block py-3 font-weight-bold shadow-sm" style={{ backgroundColor: '#f96d00', borderColor: '#f96d00', borderRadius: '10px' }}>
-                                    BAYAR SEKARANG
-                                </button>
+                                <Button
+                                    className="w-full"
+                                    size="lg"
+                                    onClick={handlePay}
+                                    disabled={!isScriptLoaded}
+                                >
+                                    {!isScriptLoaded && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    Bayar Sekarang
+                                </Button>
                             </div>
                         )}
 
                         {paymentStatus === 'pending' && (
-                            <div className="text-warning animate__animated animate__pulse animate__infinite">
-                                <div className="spinner-border mb-3" role="status"></div>
-                                <h5 className="font-weight-bold">Menunggu Pembayaran</h5>
-                                <p className="small text-muted">Silakan selesaikan transaksi pada jendela Midtrans.</p>
+                            <div className="flex flex-col items-center gap-3 py-4">
+                                <Loader2 className="h-12 w-12 animate-spin text-amber-500" />
+                                <h3 className="text-lg font-bold">Menunggu Pembayaran</h3>
+                                <p className="text-sm text-muted-foreground">
+                                    Silakan selesaikan transaksi pada jendela Midtrans.
+                                </p>
                             </div>
                         )}
 
                         {paymentStatus === 'success' && (
-                            <div className="text-success">
-                                <i className="ion-ios-checkmark-circle mb-3 d-block" style={{ fontSize: '60px' }}></i>
-                                <h4 className="font-weight-bold">Pembayaran Berhasil!</h4>
-                                <p className="small text-muted">Mohon tunggu, Anda akan diarahkan ke halaman invoice...</p>
+                            <div className="flex flex-col items-center gap-3 py-4">
+                                <CheckCircle2 className="h-12 w-12 text-green-500" />
+                                <h3 className="text-lg font-bold">Pembayaran Berhasil!</h3>
+                                <p className="text-sm text-muted-foreground">
+                                    Mohon tunggu, Anda akan diarahkan ke halaman invoice...
+                                </p>
                             </div>
                         )}
 
                         {paymentStatus === 'error' && (
-                            <div className="text-danger">
-                                <i className="ion-ios-close-circle mb-3 d-block" style={{ fontSize: '60px', color: '#dc3545' }}></i>
-                                <h4 className="font-weight-bold">Pembayaran Gagal</h4>
-                                <p className="small text-muted">Terjadi kesalahan saat memproses pembayaran. Silakan coba kembali.</p>
-                                <button onClick={handlePay} className="btn btn-outline-danger mt-3">Coba Lagi</button>
+                            <div className="flex flex-col items-center gap-3 py-4">
+                                <XCircle className="h-12 w-12 text-destructive" />
+                                <h3 className="text-lg font-bold">Pembayaran Gagal</h3>
+                                <p className="text-sm text-muted-foreground">
+                                    Terjadi kesalahan saat memproses pembayaran.
+                                </p>
+                                <Button variant="outline" onClick={handlePay}>
+                                    Coba Lagi
+                                </Button>
                             </div>
                         )}
 
-
-                        <div className="mt-5 pt-4 border-top">
-                            <Link href={isPelanggan ? "/" : "/booking"} className="btn btn-link text-muted small">
-                                <i className="ion-ios-arrow-back mr-2"></i> Kembali
-                            </Link>
+                        <div className="border-t pt-4">
+                            <Button variant="ghost" className="w-full" asChild>
+                                <Link href="/booking">
+                                    <ArrowLeft className="mr-2 h-4 w-4" />
+                                    Kembali
+                                </Link>
+                            </Button>
                         </div>
-                    </div>
-                </div>
+                    </CardContent>
+                </Card>
             </div>
-        </div>
-    );
-
-    if (isPelanggan) {
-        return (
-            <TemplateLayout showHero={false}>
-                <section className="ftco-section bg-light" style={{ paddingTop: '120px', paddingBottom: '60px' }}>
-                    <div className="container">
-                        {content}
-                    </div>
-                </section>
-            </TemplateLayout>
-        );
-    }
-
-    return (
-        <AdminLayout title="Penyelesaian Pembayaran">
-            <Head title="Checkout Pembayaran" />
-            {content}
-        </AdminLayout>
+        </BookingLayout>
     );
 }

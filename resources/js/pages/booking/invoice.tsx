@@ -1,6 +1,9 @@
-import AdminLayout from '@/layouts/AdminLayout';
-import TemplateLayout from '@/layouts/TemplateLayout';
-import { Head, Link, usePage } from '@inertiajs/react';
+import BookingLayout from '@/layouts/booking-layout';
+import { type BreadcrumbItem } from '@/types';
+import { Head, Link } from '@inertiajs/react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { ArrowLeft, Printer, User, Clock, Car, CreditCard, Info } from 'lucide-react';
 
 interface Booking {
     kdbooking: string;
@@ -14,13 +17,13 @@ interface Booking {
     transaction_time: string;
 }
 
-interface User {
+interface UserData {
     nama_lengkap: string;
     alamat: string;
     nohp: string;
 }
 
-interface Mobil {
+interface MobilData {
     nama_mobil: string;
     plat_mobil: string;
     stnk_mobil: string;
@@ -28,319 +31,224 @@ interface Mobil {
 
 interface Props {
     booking: Booking;
-    user: User;
-    mobil: Mobil;
+    user: UserData;
+    mobil: MobilData;
 }
 
-const ORANGE = '#f96d00';
-const DARK = '#222831';
-const GRAY = '#6c757d';
+function getStatusBadge(status: string) {
+    const s = (status || '').toLowerCase();
+    if (['sukses', 'success', 'berhasil', 'selesai'].includes(s)) return 'default';
+    if (['pending', 'proses'].includes(s)) return 'secondary';
+    if (['batal', 'gagal', 'expired'].includes(s)) return 'destructive';
+    return 'outline';
+}
 
 export default function Invoice({ booking, user, mobil }: Props) {
-    const { auth } = usePage<{ auth: { user: { role: string } } }>().props;
-    const authUser = auth?.user;
-    const isPelanggan = authUser?.role === 'pelanggan';
+    const breadcrumbs: BreadcrumbItem[] = [
+        { title: 'Dashboard', href: '/dashboard' },
+        { title: 'Booking', href: '/booking' },
+        { title: `Faktur #${booking.kdbooking}`, href: '#' },
+    ];
 
     const formatCurrency = (n: number) =>
-        new Intl.NumberFormat('id-ID', {
-            style: 'currency',
-            currency: 'IDR',
-            minimumFractionDigits: 0,
-        }).format(n);
+        new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
 
     const formatDate = (s: string) => {
         if (!s) return '-';
         const d = new Date(s);
-        const names = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-        return `${names[d.getDay()]}, ${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`;
+        return d.toLocaleDateString('id-ID', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
     };
 
     const formatShort = (s: string) => {
         if (!s) return '-';
         const d = new Date(s);
-        return `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`;
+        return d.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
     };
 
     const txTime = booking.transaction_time || booking.tglbooking;
 
-    const badge = (() => {
-        const s = (booking.status ?? '').toLowerCase();
-        if (['sukses', 'success', 'berhasil', 'selesai'].includes(s))
-            return { bg: '#d4edda', color: '#155724' };
-        if (s === 'pending') return { bg: '#fff3cd', color: '#856404' };
-        return { bg: '#f8d7da', color: '#721c24' };
-    })();
-
-    const content = (
-        <>
-            <div className="inv-toolbar row justify-content-center mb-3 no-print" style={{ position: 'relative', zIndex: 10 }}>
-                <div className="col-xl-10 d-flex justify-content-between align-items-center">
-                    <Link href={isPelanggan ? "/" : "/booking"} className="btn btn-link text-muted p-0" style={{ fontWeight: 500, position: 'relative', zIndex: 11 }}>
-                        <i className="ion-ios-arrow-back mr-2" />Kembali
-                    </Link>
-                    <button
-                        type="button"
-                        onClick={() => window.print()}
-                        className="btn px-4"
-                        style={{ borderRadius: '8px', background: DARK, color: '#fff', fontWeight: 600, fontSize: '13px', position: 'relative', zIndex: 11, cursor: 'pointer' }}
-                    >
-                        <i className="ion-ios-printer mr-2" />Cetak Faktur
-                    </button>
+    return (
+        <BookingLayout breadcrumbs={breadcrumbs} title={`Faktur #${booking.kdbooking}`}>
+            <div className="flex flex-col gap-4 p-4">
+                <div className="no-print flex items-center justify-between">
+                    <Button variant="ghost" asChild>
+                        <Link href="/booking">
+                            <ArrowLeft className="mr-2 h-4 w-4" />
+                            Kembali
+                        </Link>
+                    </Button>
+                    <Button onClick={() => window.print()}>
+                        <Printer className="mr-2 h-4 w-4" />
+                        Cetak Faktur
+                    </Button>
                 </div>
-            </div>
 
-            <div className="row justify-content-center">
-                <div className="col-xl-10">
-                    <div
-                        id="inv"
-                        style={{
-                            background: '#fff',
-                            borderRadius: '14px',
-                            boxShadow: '0 6px 32px rgba(0,0,0,0.10)',
-                            overflow: 'hidden',
-                            fontFamily: "'Poppins','Segoe UI',sans-serif",
-                        }}
-                    >
-                        <div style={{
-                            background: `linear-gradient(135deg, ${DARK} 0%, #393e46 55%, ${ORANGE} 100%)`,
-                            padding: '18px 28px',
-                            color: '#fff',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            position: 'relative',
-                            overflow: 'hidden',
-                        }}>
-                            <div style={{ position: 'absolute', top: '-28px', right: '-28px', width: '110px', height: '110px', borderRadius: '50%', background: 'rgba(249,109,0,0.18)' }} />
-                            <div style={{ position: 'absolute', bottom: '-18px', right: '80px', width: '65px', height: '65px', borderRadius: '50%', background: 'rgba(255,255,255,0.06)' }} />
-
-                            <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: '20px' }}>
-                                <img 
-                                    src="/storage/logo/logo.jpg" 
-                                    alt="Logo" 
-                                    style={{ 
-                                        height: '90px', 
-                                        width: 'auto', 
-                                        borderRadius: '10px', 
-                                        objectFit: 'contain',
-                                        background: '#fff',
-                                        padding: '5px',
-                                        boxShadow: '0 4px 14px rgba(0,0,0,0.25)'
-                                    }} 
+                <div className="mx-auto w-full max-w-4xl rounded-xl border bg-card shadow-lg print:max-w-full print:rounded-none print:shadow-none print:border-0">
+                    <div className="relative overflow-hidden rounded-t-xl bg-gradient-to-br from-slate-900 via-slate-800 to-orange-500 p-6 text-white print:rounded-none">
+                        <div className="absolute -right-7 -top-7 h-28 w-28 rounded-full bg-orange-500/20" />
+                        <div className="absolute bottom-[-18px] right-20 h-16 w-16 rounded-full bg-white/5" />
+                        <div className="relative z-10 flex items-center justify-between">
+                            <div className="flex items-center gap-5">
+                                <img
+                                    src="/storage/logo/logo.jpg"
+                                    alt="Logo"
+                                    className="h-[90px] w-auto rounded-[10px] bg-white p-1 object-contain shadow-lg"
                                 />
                                 <div>
-                                    <div style={{ fontSize: '17px', fontWeight: 800, letterSpacing: '0.5px', lineHeight: 1.2 }}>
+                                    <div className="text-lg font-extrabold leading-tight tracking-wide">
                                         PT. NABIL RENTAL MOBIL PADANG
                                     </div>
-                                    <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.85)', marginTop: '4px', fontWeight: 500 }}>
+                                    <div className="mt-1 text-xs font-medium text-white/80">
                                         Kompek Perumdam/III/4, Tunggul Hitam, Kota Padang
                                     </div>
                                 </div>
                             </div>
-
-                            <div style={{ position: 'relative', zIndex: 1, textAlign: 'right' }}>
-                                <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.55)', letterSpacing: '2px', textTransform: 'uppercase' }}>
+                            <div className="text-right">
+                                <div className="text-[10px] uppercase tracking-widest text-white/50">
                                     Faktur Pembayaran
                                 </div>
-                                <div style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '1px' }}>
+                                <div className="text-xl font-extrabold tracking-wide">
                                     #{booking.kdbooking}
                                 </div>
-                                <span style={{
-                                    display: 'inline-block', marginTop: '3px',
-                                    padding: '2px 10px', borderRadius: '20px', fontSize: '10px', fontWeight: 700,
-                                    textTransform: 'uppercase', letterSpacing: '0.5px',
-                                    background: badge.bg, color: badge.color,
-                                }}>
+                                <Badge variant={getStatusBadge(booking.status)} className="mt-1">
                                     {booking.status}
-                                </span>
+                                </Badge>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="space-y-5 p-6">
+                        <div className="grid gap-3 sm:grid-cols-2">
+                            <div className="rounded-lg border-l-4 border-l-orange-500 bg-muted/50 p-4">
+                                <div className="mb-2 flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-orange-600">
+                                    <User className="h-3 w-3" />
+                                    Informasi Pelanggan
+                                </div>
+                                <div className="space-y-1">
+                                    <InfoRow label="Nama" value={user.nama_lengkap} />
+                                    <InfoRow label="Alamat" value={user.alamat || '-'} />
+                                    <InfoRow label="No. HP" value={user.nohp || '-'} />
+                                </div>
+                            </div>
+                            <div className="rounded-lg border-l-4 border-l-slate-900 bg-muted/50 p-4">
+                                <div className="mb-2 flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-slate-700">
+                                    <Clock className="h-3 w-3" />
+                                    Detail Transaksi
+                                </div>
+                                <div className="space-y-1">
+                                    <InfoRow label="Waktu" value={formatDate(txTime)} />
+                                    <InfoRow label="Status" value={booking.status} />
+                                </div>
                             </div>
                         </div>
 
-                        <div style={{ padding: '18px 28px' }}>
-                            <div style={{ display: 'flex', gap: '12px', marginBottom: '14px' }}>
-                                <div style={{ flex: 1, background: '#f8f9fa', borderRadius: '8px', padding: '11px 14px', borderLeft: `3px solid ${ORANGE}` }}>
-                                    <div style={{ fontSize: '9px', fontWeight: 700, color: ORANGE, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '7px' }}>
-                                        <i className="ion-ios-person mr-1" />Informasi Pelanggan
-                                    </div>
-                                    <Row label="Nama" value={user.nama_lengkap} />
-                                    <Row label="Alamat" value={user.alamat || '-'} />
-                                    <Row label="No. HP" value={user.nohp || '-'} />
-                                </div>
+                        <div className="border-t border-dashed" />
 
-                                <div style={{ flex: 1, background: '#f8f9fa', borderRadius: '8px', padding: '11px 14px', borderLeft: `3px solid ${DARK}` }}>
-                                    <div style={{ fontSize: '9px', fontWeight: 700, color: DARK, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '7px' }}>
-                                        <i className="ion-ios-time mr-1" />Detail Transaksi
-                                    </div>
-                                    <Row label="Waktu" value={formatDate(txTime)} />
-                                    <Row label="Status" value={booking.status} />
-                                </div>
+                        <div>
+                            <div className="mb-2 flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                                <Car className="h-3 w-3" />
+                                Detail Kendaraan & Sewa
                             </div>
-
-                            <div style={{ borderTop: '1.5px dashed #dee2e6', margin: '2px 0 12px' }} />
-
-                            <div style={{ fontSize: '9px', fontWeight: 700, color: GRAY, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '7px' }}>
-                                <i className="ion-ios-car mr-1" />Detail Kendaraan &amp; Sewa
-                            </div>
-
-                            <div style={{ borderRadius: '8px', overflow: 'hidden', border: '1.5px solid #e9ecef', marginBottom: '12px' }}>
-                                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                            <div className="overflow-hidden rounded-lg border">
+                                <table className="w-full text-sm">
                                     <thead>
-                                        <tr style={{ background: DARK }}>
-                                            {['Nama Mobil', 'Plat Mobil', 'STNK Mobil', 'Lama Rental', 'Tgl Rental', 'Tgl Selesai'].map((c) => (
-                                                <th key={c} style={{
-                                                    padding: '9px 10px', color: '#fff', fontSize: '10px',
-                                                    fontWeight: 700, textAlign: 'center', whiteSpace: 'nowrap',
-                                                }}>
-                                                    {c}
-                                                </th>
-                                            ))}
+                                        <tr className="bg-slate-900 text-white">
+                                            <th className="px-3 py-2 text-center text-xs font-bold">Nama Mobil</th>
+                                            <th className="px-3 py-2 text-center text-xs font-bold">Plat Mobil</th>
+                                            <th className="px-3 py-2 text-center text-xs font-bold">STNK Mobil</th>
+                                            <th className="px-3 py-2 text-center text-xs font-bold">Lama Rental</th>
+                                            <th className="px-3 py-2 text-center text-xs font-bold">Tgl Rental</th>
+                                            <th className="px-3 py-2 text-center text-xs font-bold">Tgl Selesai</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <tr>
-                                            <Td>{mobil.nama_mobil}</Td>
-                                            <Td>{mobil.plat_mobil}</Td>
-                                            <Td>{mobil.stnk_mobil}</Td>
-                                            <Td extra={{ color: ORANGE, fontWeight: 700 }}>{booking.lama_sewa} Hari</Td>
-                                            <Td>{formatShort(booking.tglmulai)}</Td>
-                                            <Td>{formatShort(booking.tglselesai)}</Td>
+                                            <td className="px-3 py-3 text-center text-xs font-medium">{mobil.nama_mobil}</td>
+                                            <td className="px-3 py-3 text-center text-xs font-medium">{mobil.plat_mobil}</td>
+                                            <td className="px-3 py-3 text-center text-xs font-medium">{mobil.stnk_mobil}</td>
+                                            <td className="px-3 py-3 text-center text-xs font-bold text-orange-600">{booking.lama_sewa} Hari</td>
+                                            <td className="px-3 py-3 text-center text-xs font-medium">{formatShort(booking.tglmulai)}</td>
+                                            <td className="px-3 py-3 text-center text-xs font-medium">{formatShort(booking.tglselesai)}</td>
                                         </tr>
                                     </tbody>
                                 </table>
                             </div>
+                        </div>
 
-                            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '14px' }}>
-                                <div style={{ minWidth: '290px', borderRadius: '8px', overflow: 'hidden', border: '1.5px solid #e9ecef' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 14px', borderBottom: '1px solid #e9ecef' }}>
-                                        <span style={{ fontSize: '11px', color: GRAY, fontWeight: 600 }}>
-                                            <i className="ion-ios-card mr-1" style={{ color: ORANGE }} />Metode Pembayaran
-                                        </span>
-                                        <span style={{ fontSize: '12px', fontWeight: 700, color: DARK }}>{booking.payment_method || '-'}</span>
-                                    </div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '11px 14px', background: `linear-gradient(135deg, ${DARK}, #393e46)` }}>
-                                        <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.8)', fontWeight: 600 }}>Total Pembayaran</span>
-                                        <span style={{ fontSize: '16px', fontWeight: 800, color: ORANGE }}>{formatCurrency(booking.total_bayar)}</span>
-                                    </div>
+                        <div className="flex justify-end">
+                            <div className="w-full max-w-xs overflow-hidden rounded-lg border">
+                                <div className="flex items-center justify-between border-b px-4 py-2">
+                                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                                        <CreditCard className="h-3 w-3 text-orange-500" />
+                                        Metode Pembayaran
+                                    </span>
+                                    <span className="text-xs font-bold">{booking.payment_method || '-'}</span>
+                                </div>
+                                <div className="flex items-center justify-between bg-gradient-to-r from-slate-900 to-slate-700 px-4 py-3">
+                                    <span className="text-sm font-medium text-white/80">Total Pembayaran</span>
+                                    <span className="text-lg font-extrabold text-orange-500">
+                                        {formatCurrency(booking.total_bayar)}
+                                    </span>
                                 </div>
                             </div>
+                        </div>
 
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px' }}>
-                                <Sig top="Mengetahui," role="Pelanggan" name={user.nama_lengkap} />
-                                <Sig
-                                    top={`Padang, ${new Date(txTime).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}`}
-                                    role="Petugas"
-                                    name="PT. Nabil Rental Mobil"
-                                />
-                            </div>
+                        <div className="flex justify-between pt-4">
+                            <SignatureBlock
+                                title="Mengetahui,"
+                                role="Pelanggan"
+                                name={user.nama_lengkap}
+                            />
+                            <SignatureBlock
+                                title={`Padang, ${new Date(txTime).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}`}
+                                role="Petugas"
+                                name="PT. Nabil Rental Mobil"
+                            />
+                        </div>
 
-                            <div style={{ marginTop: '12px', padding: '9px 14px', borderRadius: '7px', background: '#fff8f3', border: '1px solid #fde8d8', textAlign: 'center' }}>
-                                <p style={{ margin: 0, fontSize: '10px', color: '#9a6033', fontWeight: 500 }}>
-                                    <i className="ion-ios-information-circle mr-1" />
-                                    Terima kasih atas kepercayaan Anda. Simpan faktur ini sebagai bukti pengambilan kendaraan.
-                                </p>
-                            </div>
+                        <div className="mt-3 rounded-lg border border-orange-200 bg-orange-50 p-3 text-center">
+                            <p className="text-xs font-medium text-orange-800">
+                                <Info className="mr-1 inline h-3 w-3" />
+                                Terima kasih atas kepercayaan Anda. Simpan faktur ini sebagai bukti pengambilan kendaraan.
+                            </p>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <style dangerouslySetInnerHTML={{
-                __html: `
-                @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap');
-
+            <style>{`
                 @media print {
-                    /* ── Sembunyikan semua elemen Admin & Website, hanya tampilkan invoice ── */
-                    .inv-toolbar,
-                    .admin-sidebar,
-                    nav.navbar,
-                    .sticky-top,
-                    .no-print,
-                    footer { display: none !important; }
-
-                    /* ── Reset layout admin & website ── */
-                    .admin-wrapper, .template-wrapper { display: block !important; background: #fff !important; }
-                    .main-panel    { margin-left: 0 !important; width: 100% !important; }
-                    .content-body  { padding: 0 !important; margin: 0 !important; }
-                    main { padding-top: 0 !important; }
-
-                    html, body {
-                        margin: 0 !important; padding: 0 !important;
-                        background: #fff !important;
-                        -webkit-print-color-adjust: exact !important;
-                        print-color-adjust: exact !important;
-                    }
-
-                    @page {
-                        size: A4 portrait;
-                        margin: 6mm;
-                    }
-
-                    #inv {
-                        box-shadow: none !important;
-                        border-radius: 0 !important;
-                        zoom: 0.78;
-                        page-break-after: avoid;
-                        page-break-before: avoid;
-                        page-break-inside: avoid;
-                        break-inside: avoid;
-                    }
+                    .no-print { display: none !important; }
+                    nav, aside, header, [data-sidebar] { display: none !important; }
+                    [data-layout] { padding: 0 !important; margin: 0 !important; }
+                    main { padding: 0 !important; }
+                    html, body { margin: 0 !important; padding: 0 !important; background: #fff !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+                    @page { size: A4 portrait; margin: 6mm; }
                 }
-            `}} />
-        </>
-    );
-
-    if (isPelanggan) {
-        return (
-            <TemplateLayout showHero={false}>
-                <Head title={`Faktur #${booking.kdbooking}`} />
-                <section className="ftco-section bg-light" style={{ paddingTop: '120px', paddingBottom: '60px' }}>
-                    <div className="container">
-                        {content}
-                    </div>
-                </section>
-            </TemplateLayout>
-        );
-    }
-
-    return (
-        <AdminLayout title={`Faktur ${booking.kdbooking}`}>
-            <Head title={`Faktur #${booking.kdbooking}`} />
-            {content}
-        </AdminLayout>
+            `}</style>
+        </BookingLayout>
     );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+function InfoRow({ label, value }: { label: string; value: string }) {
     return (
-        <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: '4px' }}>
-            <span style={{ fontSize: '10px', fontWeight: 600, color: GRAY, width: '52px', flexShrink: 0 }}>{label}</span>
-            <span style={{ fontSize: '10px', color: GRAY, margin: '0 5px' }}>:</span>
-            <span style={{ fontSize: '11px', fontWeight: 600, color: DARK, wordBreak: 'break-word' }}>{value}</span>
+        <div className="flex items-baseline text-xs">
+            <span className="w-14 shrink-0 font-semibold text-muted-foreground">{label}</span>
+            <span className="mx-1 text-muted-foreground">:</span>
+            <span className="font-semibold break-words">{value}</span>
         </div>
     );
 }
 
-function Sig({ top, role, name }: { top: string; role: string; name: string }) {
+function SignatureBlock({ title, role, name }: { title: string; role: string; name: string }) {
     return (
-        <div style={{ textAlign: 'center', minWidth: '160px' }}>
-            <p style={{ margin: 0, fontSize: '10px', color: GRAY }}>{top}</p>
-            <p style={{ margin: '2px 0 0', fontWeight: 700, fontSize: '11px', color: DARK }}>{role}</p>
-            <div style={{ height: '40px' }} />
-            <div style={{ borderTop: `1.5px solid ${DARK}`, paddingTop: '4px', fontSize: '10px', fontWeight: 700, color: DARK }}>
+        <div className="min-w-[160px] text-center">
+            <p className="text-xs text-muted-foreground">{title}</p>
+            <p className="text-xs font-bold">{role}</p>
+            <div className="h-10" />
+            <div className="border-t border-foreground pt-1 text-xs font-bold">
                 ( {name} )
             </div>
         </div>
-    );
-}
-
-function Td({ children, extra = {} }: { children: React.ReactNode; extra?: React.CSSProperties }) {
-    return (
-        <td style={{
-            padding: '10px 9px', textAlign: 'center',
-            fontSize: '11px', fontWeight: 500, color: DARK,
-            ...extra,
-        }}>
-            {children}
-        </td>
     );
 }

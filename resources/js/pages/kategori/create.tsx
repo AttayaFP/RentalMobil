@@ -1,6 +1,20 @@
-import AdminLayout from '@/layouts/AdminLayout';
-import { useForm } from '@inertiajs/react';
-import { FormEventHandler } from 'react';
+import AppLayout from '@/layouts/app-layout';
+import { type BreadcrumbItem } from '@/types';
+import { Head, Link, useForm } from '@inertiajs/react';
+import { FormEventHandler, useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ArrowLeft } from 'lucide-react';
+import { toast } from 'sonner';
+
+const breadcrumbs: BreadcrumbItem[] = [
+    { title: 'Dashboard', href: '/dashboard' },
+    { title: 'Kategori', href: '/kategori' },
+    { title: 'Tambah', href: '/kategori/create' },
+];
 
 interface Props {
     next_kdkategori: string;
@@ -12,64 +26,92 @@ export default function Create({ next_kdkategori }: Props) {
         nama_kategori: '',
     });
 
+    const [showConfirm, setShowConfirm] = useState(false);
+
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
-        post('/kategori');
+        setShowConfirm(true);
     };
 
-    const forceNavigate = (path: string) => {
-        window.location.href = path;
+    const confirmSubmit = () => {
+        post('/kategori', {
+            onSuccess: () => toast.success('Kategori berhasil ditambahkan'),
+            onError: () => toast.error('Gagal menambahkan kategori'),
+            onFinish: () => setShowConfirm(false),
+        });
     };
 
     return (
-        <AdminLayout title="Tambah Kategori Mobil">
-            <div className="row justify-content-center">
-                <div className="col-lg-6">
-                    <div className="card shadow-sm border-0 p-4 p-md-5" style={{ borderRadius: '15px' }}>
-                        <div className="mb-4 d-flex align-items-center">
-                            <button onClick={() => forceNavigate('/kategori')} className="btn btn-link text-muted p-0 mr-3">
-                                <i className="ion-ios-arrow-back" style={{ fontSize: '24px' }}></i>
-                            </button>
-                            <h4 className="font-weight-bold mb-0">Data Kategori Baru</h4>
-                        </div>
+        <AppLayout breadcrumbs={breadcrumbs}>
+            <Head title="Tambah Kategori" />
 
-                        <form onSubmit={submit}>
-                            <div className="form-group mb-4">
-                                <label className="font-weight-bold text-dark small text-uppercase">Kode Kategori</label>
-                                <div className="form-control bg-light d-flex align-items-center font-weight-bold" style={{ cursor: 'default', userSelect: 'none', minHeight: '50px' }}>
-                                    {data.kdkategori}
-                                </div>
-                                {errors.kdkategori && <div className="invalid-feedback">{errors.kdkategori}</div>}
-                            </div>
-                            
-                            <div className="form-group mb-4">
-                                <label className="font-weight-bold text-dark small text-uppercase">Nama Kategori</label>
-                                <input 
-                                    type="text" 
-                                    className={`form-control ${errors.nama_kategori ? 'is-invalid' : ''}`}
-                                    placeholder="Contoh: Sport Utility Vehicle"
-                                    value={data.nama_kategori}
-                                    onChange={e => setData('nama_kategori', e.target.value)}
-                                    required
-                                />
-                                {errors.nama_kategori && <div className="invalid-feedback">{errors.nama_kategori}</div>}
-                            </div>
-
-                            <div className="mt-5 pt-4 border-top">
-                                <button type="submit" className="btn btn-primary btn-block py-3 font-weight-bold" disabled={processing} style={{ backgroundColor: '#f96d00', borderColor: '#f96d00' }}>
-                                    {processing ? 'Menyimpan...' : 'Simpan Kategori'}
-                                </button>
-                                <button type="button" onClick={() => forceNavigate('/kategori')} className="btn btn-link btn-block text-muted small mt-2">Batal</button>
-                            </div>
-                        </form>
+            <div className="flex flex-col gap-6 p-4">
+                <div className="flex items-center gap-4">
+                    <Button variant="outline" size="icon" asChild>
+                        <Link href="/kategori">
+                            <ArrowLeft className="h-4 w-4" />
+                        </Link>
+                    </Button>
+                    <div>
+                        <h1 className="text-2xl font-bold">Tambah Kategori Baru</h1>
+                        <p className="text-sm text-muted-foreground">Buat kategori baru untuk jenis mobil</p>
                     </div>
                 </div>
+
+                <Card className="max-w-lg">
+                    <CardHeader>
+                        <CardTitle className="text-base">Data Kategori</CardTitle>
+                        <CardDescription>Masukkan kode dan nama kategori</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <form onSubmit={submit} className="space-y-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="kdkategori">Kode Kategori</Label>
+                                <Input id="kdkategori" value={data.kdkategori} onChange={(e) => setData('kdkategori', e.target.value)} required />
+                                {errors.kdkategori && <p className="text-sm text-destructive">{errors.kdkategori}</p>}
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="nama_kategori">Nama Kategori</Label>
+                                <Input
+                                    id="nama_kategori"
+                                    placeholder="Contoh: Sport Utility Vehicle"
+                                    value={data.nama_kategori}
+                                    onChange={(e) => setData('nama_kategori', e.target.value)}
+                                    required
+                                />
+                                {errors.nama_kategori && <p className="text-sm text-destructive">{errors.nama_kategori}</p>}
+                            </div>
+
+                            <div className="flex justify-end gap-3 pt-4">
+                                <Button variant="outline" asChild>
+                                    <Link href="/kategori">Batal</Link>
+                                </Button>
+                                <Button type="submit" disabled={processing}>
+                                    {processing ? 'Menyimpan...' : 'Simpan Kategori'}
+                                </Button>
+                            </div>
+                        </form>
+                    </CardContent>
+                </Card>
             </div>
-            
-            <style dangerouslySetInnerHTML={{ __html: `
-                .form-control { border-radius: 8px; padding: 12px 15px; border: 1px solid #ddd; height: auto; }
-                .form-control:focus { border-color: #f96d00; box-shadow: 0 0 0 0.2rem rgba(249, 109, 0, 0.1); }
-            `}} />
-        </AdminLayout>
+
+            <Dialog open={showConfirm} onOpenChange={setShowConfirm}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Simpan Kategori Baru</DialogTitle>
+                        <DialogDescription>Pastikan kode dan nama kategori sudah benar.</DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowConfirm(false)}>
+                            Batal
+                        </Button>
+                        <Button onClick={confirmSubmit} disabled={processing}>
+                            {processing ? 'Menyimpan...' : 'Ya, Simpan'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </AppLayout>
     );
 }

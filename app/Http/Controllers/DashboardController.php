@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\BookingMobil;
 use App\Models\Mobil;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class DashboardController extends Controller
@@ -24,16 +26,51 @@ class DashboardController extends Controller
                 })->orderBy('tglpengembalian', 'desc')->first();
 
                 if ($latestKembali && $latestKembali->tglpengembalian) {
-                    $tglPengembalian = \Carbon\Carbon::parse($latestKembali->tglpengembalian)->startOfDay();
+                    $tglPengembalian = Carbon::parse($latestKembali->tglpengembalian)->startOfDay();
                 } else {
-                    $tglPengembalian = \Carbon\Carbon::parse($mobil->updated_at)->startOfDay();
+                    $tglPengembalian = Carbon::parse($mobil->updated_at)->startOfDay();
                 }
 
-                $hariIni = \Carbon\Carbon::now()->startOfDay();
+                $hariIni = Carbon::now()->startOfDay();
 
                 return $tglPengembalian->diffInDays($hariIni, false) >= 2;
             })
             ->values();
+
+        $monthlyRevenue = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $date = Carbon::now()->subMonths($i);
+            $total = BookingMobil::where('status', 'Selesai')
+                ->whereYear('tglbooking', $date->year)
+                ->whereMonth('tglbooking', $date->month)
+                ->sum('total_bayar');
+            $monthlyRevenue[] = [
+                'month' => $date->format('M Y'),
+                'revenue' => (float) $total,
+            ];
+        }
+
+        $bookingByStatus = BookingMobil::select('status', DB::raw('count(*) as total'))
+            ->groupBy('status')
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'status' => $item->status,
+                    'total' => (int) $item->total,
+                ];
+            });
+
+        $monthlyBookings = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $date = Carbon::now()->subMonths($i);
+            $count = BookingMobil::whereYear('tglbooking', $date->year)
+                ->whereMonth('tglbooking', $date->month)
+                ->count();
+            $monthlyBookings[] = [
+                'month' => $date->format('M Y'),
+                'bookings' => (int) $count,
+            ];
+        }
 
         return Inertia::render('dashboard', [
             'stats' => [
@@ -50,6 +87,11 @@ class DashboardController extends Controller
                 ->take(5)
                 ->get(),
             'mobil_selesai_rawat' => $mobilSelesaiRawat,
+            'chart_data' => [
+                'monthly_revenue' => $monthlyRevenue,
+                'booking_by_status' => $bookingByStatus,
+                'monthly_bookings' => $monthlyBookings,
+            ],
         ]);
     }
 }

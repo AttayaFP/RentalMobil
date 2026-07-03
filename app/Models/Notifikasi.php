@@ -44,14 +44,13 @@ class Notifikasi extends Model
                 continue;
             }
 
-            // Check if there is currently NO overlapping successful or active pending booking
             $overlapExists = BookingMobil::where('kdmobil', $kdmobil)
                 ->where('kdbooking', '!=', $booking->kdbooking)
                 ->where(function ($q) {
                     $q->whereIn('status', ['Sukses', 'success', 'Success', 'Berhasil', 'Selesai', 'challenge'])
                         ->orWhere(function ($qp) {
                             $qp->whereIn('status', ['Pending', 'pending'])
-                                ->where('created_at', '>=', now()->subMinutes(1)); // 1 min lock
+                                ->where('created_at', '>=', now()->subMinutes(1));
                         });
                 })
                 ->where(function ($q) use ($tglmulai, $tglselesai) {
@@ -75,6 +74,46 @@ class Notifikasi extends Model
                         'is_read' => false,
                     ]);
                     $booking->update(['status' => 'Notified']);
+                }
+            }
+        }
+    }
+
+    public static function generateAdminMaintenanceNotifications()
+    {
+        $adminUsers = User::where('role', 'admin')->get();
+
+        $mobilsInMaintenance = Mobil::whereRaw('LOWER(status) = ?', ['perawatan'])
+            ->get()
+            ->filter(function ($mobil) {
+                $latestKembali = KembaliMobil::whereHas('booking', function ($q) use ($mobil) {
+                    $q->where('kdmobil', $mobil->kdmobil);
+                })->orderBy('tglpengembalian', 'desc')->first();
+
+                if ($latestKembali && $latestKembali->tglpengembalian) {
+                    $tglPengembalian = \Carbon\Carbon::parse($latestKembali->tglpengembalian)->startOfDay();
+                } else {
+                    $tglPengembalian = \Carbon\Carbon::parse($mobil->updated_at)->startOfDay();
+                }
+
+                return $tglPengembalian->diffInDays(\Carbon\Carbon::now()->startOfDay(), false) >= 2;
+            });
+
+        foreach ($adminUsers as $admin) {
+            foreach ($mobilsInMaintenance as $mobil) {
+                $exists = self::where('iduser', $admin->id)
+                    ->where('kdmobil', $mobil->kdmobil)
+                    ->where('pesan', 'like', '%perawatan%')
+                    ->where('is_read', false)
+                    ->exists();
+
+                if (!$exists) {
+                    self::create([
+                        'iduser' => $admin->id,
+                        'kdmobil' => $mobil->kdmobil,
+                        'pesan' => "Mobil " . $mobil->nama_mobil . " (" . $mobil->plat_mobil . ") sudah dalam status perawatan lebih dari 2 hari. Silakan ubah status menjadi Tersedia jika sudah selesai.",
+                        'is_read' => false,
+                    ]);
                 }
             }
         }

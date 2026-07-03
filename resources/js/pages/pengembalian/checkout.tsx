@@ -1,8 +1,19 @@
-import AdminLayout from '@/layouts/AdminLayout';
-import TemplateLayout from '@/layouts/TemplateLayout';
+import AppLayout from '@/layouts/app-layout';
+import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { ArrowLeft, CreditCard, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+
+const breadcrumbs: BreadcrumbItem[] = [
+    { title: 'Dashboard', href: '/dashboard' },
+    { title: 'Pengembalian', href: '/pengembalian' },
+    { title: 'Checkout', href: '#' },
+];
 
 interface Pengembalian {
     kdpengembalian: string;
@@ -13,7 +24,23 @@ interface Props {
     pengembalian: Pengembalian;
     snap_token: string;
     client_key: string;
-    is_production?: boolean;
+    is_production: boolean;
+}
+
+declare global {
+    interface Window {
+        snap: {
+            pay: (
+                token: string,
+                options?: {
+                    onSuccess?: (result: unknown) => void;
+                    onPending?: (result: unknown) => void;
+                    onError?: (result: unknown) => void;
+                    onClose?: () => void;
+                },
+            ) => void;
+        };
+    }
 }
 
 export default function Checkout({ pengembalian, snap_token, client_key, is_production }: Props) {
@@ -22,14 +49,17 @@ export default function Checkout({ pengembalian, snap_token, client_key, is_prod
     const isPelanggan = user?.role === 'pelanggan';
 
     const [paymentStatus, setPaymentStatus] = useState<'pending' | 'success' | 'error' | 'none'>('none');
-    const [isScriptLoaded, setIsScriptLoaded] = useState<boolean>(false);
+    const [isScriptLoaded, setIsScriptLoaded] = useState(false);
+
+    const formatCurrency = (amount: number) =>
+        new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
 
     useEffect(() => {
         const midtransScriptUrl = is_production
             ? 'https://app.midtrans.com/snap/snap.js'
             : 'https://app.sandbox.midtrans.com/snap/snap.js';
 
-        let script = document.querySelector(`script[id="midtrans-script"]`) as HTMLScriptElement;
+        let script = document.querySelector('script[id="midtrans-script"]') as HTMLScriptElement;
         if (!script) {
             script = document.createElement('script');
             script.id = 'midtrans-script';
@@ -49,107 +79,120 @@ export default function Checkout({ pengembalian, snap_token, client_key, is_prod
                 onSuccess: function (result: unknown) {
                     setPaymentStatus('success');
                     axios.post(`/pengembalian/${pengembalian.kdpengembalian}/success`, result)
-                        .then(() => { 
-                            router.get(isPelanggan ? "/" : "/pengembalian"); 
+                        .then(() => {
+                            router.visit(isPelanggan ? '/' : '/pengembalian');
                         });
                 },
-                onPending: function () { setPaymentStatus('pending'); },
-                onError: function () { setPaymentStatus('error'); },
-                onClose: function () { setPaymentStatus('none'); },
+                onPending: function () {
+                    setPaymentStatus('pending');
+                },
+                onError: function () {
+                    setPaymentStatus('error');
+                },
+                onClose: function () {
+                    setPaymentStatus('none');
+                },
             });
         } else {
-            alert('Gerbang pembayaran Midtrans belum siap. Silakan tunggu sebentar dan coba lagi.');
+            toast.error('Gerbang pembayaran Midtrans belum siap. Silakan tunggu sebentar.');
         }
     }, [snap_token, pengembalian.kdpengembalian, isPelanggan]);
 
     useEffect(() => {
         if (isScriptLoaded) {
-            const timer = setTimeout(() => { handlePay(); }, 800);
+            const timer = setTimeout(() => {
+                handlePay();
+            }, 800);
             return () => clearTimeout(timer);
         }
     }, [isScriptLoaded, handlePay]);
 
-
     const content = (
-        <div className="row justify-content-center">
-            <div className="col-lg-6" data-aos="zoom-in">
-                <div className="card shadow-lg border-0 text-center overflow-hidden" style={{ borderRadius: '20px' }}>
-                    <div className="p-5 bg-dark text-white">
-                        <div className="mx-auto mb-4 d-flex align-items-center justify-content-center" style={{ width: '80px', height: '80px', borderRadius: '50%', backgroundColor: 'rgba(249, 109, 0, 0.1)', border: '2px solid #f96d00' }}>
-                            <i className="ion-ios-cash" style={{ fontSize: '40px', color: '#f96d00' }}></i>
-                        </div>
-                        <h3 className="font-weight-bold mb-1">Pembayaran Denda</h3>
-                        <p className="opacity-75 small">Kode Pengembalian: <span className="font-weight-bold" style={{ color: '#f96d00' }}>{pengembalian.kdpengembalian}</span></p>
+        <div className="mx-auto max-w-lg">
+            <Card>
+                <CardHeader className="text-center">
+                    <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+                        <CreditCard className="h-8 w-8 text-primary" />
                     </div>
-                    
-                    <div className="card-body p-5 bg-white">
-                        <div className="p-4 mb-5 rounded-xl" style={{ backgroundColor: '#f8f9fa', border: '1px dashed #ddd' }}>
-                            <p className="text-muted small text-uppercase font-weight-bold mb-2">Total Denda yang Harus Dibayar</p>
-                            <h2 className="font-weight-bold mb-0" style={{ color: '#222831' }}>
-                                {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(pengembalian.denda)}
-                            </h2>
+                    <CardTitle>Pembayaran Denda</CardTitle>
+                    <CardDescription>
+                        Kode Pengembalian:{' '}
+                        <Badge variant="secondary">{pengembalian.kdpengembalian}</Badge>
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <div className="rounded-lg border border-dashed bg-muted/50 p-6 text-center">
+                        <p className="text-xs font-medium uppercase text-muted-foreground">Total Denda</p>
+                        <p className="mt-1 text-3xl font-bold">{formatCurrency(pengembalian.denda)}</p>
+                    </div>
+
+                    {paymentStatus === 'none' && (
+                        <div className="space-y-3 text-center">
+                            <p className="text-sm text-muted-foreground">Gerbang pembayaran Midtrans sedang disiapkan...</p>
+                            <Button onClick={handlePay} className="w-full" size="lg">
+                                <CreditCard className="mr-2 h-4 w-4" />
+                                Bayar Sekarang
+                            </Button>
                         </div>
+                    )}
 
-                        {paymentStatus === 'none' && (
-                            <div className="animate__animated animate__fadeIn">
-                                <p className="text-muted small mb-4">Gerbang pembayaran Midtrans sedang disiapkan...</p>
-                                <button onClick={handlePay} className="btn btn-primary btn-block py-3 font-weight-bold shadow-sm" style={{ backgroundColor: '#f96d00', borderColor: '#f96d00', borderRadius: '10px' }}>
-                                    BAYAR SEKARANG
-                                </button>
-                            </div>
-                        )}
+                    {paymentStatus === 'pending' && (
+                        <div className="flex flex-col items-center gap-3 py-4">
+                            <Loader2 className="h-10 w-10 animate-spin text-yellow-500" />
+                            <p className="font-semibold">Menunggu Pembayaran</p>
+                            <p className="text-sm text-muted-foreground">Silakan selesaikan transaksi pada jendela Midtrans.</p>
+                        </div>
+                    )}
 
-                        {paymentStatus === 'pending' && (
-                            <div className="text-warning animate__animated animate__pulse animate__infinite">
-                                <div className="spinner-border mb-3" role="status"></div>
-                                <h5 className="font-weight-bold">Menunggu Pembayaran</h5>
-                                <p className="small text-muted">Silakan selesaikan transaksi pada jendela Midtrans.</p>
-                            </div>
-                        )}
+                    {paymentStatus === 'success' && (
+                        <div className="flex flex-col items-center gap-3 py-4">
+                            <CheckCircle2 className="h-16 w-16 text-green-500" />
+                            <p className="text-lg font-semibold">Pembayaran Berhasil!</p>
+                            <p className="text-sm text-muted-foreground">Mohon tunggu, Anda akan diarahkan...</p>
+                        </div>
+                    )}
 
-                        {paymentStatus === 'success' && (
-                            <div className="text-success">
-                                <i className="ion-ios-checkmark-circle mb-3 d-block" style={{ fontSize: '60px' }}></i>
-                                <h4 className="font-weight-bold">Pembayaran Denda Berhasil!</h4>
-                                <p className="small text-muted">Mohon tunggu, Anda akan diarahkan...</p>
-                            </div>
-                        )}
+                    {paymentStatus === 'error' && (
+                        <div className="flex flex-col items-center gap-3 py-4">
+                            <XCircle className="h-16 w-16 text-destructive" />
+                            <p className="text-lg font-semibold">Pembayaran Gagal</p>
+                            <p className="text-sm text-muted-foreground">Terjadi kesalahan. Silakan coba kembali.</p>
+                            <Button onClick={handlePay} variant="outline">
+                                Coba Lagi
+                            </Button>
+                        </div>
+                    )}
 
-                        {paymentStatus === 'error' && (
-                            <div className="text-danger">
-                                <i className="ion-ios-close-circle mb-3 d-block" style={{ fontSize: '60px', color: '#dc3545' }}></i>
-                                <h4 className="font-weight-bold">Pembayaran Gagal</h4>
-                                <p className="small text-muted">Terjadi kesalahan saat memproses pembayaran. Silakan coba kembali.</p>
-                            </div>
-                        )}
-
-                        <div className="mt-5 pt-4 border-top">
-                            <Link href={isPelanggan ? "/" : "/pengembalian"} className="btn btn-link text-muted small">
-                                <i className="ion-ios-arrow-back mr-2"></i> Kembali
+                    <div className="border-t pt-4">
+                        <Button variant="ghost" size="sm" asChild>
+                            <Link href={isPelanggan ? '/' : '/pengembalian'}>
+                                <ArrowLeft className="mr-2 h-4 w-4" />
+                                Kembali
                             </Link>
-                        </div>
+                        </Button>
                     </div>
-                </div>
-            </div>
+                </CardContent>
+            </Card>
         </div>
     );
 
     if (isPelanggan) {
         return (
-            <TemplateLayout showHero={false}>
-                <section className="ftco-section bg-light" style={{ paddingTop: '120px', paddingBottom: '60px' }}>
-                    <div className="container">
-                        {content}
-                    </div>
-                </section>
-            </TemplateLayout>
+            <div className="min-h-screen bg-muted/30">
+                <Head title="Checkout Pembayaran Denda" />
+                <div className="container mx-auto px-4 py-24">
+                    {content}
+                </div>
+            </div>
         );
     }
 
     return (
-        <AdminLayout title="Penyelesaian Pembayaran Denda">
+        <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Checkout Pembayaran Denda" />
-            {content}
-        </AdminLayout>
+            <div className="flex h-full flex-1 flex-col items-center justify-center gap-4 rounded-xl p-4">
+                {content}
+            </div>
+        </AppLayout>
     );
 }
