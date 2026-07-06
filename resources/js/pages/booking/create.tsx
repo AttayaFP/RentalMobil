@@ -1,6 +1,6 @@
 import BookingLayout from '@/layouts/booking-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
+import { Link, router, useForm, usePage } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Car, User, CreditCard, CalendarDays, AlertTriangle, Bell, Loader2 } from 'lucide-react';
+import { ArrowLeft, Car, CreditCard, AlertTriangle, Bell, Loader2 } from 'lucide-react';
 
 interface AuthUser {
     id: number;

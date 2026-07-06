@@ -49,7 +49,6 @@ use App\Http\Controllers\PengembalianController;
 Route::middleware(['auth'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
 
-    // Routes accessible by Admin only
     Route::middleware(['role:admin'])->group(function () {
         Route::resource('kategori', KategoriController::class);
         Route::resource('mobil', MobilController::class);
@@ -60,7 +59,6 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('pengembalian', PengembalianController::class);
     });
 
-    // Routes accessible by Admin and Pimpinan
     Route::middleware(['role:admin,pimpinan'])->group(function () {
         // Laporan routes
         Route::get('laporan/pelanggan', [LaporanController::class, 'pelanggan'])->name('laporan.pelanggan');
@@ -71,7 +69,6 @@ Route::middleware(['auth'])->group(function () {
         Route::get('laporan/belum-kembali', [LaporanController::class, 'belumKembali'])->name('laporan.belum-kembali');
     });
 
-    // Routes accessible by Admin and Pelanggan
     Route::middleware(['role:admin,pelanggan'])->group(function () {
         Route::get('booking/{booking}/checkout', [BookingController::class, 'checkout'])->name('booking.checkout');
         Route::get('booking/{booking}/invoice', [BookingController::class, 'invoice'])->name('booking.invoice');

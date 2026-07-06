@@ -85,17 +85,13 @@ export function AppSidebar() {
         },
     ];
 
-    // Filter items based on role
     const filteredItems = mainNavItems.filter((item) => {
         if (userRole === 'pelanggan') {
-            // Pelanggan only sees Dashboard
             return ['Dashboard'].includes(item.title);
         }
         if (userRole === 'pimpinan') {
-            // Pimpinan sees Dashboard and Laporan
             return ['Dashboard', 'Laporan'].includes(item.title);
         }
-        // Admin sees everything
         return true;
     });
 

@@ -111,6 +111,11 @@ Middleware: `CheckRole` di `app/Http/Middleware/CheckRole.php`, registered as `r
 5. Redirect ke Midtrans Snap checkout
 6. Payment success callback → `POST /booking/{id}/success` → status: Sukses, mobil: Disewa
 7. Invoice: `GET /booking/{id}/invoice`
+8. Pelanggan tekan "Kembali" di checkout → role-aware redirect: pelanggan → `/` (homepage), admin/pimpinan → `/booking`
+9. Pelanggan di homepage → dialog notifikasi pending booking muncul (countdown 1 menit dari `created_at`)
+   - "Lanjutkan Pembayaran" → redirect ke `/booking/{kdbooking}/checkout`
+   - Timer habis → dialog berubah jadi "Booking Kadaluarsa" → "Buat Booking Baru" → `/booking/create`
+   - "Nanti Saja" / "Tutup" → dismiss dialog
 
 ### Reminder (Pengingat)
 1. Pelanggan aktifkan pengingat → `POST /booking/request-reminder`
@@ -159,8 +164,98 @@ Notifikasi disimpan di tabel `notifikasis` dan di-share via `HandleInertiaReques
 - `/laporan/mobil` — daftar mobil + kategori
 - `/laporan/booking` — daftar booking + filter tanggal
 - `/laporan/pengembalian` — daftar pengembalian + filter tanggal
-- `/laporan/rental` — gabungan booking + pengembalian + total
-- `/laporan/belum-kembali` — booking belum ada pengembalian
+- `/laporan/rental` — gabungan booking sukses/selesai + pengembalian
+- `/laporan/belum-kembali` — mobil berstatus Disewa (sedang disewa)
+
+### Pola Laporan (WAJIB ikuti)
+```tsx
+<div className="border-2 border-black">
+    <div className="flex items-center gap-4 border-b-2 border-black p-4">
+        <img src={logoImg} alt="Logo" className="h-20 w-20 object-contain" />
+        <div className="flex-1 text-center">
+            <h1 className="text-xl font-bold uppercase">PT. NABIL RENTAL MOBIL PADANG</h1>
+            <p className="text-sm text-muted-foreground">Komplek Perumdam/III/4, Tunggul Hitam, Kota Padang</p>
+        </div>
+        <div className="w-20" />
+    </div>
+    <div className="border-b-2 border-black bg-muted/30 px-4 py-3">
+        <h2 className="text-center text-sm font-bold uppercase">Judul Laporan</h2>
+    </div>
+    <div className="p-4">
+        <div className="no-print mb-4 flex items-center gap-2">
+            <Input className="rounded-none" />
+            <Button className="rounded-none">Filter</Button>
+            <Button onClick={() => window.print()} className="rounded-none">Cetak Laporan</Button>
+        </div>
+        <div className="overflow-x-auto">
+            <Table>
+                <TableHeader>
+                    <TableRow className="border-b-2 border-black bg-muted/50 hover:bg-muted/50">
+                        <TableHead className="border border-black">...</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    <TableRow className="border-b border-black">
+                        <TableCell className="border border-black">...</TableCell>
+                    </TableRow>
+                </TableBody>
+                <TableRow className="border-t-2 border-black bg-muted/50 hover:bg-muted/50">
+                    <TableCell className="border border-black">Footer</TableCell>
+                </TableRow>
+            </Table>
+        </div>
+        <div className="mt-4 border-2 border-black bg-muted/30 p-3 text-center">
+            <p className="text-sm font-bold uppercase">Summary</p>
+        </div>
+    </div>
+</div>
+```
+- Header: logo kiri + judul PT di tengah + spacer kanan
+- Sub-header: judul laporan dengan `border-b-2 border-black bg-muted/30`
+- Search/Filter: class `no-print` agar hilang saat cetak
+- Button/Input/Badge: `rounded-none` — sharp corners
+- Table: `border border-black` di setiap cell, `border-b-2 border-black` di header/footer
+- Cetak: `window.print()` + print styles di `app.css` (landscape, hide sidebar/nav/no-print)
+
+### Detail Per Laporan
+
+#### Laporan Pelanggan
+- Fields: No, Kode Pelanggan, Nama Lengkap, Jenis Kelamin, Username, Email, No HP, Alamat
+- Footer: "Jumlah Pelanggan" + "Jumlah Seluruh Data Pelanggan"
+- Backend: `User::where('role', 'pelanggan')`
+
+#### Laporan Mobil
+- Fields: No, Kode, Nama Mobil, Tahun, Plat, Warna, STNK, Harga/Hari, Kategori, Status
+- Footer: "Jumlah Mobil" + "Jumlah Seluruh Data Mobil"
+- Backend: `Mobil::with('kategori')`
+
+#### Laporan Booking
+- Fields: No, Kode, Nama Pelanggan, Nama Mobil, Plat, Lama Sewa, Tgl Mulai, Tgl Selesai, Metode Pembayaran, Total Bayar, Status
+- Filter: search + date range (`tglmulai`)
+- Footer: "Total Seluruh Pendapatan Booking" (dari tabel) + summary boxes (Jumlah Data + Total Pembayaran, hanya status Sukses/Selesai)
+- Backend: `BookingMobil::with(['user', 'mobil'])`
+
+#### Laporan Pengembalian
+- Fields: No, Kode, Nama Pelanggan, Nama Mobil, No Plat, Tgl Mulai, Tgl Selesai, Tgl Kembali, Telat, Denda
+- Filter: search + date range (`tglpengembalian`)
+- Footer: "Total Denda" (dari tabel)
+- Summary boxes: "Mobil Sudah Kembali" (count) / "Mobil Terlambat >1 Hari" (count denda > 0) / "Total Denda Keseluruhan" (sum denda)
+- Backend: `KembaliMobil::with(['user', 'booking.mobil'])`
+
+#### Laporan Rental
+- Fields: No, Kode, Nama Pelanggan, Nama Mobil, No. Plat, Tgl Mulai, Tgl Selesai, Tgl Kembali, Telat, Sewa, Denda, Total, Status
+- Filter: search + date range (`tglmulai`)
+- Footer: "Total Pendapatan" (dari tabel)
+- Summary title: "Rangkuman Status Mobil & Total Pendapatan"
+- Summary boxes: "Total Pendapatan" / "Mobil Disewa" / "Mobil Dikembalikan" / "Total Mobil Dalam Perawatan"
+- Backend: `BookingMobil::whereIn('status', ['Sukses','Success','Berhasil','Selesai'])` + `Mobil::where('status','Perawatan')->count()`
+- Status: jika ada pengembalian → "Selesai", jika tidak → "Sukses"
+
+#### Laporan Belum Kembali
+- Fields: No, Kode Booking, Mobil, Plat, Tgl Mulai, Status (badge "BELUM KEMBALI")
+- Filter: search + date range (`tglmulai`)
+- Footer: "Total Mobil Belum Kembali" + summary
+- Backend: `BookingMobil::whereHas('mobil', fn($q) => $q->where('status','Disewa'))->where('status','Sukses')`
 
 ## Routes Structure
 - `routes/web.php` — main routes
@@ -172,7 +267,7 @@ Notifikasi disimpan di tabel `notifikasis` dan di-share via `HandleInertiaReques
 - `BookingController.php` — booking CRUD + Midtrans checkout + auto-expire + reminder reuse
 - `MobilController.php` — mobil CRUD + status management + setTersedia
 - `PengembalianController.php` — pengembalian CRUD + denda checkout (hanya booking Sukses)
-- `DashboardController.php` — stats + charts + recent bookings + mobil selesai rawat
+- `DashboardController.php` — stats (booking_aktif=Sukses only, total_pendapatan=Sukses+Selesai) + charts + recent bookings + mobil selesai rawat
 - `LaporanController.php` — 6 laporan endpoints
 - `PelangganController.php` — user/pelanggan CRUD
 - `KategoriController.php` — kategori CRUD
@@ -238,17 +333,22 @@ Admin (AppLayout):
 Pelanggan Booking (BookingLayout — tanpa sidebar):
   booking/create, booking/checkout, booking/invoice
 
-Guest (GuestLayout):
-  welcome, about, services, pricing, cars, blog, contact, auth/login, auth/register
+Guest (GuestLayout — Lamborghini dark theme):
+  welcome, about, services, pricing, cars, blog, contact
+
+Auth (standalone — tanpa navbar/sidebar, dark background):
+  auth/login, auth/register
 ```
 
 ## HandleInertiaRequests Shared Data
 File: `app/Http/Middleware/HandleInertiaRequests.php`
+Pattern: `return [...parent::share($request), 'key' => value];`
 
 Shared props:
 - `auth.user` — authenticated user
 - `auth.notifications` — unread notifikasis (filtered by role: admin=non-perawatan only, pelanggan=non-perawatan)
 - `auth.mobil_selesai_rawat` — mobil perawatan ≥2 days (admin only, query dari tabel mobil)
+- `auth.pending_booking` — booking pending pelanggan (`{ kdbooking, nama_mobil, total_bayar, created_at }`) — `null` jika tidak ada. Auto-expire 1 menit. Digunakan di `welcome.tsx` untuk dialog notifikasi
 - `flash.success` / `flash.error` — session flash messages (displayed via sonner toast in app-sidebar-layout)
 - `name` — app name
 - `quote` — random inspiring quote
@@ -258,7 +358,8 @@ File: `config/midtrans.php`
 - Snap API (bukan Core API)
 - Token generated di backend → dikirim ke frontend via Inertia props
 - Frontend call `snap.pay(token)` dengan callback
-- TIDAK ADA webhook handler — payment confirmed via client-side callback only
+- Payment confirmed via client-side callback only (`onSuccess` → `POST /booking/{id}/success`)
+- `PaymentController.php` ada `notificationHandler()` tapi TIDAK di-route (dormant)
 
 ## shadcn/ui Components Installed
 Semua di `resources/js/components/ui/`:
@@ -337,17 +438,28 @@ File: `resources/js/components/gold-particles.tsx`
 Digunakan di: welcome.tsx (hero section)
 
 ## Halaman dengan Animasi
-- `welcome.tsx` — hero timeline + parallax + particles + text split + marquee + stagger + scale reveal
+- `welcome.tsx` — hero timeline + parallax + particles + text split + marquee + stagger + scale reveal + pending booking dialog
 - `about.tsx` — scroll reveal + values stagger + CTA reveal
 - `services.tsx` — header reveal + cards stagger
 - `pricing.tsx` — header reveal + table stagger
 - `cars.tsx` — header reveal + cards stagger
+- `blog.tsx` — header reveal + cards stagger
 - `contact.tsx` — info cards stagger + form reveal
 - `dashboard.tsx` — stat cards stagger + count up + chart reveal + Framer Motion
 
 ### Hero Background Image
 File: `resources/js/assets/images/logo.jpg`
 Digunakan di `welcome.tsx` sebagai background-image hero section dengan parallax + gradient overlay.
+
+## Print Styles (app.css)
+```css
+@page { size: landscape; margin: 10mm; }
+.no-print → display: none
+sidebar, header, nav, aside → hidden
+table → font-size 10px, width 100%
+th/td → padding 4px 6px
+```
+Digunakan di semua halaman laporan.
 
 ## Development Commands
 ```bash
@@ -356,6 +468,32 @@ php artisan serve     # Backend only
 npm run dev           # Vite dev server only
 npm run build         # Production build
 php artisan migrate   # Run migrations
+```
+
+## Dashboard Stats Definition
+File: `app/Http/Controllers/DashboardController.php`
+
+| Stat | Query | Arti |
+|------|-------|------|
+| `booking_aktif` | `whereIn('status', ['Sukses', 'Success', 'Berhasil'])` | Booking yang mobilnya sedang disewa |
+| `total_pendapatan` | `whereIn('status', ['Sukses', 'Success', 'Berhasil', 'Selesai'])` → `sum('total_bayar')` | Semua pendapatan dari booking berbayar |
+| `monthly_revenue` | `whereIn('status', ['Sukses', 'Success', 'Berhasil', 'Selesai'])` per bulan | Pendapatan 6 bulan terakhir |
+| `mobil_tersedia` | `Mobil::where('status', 'Tersedia')` | Mobil siap sewa |
+| `mobil_disewa` | `Mobil::where('status', 'Disewa')` | Mobil sedang dipakai |
+| `mobil_perawatan` | `Mobil::where('status', 'Perawatan')` | Mobil dalam servis |
+
+## TypeScript Global Declarations
+File: `resources/js/types/vite-env.d.ts`
+- `route()` function from Ziggy declared globally
+- Vite client types referenced
+
+## Framer Motion Variants Pattern
+Ease values harus pakai `as const` agar TypeScript tidak error:
+```tsx
+const fadeUp = {
+    hidden: { opacity: 0, y: 30 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' as const } },
+};
 ```
 
 ---

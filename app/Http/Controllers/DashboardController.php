@@ -40,7 +40,7 @@ class DashboardController extends Controller
         $monthlyRevenue = [];
         for ($i = 5; $i >= 0; $i--) {
             $date = Carbon::now()->subMonths($i);
-            $total = BookingMobil::where('status', 'Selesai')
+            $total = BookingMobil::whereIn('status', ['Sukses', 'Success', 'Berhasil', 'Selesai'])
                 ->whereYear('tglbooking', $date->year)
                 ->whereMonth('tglbooking', $date->month)
                 ->sum('total_bayar');
@@ -76,8 +76,8 @@ class DashboardController extends Controller
             'stats' => [
                 'total_mobil' => Mobil::count(),
                 'total_pelanggan' => User::where('role', 'pelanggan')->count(),
-                'booking_aktif' => BookingMobil::where('status', '!=', 'Selesai')->count(),
-                'total_pendapatan' => (float) BookingMobil::where('status', 'Selesai')->sum('total_bayar'),
+                'booking_aktif' => BookingMobil::whereIn('status', ['Sukses', 'Success', 'Berhasil'])->count(),
+                'total_pendapatan' => (float) BookingMobil::whereIn('status', ['Sukses', 'Success', 'Berhasil', 'Selesai'])->sum('total_bayar'),
                 'mobil_tersedia' => Mobil::where('status', 'Tersedia')->count(),
                 'mobil_disewa' => Mobil::where('status', 'Disewa')->count(),
                 'mobil_perawatan' => Mobil::where('status', 'Perawatan')->count(),

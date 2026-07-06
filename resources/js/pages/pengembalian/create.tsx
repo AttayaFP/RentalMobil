@@ -1,6 +1,6 @@
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link, router, useForm } from '@inertiajs/react';
+import { Head, Link, useForm } from '@inertiajs/react';
 import { FormEventHandler, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -29,18 +29,12 @@ interface Booking {
     mobil: { nama_mobil: string };
 }
 
-interface User {
-    id: number;
-    nama_lengkap: string;
-}
-
 interface Props {
     bookings: Booking[];
-    users: User[];
     next_kdpengembalian: string;
 }
 
-export default function Create({ bookings, users, next_kdpengembalian }: Props) {
+export default function Create({ bookings, next_kdpengembalian }: Props) {
     const { data, setData, post, processing, errors } = useForm({
         kdpengembalian: next_kdpengembalian,
         kdbooking: '',

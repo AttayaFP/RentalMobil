@@ -16,65 +16,65 @@ export default function Contact() {
         <>
             <Head title="Kontak - Rental Mobil Nabil Padang" />
 
-            <section className="bg-gradient-to-br from-emerald-600 via-teal-700 to-cyan-800 py-20">
+            <section className="bg-black py-20">
                 <div className="mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8">
-                    <h1 className="hero-title text-4xl font-extrabold text-white">Hubungi Kami</h1>
-                    <p className="hero-sub mt-2 text-emerald-100">
-                        <Link href="/" className="hover:underline">Beranda</Link> / Kontak
+                    <h1 className="text-4xl font-bold uppercase tracking-wide text-white">Hubungi Kami</h1>
+                    <p className="mt-2 text-[#7D7D7D]">
+                        <Link href="/" className="text-[#FFC000] hover:text-[#917300] hover:underline">Beranda</Link> / Kontak
                     </p>
                 </div>
             </section>
 
-            <section className="py-16">
+            <section className="bg-black py-16">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                    <h2 className="reveal mb-8 text-2xl font-bold">Informasi Pengembang</h2>
+                    <h2 className="reveal mb-8 text-2xl font-bold uppercase text-white">Informasi Pengembang</h2>
                     <div ref={infoRef} className="mb-12 grid gap-6 sm:grid-cols-3">
-                        <Card className="stagger-item">
+                        <Card className="stagger-item rounded-none border-white/10 bg-[#202020]">
                             <CardContent className="p-5">
-                                <MapPin className="h-6 w-6 text-emerald-600" />
-                                <p className="mt-2 text-sm font-semibold text-emerald-600">Nama Pengembang</p>
-                                <p className="text-sm text-muted-foreground">Attaya Fiqri Pradana</p>
+                                <MapPin className="h-6 w-6 text-[#FFC000]" />
+                                <p className="mt-2 text-sm font-semibold uppercase text-[#FFC000]">Nama Pengembang</p>
+                                <p className="text-sm text-[#7D7D7D]">Attaya Fiqri Pradana</p>
                             </CardContent>
                         </Card>
-                        <Card className="stagger-item">
+                        <Card className="stagger-item rounded-none border-white/10 bg-[#202020]">
                             <CardContent className="p-5">
-                                <GraduationCap className="h-6 w-6 text-emerald-600" />
-                                <p className="mt-2 text-sm font-semibold text-emerald-600">NoBP / NIM</p>
-                                <p className="text-sm text-muted-foreground">2210019</p>
+                                <GraduationCap className="h-6 w-6 text-[#FFC000]" />
+                                <p className="mt-2 text-sm font-semibold uppercase text-[#FFC000]">NoBP / NIM</p>
+                                <p className="text-sm text-[#7D7D7D]">2210019</p>
                             </CardContent>
                         </Card>
-                        <Card className="stagger-item">
+                        <Card className="stagger-item rounded-none border-white/10 bg-[#202020]">
                             <CardContent className="p-5">
-                                <Globe className="h-6 w-6 text-emerald-600" />
-                                <p className="mt-2 text-sm font-semibold text-emerald-600">Tujuan Website</p>
-                                <p className="text-sm text-muted-foreground">Skripsi S1 Sistem Informasi</p>
+                                <Globe className="h-6 w-6 text-[#FFC000]" />
+                                <p className="mt-2 text-sm font-semibold uppercase text-[#FFC000]">Tujuan Website</p>
+                                <p className="text-sm text-[#7D7D7D]">Skripsi S1 Sistem Informasi</p>
                             </CardContent>
                         </Card>
                     </div>
 
                     <div ref={formRef} className="grid gap-8 md:grid-cols-2">
-                        <Card className="reveal">
+                        <Card className="reveal rounded-none border-white/10 bg-[#202020]">
                             <CardContent className="p-6">
-                                <h3 className="mb-4 text-lg font-bold">Kirim Pesan</h3>
+                                <h3 className="mb-4 text-lg font-bold uppercase text-white">Kirim Pesan</h3>
                                 <form className="space-y-4">
-                                    <Input placeholder="Nama Anda" />
-                                    <Input type="email" placeholder="Email Anda" />
-                                    <Input placeholder="Subjek" />
-                                    <Textarea rows={5} placeholder="Pesan" />
-                                    <Button type="button" className="w-full">
+                                    <Input placeholder="Nama Anda" className="rounded-none border-white/10 bg-black text-white placeholder:text-[#7D7D7D]" />
+                                    <Input type="email" placeholder="Email Anda" className="rounded-none border-white/10 bg-black text-white placeholder:text-[#7D7D7D]" />
+                                    <Input placeholder="Subjek" className="rounded-none border-white/10 bg-black text-white placeholder:text-[#7D7D7D]" />
+                                    <Textarea rows={5} placeholder="Pesan" className="rounded-none border-white/10 bg-black text-white placeholder:text-[#7D7D7D]" />
+                                    <Button type="button" className="w-full rounded-none bg-[#FFC000] text-black hover:bg-[#917300]">
                                         Kirim Pesan
                                     </Button>
                                 </form>
                             </CardContent>
                         </Card>
 
-                        <Card className="reveal">
+                        <Card className="reveal rounded-none border-white/10 bg-[#202020]">
                             <CardContent className="p-6">
-                                <h3 className="mb-4 text-lg font-bold">Lokasi Kami</h3>
-                                <div className="flex h-48 items-center justify-center rounded-lg bg-muted">
-                                    <p className="text-sm text-muted-foreground">Peta lokasi kantor rental mobil akan ditampilkan di sini.</p>
+                                <h3 className="mb-4 text-lg font-bold uppercase text-white">Lokasi Kami</h3>
+                                <div className="flex h-48 items-center justify-center bg-[#181818]">
+                                    <p className="text-sm text-[#7D7D7D]">Peta lokasi kantor rental mobil akan ditampilkan di sini.</p>
                                 </div>
-                                <p className="mt-4 text-sm text-muted-foreground">
+                                <p className="mt-4 text-sm text-[#7D7D7D]">
                                     Komplek Perumdam III/4, Tunggul Hitam, Kota Padang
                                 </p>
                             </CardContent>

@@ -1,6 +1,6 @@
 import BookingLayout from '@/layouts/booking-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Printer, User, Clock, Car, CreditCard, Info } from 'lucide-react';
@@ -44,6 +44,9 @@ function getStatusBadge(status: string) {
 }
 
 export default function Invoice({ booking, user, mobil }: Props) {
+    const { auth } = usePage<{ auth: { user: { role: string } | null } }>().props;
+    const backLink = auth?.user?.role === 'pelanggan' ? '/' : '/booking';
+
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Dashboard', href: '/dashboard' },
         { title: 'Booking', href: '/booking' },
@@ -72,7 +75,7 @@ export default function Invoice({ booking, user, mobil }: Props) {
             <div className="flex flex-col gap-4 p-4">
                 <div className="no-print flex items-center justify-between">
                     <Button variant="ghost" asChild>
-                        <Link href="/booking">
+                        <Link href={backLink}>
                             <ArrowLeft className="mr-2 h-4 w-4" />
                             Kembali
                         </Link>

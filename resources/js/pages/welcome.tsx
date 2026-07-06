@@ -3,8 +3,9 @@ import { Head, router, usePage } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Handshake, CalendarCheck, ArrowRight, Star, Shield, Clock } from 'lucide-react';
-import React from 'react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { MapPin, Handshake, CalendarCheck, ArrowRight, Star, Shield, Clock, AlertTriangle, CreditCard } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
 import {
     useHeroAnimation,
     useScrollReveal,
@@ -39,7 +40,7 @@ interface Props {
 
 const fadeUp = {
     hidden: { opacity: 0, y: 30 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' } },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' as const } },
 };
 
 const staggerContainer = {
@@ -49,12 +50,26 @@ const staggerContainer = {
 
 const scaleIn = {
     hidden: { opacity: 0, scale: 0.9 },
-    visible: { opacity: 1, scale: 1, transition: { duration: 0.5, ease: 'easeOut' } },
+    visible: { opacity: 1, scale: 1, transition: { duration: 0.5, ease: 'easeOut' as const } },
 };
 
 export default function Welcome({ mobils = [] }: Props) {
-    const { auth } = usePage<{ auth: { user: { id: number; role: string; nama_lengkap?: string; name?: string } | null } }>().props;
+    const { auth } = usePage<{
+        auth: {
+            user: { id: number; role: string; nama_lengkap?: string; name?: string } | null;
+            pending_booking?: {
+                kdbooking: string;
+                nama_mobil: string;
+                total_bayar: number;
+                created_at: string;
+            } | null;
+        };
+    }>().props;
     const user = auth?.user;
+    const pendingBooking = auth?.pending_booking;
+    const [timeRemaining, setTimeRemaining] = useState(0);
+    const [isExpired, setIsExpired] = useState(false);
+    const [dismissed, setDismissed] = useState(false);
     const heroRef = useHeroAnimation();
     const middleRef = useScrollReveal();
     const carsRef = useStaggerReveal();
@@ -68,6 +83,25 @@ export default function Welcome({ mobils = [] }: Props) {
     const stat2Ref = useCountUp(50, { suffix: '+' });
     const stat3Ref = useCountUp(5);
     const stat4Ref = useCountUp(24, { suffix: '/7' });
+
+    useEffect(() => {
+        if (!pendingBooking) return;
+
+        const expiresAt = new Date(pendingBooking.created_at).getTime() + 60 * 1000;
+
+        const updateTimer = () => {
+            const remaining = Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000));
+            setTimeRemaining(remaining);
+            if (remaining <= 0) {
+                setIsExpired(true);
+            }
+        };
+
+        updateTimer();
+        const interval = setInterval(updateTimer, 1000);
+
+        return () => clearInterval(interval);
+    }, [pendingBooking]);
 
     const formatCurrency = (amount: number) =>
         new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
@@ -420,6 +454,77 @@ export default function Welcome({ mobils = [] }: Props) {
                     </div>
                 </div>
             </section>
+
+            <Dialog open={!!pendingBooking && !dismissed && !isExpired} onOpenChange={() => setDismissed(true)}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <CreditCard className="h-5 w-5 text-amber-500" />
+                            Booking Menunggu Pembayaran
+                        </DialogTitle>
+                        <DialogDescription>
+                            Anda memiliki booking yang belum dibayar untuk mobil <span className="font-semibold text-foreground">{pendingBooking?.nama_mobil}</span>.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-3">
+                        <div className="rounded-lg border border-dashed bg-muted/50 p-4 text-center">
+                            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Total Pembayaran</p>
+                            <p className="mt-1 text-2xl font-bold">{formatCurrency(pendingBooking?.total_bayar || 0)}</p>
+                        </div>
+                        <div className="flex items-center justify-center gap-2">
+                            <Clock className="h-4 w-4 text-amber-500" />
+                            <p className="text-sm font-semibold text-amber-500">
+                                Waktu tersisa: {timeRemaining} detik
+                            </p>
+                        </div>
+                    </div>
+
+                    <DialogFooter className="flex-col gap-2 sm:flex-col">
+                        <Button
+                            className="w-full"
+                            onClick={() => {
+                                setDismissed(true);
+                                router.visit(`/booking/${pendingBooking?.kdbooking}/checkout`);
+                            }}
+                        >
+                            Lanjutkan Pembayaran
+                        </Button>
+                        <Button variant="ghost" className="w-full" onClick={() => setDismissed(true)}>
+                            Nanti Saja
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={!!pendingBooking && !dismissed && isExpired} onOpenChange={() => setDismissed(true)}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <AlertTriangle className="h-5 w-5 text-destructive" />
+                            Booking Kadaluarsa
+                        </DialogTitle>
+                        <DialogDescription>
+                            Waktu pembayaran untuk booking <span className="font-semibold text-foreground">{pendingBooking?.kdbooking}</span> telah habis. Silakan buat booking baru.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <DialogFooter className="flex-col gap-2 sm:flex-col">
+                        <Button
+                            className="w-full"
+                            onClick={() => {
+                                setDismissed(true);
+                                router.visit('/booking/create');
+                            }}
+                        >
+                            Buat Booking Baru
+                        </Button>
+                        <Button variant="ghost" className="w-full" onClick={() => setDismissed(true)}>
+                            Tutup
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </>
     );
 }

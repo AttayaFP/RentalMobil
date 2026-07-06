@@ -355,12 +355,12 @@ File: `resources/js/hooks/use-animation.ts`
 | `useScaleReveal()` | Scale dari 0.8 → 1 + fade on scroll | CTA sections, callouts |
 
 ### Framer Motion Patterns
-Digunakan untuk animasi yang lebih deklaratif:
+Digunakan untuk animasi yang lebih deklaratif. Ease values harus pakai `as const` agar TypeScript tidak error:
 
 ```tsx
 const fadeUp = {
     hidden: { opacity: 0, y: 30 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.6 } },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' as const } },
 };
 
 const staggerContainer = {
@@ -402,3 +402,100 @@ Brand names berjalan otomatis di bawah hero section menggunakan `useMarquee(25)`
 - `animate-fade-in`: opacity 0→1 + translateY 8px→0
 - `animate-shimmer`: gradient shimmer effect untuk loading states
 - Lenis smooth scroll classes: `html.lenis`, `.lenis.lenis-smooth`, `.lenis.lenis-stopped`
+
+## 11. Pending Booking Dialog
+
+### Behavior
+Dialog notifikasi otomatis muncul di `welcome.tsx` saat pelanggan memiliki booking pending (status `Pending`, created < 1 menit yang lalu).
+
+### States
+1. **Pending**: Tampil saat booking masih aktif
+   - Info mobil + total pembayaran dalam `border-dashed bg-muted/50`
+   - Countdown timer dengan `Clock` icon, warna `text-amber-500`
+   - Tombol utama: "Lanjutkan Pembayaran" → checkout
+   - Tombol sekunder: "Nanti Saja" → dismiss
+2. **Expired**: Tampil saat countdown habis (60 detik dari `created_at`)
+   - `AlertTriangle` icon, warna `text-destructive`
+   - Pesan "Booking Kadaluarsa"
+   - Tombol: "Buat Booking Baru" → `/booking/create`
+
+### Data Source
+`auth.pending_booking` dari `HandleInertiaRequests` shared data:
+```php
+[
+    'kdbooking' => 'BO001',
+    'nama_mobil' => 'Toyota Avanza',
+    'total_bayar' => 500000,
+    'created_at' => '2026-07-05T14:00:00.000000Z',
+]
+```
+
+### Frontend Pattern
+```tsx
+const { auth } = usePage<{ auth: { pending_booking?: { kdbooking: string; nama_mobil: string; total_bayar: number; created_at: string } | null } }>().props;
+const pendingBooking = auth?.pending_booking;
+const [timeRemaining, setTimeRemaining] = useState(0);
+const [isExpired, setIsExpired] = useState(false);
+const [dismissed, setDismissed] = useState(false);
+
+useEffect(() => {
+    if (!pendingBooking) return;
+    const expiresAt = new Date(pendingBooking.created_at).getTime() + 60 * 1000;
+    const updateTimer = () => {
+        const remaining = Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000));
+        setTimeRemaining(remaining);
+        if (remaining <= 0) setIsExpired(true);
+    };
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+}, [pendingBooking]);
+```
+
+## 12. Report (Laporan) Design System
+
+### Company Header
+Setiap halaman laporan memiliki header standar:
+```
+┌──────────────────────────────────────────────────────┐
+│  [LOGO]    PT. NABIL RENTAL MOBIL PADANG             │
+│             Komplek Perumdam/III/4, Tunggul Hitam,   │
+│             Kota Padang                              │
+├──────────────────────────────────────────────────────┤
+│    JUDUL LAPORAN - SUBTITLE                          │
+└──────────────────────────────────────────────────────┘
+```
+- Logo: `h-20 w-20 object-contain` di kiri
+- Judul PT: `text-xl font-bold uppercase` di tengah
+- Alamat: `text-sm text-muted-foreground` di bawah judul PT
+- Sub-header: `border-b-2 border-black bg-muted/30 px-4 py-3`
+- File logo: `resources/js/assets/images/logo.jpg`
+
+### Table Styling
+- Container: `border-2 border-black` (sharp corners)
+- Header row: `border-b-2 border-black bg-muted/50 hover:bg-muted/50`
+- Cell: `border border-black` (full border setiap cell)
+- Body row: `border-b border-black`
+- Footer row: `border-t-2 border-black bg-muted/50`
+- Badge: `rounded-none`
+
+### Filter & Print
+- Search + Filter + Cetak: class `no-print` (hilang saat cetak)
+- Button/Input: `rounded-none`
+- Print: `window.print()` dengan `@page { size: landscape; margin: 10mm; }`
+
+### Summary Boxes
+- Container: `border-2 border-black bg-muted/30 p-3 text-center`
+- Label: `text-xs font-bold uppercase text-muted-foreground`
+- Value: `text-lg font-bold` atau `Badge` dengan `rounded-none`
+- Grid: `grid-cols-3` atau `grid-cols-4` tergantung laporan
+
+### Daftar Laporan
+| Laporan | Fields | Summary |
+|---------|--------|---------|
+| Pelanggan | No, Kode, Nama, JK, Username, Email, HP, Alamat | Jumlah Pelanggan + Total |
+| Mobil | No, Kode, Nama, Tahun, Plat, Warna, STNK, Harga, Kategori, Status | Jumlah Mobil + Total |
+| Booking | No, Kode, Pelanggan, Mobil, Plat, Durasi, Tgl Mulai/Selesai, Payment, Total, Status | Jumlah Data + Total Pembayaran |
+| Pengembalian | No, Kode, Pelanggan, Mobil, Plat, Tgl Mulai/Selesai/Kembali, Telat, Denda | Sudah Kembali / Terlambat / Total Denda |
+| Rental | No, Kode, Pelanggan, Mobil, Plat, Tgl Mulai/Selesai/Kembali, Telat, Sewa, Denda, Total, Status | Rangkuman: Pendapatan / Disewa / Dikembalikan / Perawatan |
+| Belum Kembali | No, Kode, Mobil, Plat, Tgl Mulai, Status | Total Belum Kembali |

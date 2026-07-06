@@ -42,50 +42,50 @@ export default function Pricing({ mobils }: Props) {
         <>
             <Head title="Daftar Harga - Rental Mobil Nabil Padang" />
 
-            <section className="bg-gradient-to-br from-emerald-600 via-teal-700 to-cyan-800 py-20">
+            <section className="bg-black py-20">
                 <div className="mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8">
-                    <h1 className="hero-title text-4xl font-extrabold text-white">Daftar Harga</h1>
-                    <p className="hero-sub mt-2 text-emerald-100">
-                        <Link href="/" className="hover:underline">Beranda</Link> / Daftar Harga
+                    <h1 className="text-4xl font-bold uppercase tracking-wide text-white">Daftar Harga</h1>
+                    <p className="mt-2 text-[#7D7D7D]">
+                        <Link href="/" className="text-[#FFC000] hover:text-[#917300] hover:underline">Beranda</Link> / Daftar Harga
                     </p>
                 </div>
             </section>
 
-            <section ref={tableRef} className="bg-muted/30 py-16">
+            <section ref={tableRef} className="bg-black py-16">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div ref={headerRef} className="reveal mb-10 text-center">
-                        <p className="text-sm font-semibold text-emerald-600">Tarif Rental</p>
-                        <h2 className="mt-2 text-3xl font-bold">Harga Sewa Mobil Terbaik</h2>
+                        <p className="text-sm font-semibold uppercase tracking-wide text-[#FFC000]">Tarif Rental</p>
+                        <h2 className="mt-2 text-3xl font-bold uppercase text-white">Harga Sewa Mobil Terbaik</h2>
                     </div>
-                    <div className="stagger-item overflow-hidden rounded-lg border bg-white shadow-sm">
+                    <div className="stagger-item overflow-hidden border border-white/10 bg-[#202020]">
                         <Table>
                             <TableHeader>
-                                <TableRow>
-                                    <TableHead className="w-[100px]">Gambar</TableHead>
-                                    <TableHead>Nama Mobil</TableHead>
-                                    <TableHead>Tarif Per Hari</TableHead>
-                                    <TableHead className="text-center">Sewa</TableHead>
+                                <TableRow className="border-b-2 border-white/10 bg-[#181818] hover:bg-[#181818]">
+                                    <TableHead className="w-[100px] text-white">Gambar</TableHead>
+                                    <TableHead className="text-white">Nama Mobil</TableHead>
+                                    <TableHead className="text-white">Tarif Per Hari</TableHead>
+                                    <TableHead className="text-center text-white">Sewa</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {mobils.map((mobil) => (
-                                    <TableRow key={mobil.kdmobil}>
-                                        <TableCell>
+                                    <TableRow key={mobil.kdmobil} className="border-b border-white/10 hover:bg-white/5">
+                                        <TableCell className="border border-white/10">
                                             <img
                                                 src={mobil.foto ? `/storage/${mobil.foto}` : '/img/car-placeholder.png'}
                                                 alt={mobil.nama_mobil}
-                                                className="h-16 w-24 rounded object-cover"
+                                                className="h-16 w-24 object-cover"
                                             />
                                         </TableCell>
-                                        <TableCell className="font-medium">{mobil.nama_mobil}</TableCell>
-                                        <TableCell className="font-semibold text-emerald-600">{formatCurrency(mobil.harga)}</TableCell>
-                                        <TableCell className="text-center">
+                                        <TableCell className="border border-white/10 font-medium text-white">{mobil.nama_mobil}</TableCell>
+                                        <TableCell className="border border-white/10 font-semibold text-[#FFC000]">{formatCurrency(mobil.harga)}</TableCell>
+                                        <TableCell className="border border-white/10 text-center">
                                             {mobil.status === 'Tersedia' ? (
-                                                <Button size="sm" onClick={() => handleSewa(mobil.kdmobil)}>
+                                                <Button size="sm" className="rounded-none bg-[#FFC000] text-black hover:bg-[#917300]" onClick={() => handleSewa(mobil.kdmobil)}>
                                                     Sewa
                                                 </Button>
                                             ) : (
-                                                <Badge variant="secondary">Habis</Badge>
+                                                <Badge variant="secondary" className="rounded-none">Habis</Badge>
                                             )}
                                         </TableCell>
                                     </TableRow>

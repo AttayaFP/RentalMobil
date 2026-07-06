@@ -155,7 +155,8 @@ class LaporanController extends Controller
 
     public function rental(Request $request): Response
     {
-        $query = BookingMobil::with(['user', 'mobil', 'pengembalian']);
+        $query = BookingMobil::with(['user', 'mobil', 'pengembalian'])
+            ->whereIn('status', ['Sukses', 'Success', 'Berhasil', 'Selesai']);
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -183,6 +184,11 @@ class LaporanController extends Controller
             $totalSewa = (float) ($booking->total_bayar ?? 0);
             $denda = (float) ($pengembalian->denda ?? 0);
 
+            $statusText = $booking->status;
+            if ($pengembalian) {
+                $statusText = 'Selesai';
+            }
+
             return [
                 'koderental' => $pengembalian->kdpengembalian ?? $booking->kdbooking,
                 'kdbooking' => $booking->kdbooking,
@@ -196,23 +202,24 @@ class LaporanController extends Controller
                 'denda' => $denda,
                 'totalsewa' => $totalSewa,
                 'total_seluruh' => $totalSewa + $denda,
-                'status' => $booking->status,
-                'status_mobil' => $booking->mobil->status ?? 'Tersedia',
+                'status' => $statusText,
             ];
         });
 
         return Inertia::render('laporan/rental', [
             'rentals' => $rentals,
+            'mobil_perawatan' => Mobil::where('status', 'Perawatan')->count(),
             'filters' => $request->only(['search', 'start_date', 'end_date']),
         ]);
     }
 
     public function belumKembali(Request $request): Response
     {
-        $query = BookingMobil::whereNotIn('kdbooking', KembaliMobil::pluck('kdbooking'))
-            ->where('status', '!=', 'Selesai')
-            ->where('status', '!=', 'Batal')
-            ->with('mobil');
+        $query = BookingMobil::whereHas('mobil', function ($q) {
+                $q->where('status', 'Disewa');
+            })
+            ->where('status', 'Sukses')
+            ->with(['mobil', 'user']);
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -221,6 +228,9 @@ class LaporanController extends Controller
                   ->orWhereHas('mobil', function($qm) use ($search) {
                       $qm->where('nama_mobil', 'like', "%{$search}%")
                         ->orWhere('plat_mobil', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('user', function($qu) use ($search) {
+                      $qu->where('nama_lengkap', 'like', "%{$search}%");
                   });
             });
         }

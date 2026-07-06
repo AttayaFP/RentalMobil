@@ -91,7 +91,7 @@ const cardVariants = {
         opacity: 1,
         y: 0,
         scale: 1,
-        transition: { delay: i * 0.1, duration: 0.5, ease: 'easeOut' },
+        transition: { delay: i * 0.1, duration: 0.5, ease: 'easeOut' as const },
     }),
 };
 
@@ -179,7 +179,7 @@ export default function Dashboard({ stats, recent_bookings, chart_data }: Props)
                                     <BarChart accessibilityLayer data={chart_data.monthly_revenue} margin={{ left: 12, right: 12 }}>
                                         <CartesianGrid vertical={false} />
                                         <XAxis dataKey="month" tickLine={false} tickMargin={10} axisLine={false} tickFormatter={(value) => value.slice(0, 6)} />
-                                        <ChartTooltip content={<ChartTooltipContent formatter={(value) => formatCurrency(Number(value))} />} />
+                                        <ChartTooltip content={<ChartTooltipContent formatter={(value: unknown) => formatCurrency(Number(value))} />} />
                                         <Bar dataKey="revenue" fill="var(--color-revenue)" radius={[4, 4, 0, 0]} />
                                     </BarChart>
                                 </ChartContainer>
@@ -217,15 +217,15 @@ export default function Dashboard({ stats, recent_bookings, chart_data }: Props)
                             <CardContent className="pt-0">
                                 <div className="flex justify-center gap-4 text-sm">
                                     <div className="flex items-center gap-1.5">
-                                        <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: 'var(--chart-2)' }} />
+                                        <div className="h-2.5 w-2.5 rounded-full bg-[var(--chart-2)]" />
                                         Tersedia ({stats.mobil_tersedia})
                                     </div>
                                     <div className="flex items-center gap-1.5">
-                                        <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: 'var(--chart-1)' }} />
+                                        <div className="h-2.5 w-2.5 rounded-full bg-[var(--chart-1)]" />
                                         Disewa ({stats.mobil_disewa})
                                     </div>
                                     <div className="flex items-center gap-1.5">
-                                        <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: 'var(--chart-4)' }} />
+                                        <div className="h-2.5 w-2.5 rounded-full bg-[var(--chart-4)]" />
                                         Perawatan ({stats.mobil_perawatan})
                                     </div>
                                 </div>

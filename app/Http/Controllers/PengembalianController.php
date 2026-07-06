@@ -133,7 +133,6 @@ class PengembalianController extends Controller
     {
         $pengembalian = KembaliMobil::findOrFail($id);
 
-        // Revert booking and car status
         $booking = BookingMobil::find($pengembalian->kdbooking);
         if ($booking) {
             $booking->update(['status' => 'Success']);
@@ -198,8 +197,6 @@ class PengembalianController extends Controller
     public function success(Request $request, string $kdpengembalian)
     {
         $pengembalian = KembaliMobil::findOrFail($kdpengembalian);
-        // We can log the payment details or update a local status if we have it,
-        // but for now we simply return a JSON success response.
         return response()->json(['message' => 'Denda payment recorded successfully']);
     }
 }

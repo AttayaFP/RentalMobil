@@ -1,6 +1,6 @@
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link, router, useForm } from '@inertiajs/react';
+import { Head, Link, useForm } from '@inertiajs/react';
 import { FormEventHandler, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -23,11 +23,6 @@ interface Booking {
     mobil: { nama_mobil: string };
 }
 
-interface User {
-    id: number;
-    nama_lengkap: string;
-}
-
 interface Pengembalian {
     kdpengembalian: string;
     kdbooking: string;
@@ -44,10 +39,9 @@ interface Pengembalian {
 interface Props {
     pengembalian: Pengembalian;
     bookings: Booking[];
-    users: User[];
 }
 
-export default function Edit({ pengembalian, bookings, users }: Props) {
+export default function Edit({ pengembalian, bookings }: Props) {
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Dashboard', href: '/dashboard' },
         { title: 'Pengembalian', href: '/pengembalian' },

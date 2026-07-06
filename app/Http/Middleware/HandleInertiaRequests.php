@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\BookingMobil;
 use App\Models\Mobil;
 use App\Models\Notifikasi;
 use Illuminate\Foundation\Inspiring;
@@ -23,12 +24,31 @@ class HandleInertiaRequests extends Middleware
 
         $notifications = [];
         $mobilSelesaiRawat = [];
+        $pendingBooking = null;
 
         if ($request->user()) {
             $user = $request->user();
 
             if ($user->role === 'pelanggan') {
                 Notifikasi::generatePassiveNotifications($user->id);
+
+                BookingMobil::autoExpirePendingBookings(1);
+
+                $pending = BookingMobil::where('iduser', $user->id)
+                    ->whereIn('status', ['Pending', 'pending'])
+                    ->where('created_at', '>=', now()->subMinutes(1))
+                    ->with(['mobil'])
+                    ->latest()
+                    ->first();
+
+                if ($pending) {
+                    $pendingBooking = [
+                        'kdbooking' => $pending->kdbooking,
+                        'nama_mobil' => $pending->mobil->nama_mobil ?? '-',
+                        'total_bayar' => (int) $pending->total_bayar,
+                        'created_at' => $pending->created_at->toISOString(),
+                    ];
+                }
             }
 
             if ($user->role === 'admin') {
@@ -72,7 +92,7 @@ class HandleInertiaRequests extends Middleware
             }
         }
 
-        return array_merge(parent::share($request), [
+        return [
             ...parent::share($request),
             'name' => config('app.name'),
             'quote' => ['message' => trim($message), 'author' => trim($author)],
@@ -80,11 +100,12 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
                 'notifications' => $notifications,
                 'mobil_selesai_rawat' => $mobilSelesaiRawat,
+                'pending_booking' => $pendingBooking,
             ],
             'flash' => [
                 'success' => $request->session()->get('success'),
                 'error' => $request->session()->get('error'),
             ],
-        ]);
+        ];
     }
 }

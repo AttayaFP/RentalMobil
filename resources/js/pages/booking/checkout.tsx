@@ -1,11 +1,11 @@
 import BookingLayout from '@/layouts/booking-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link, router } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import { useEffect, useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { CreditCard, CheckCircle2, XCircle, Loader2, ArrowLeft, Clock } from 'lucide-react';
+import { CreditCard, CheckCircle2, XCircle, Loader2, ArrowLeft } from 'lucide-react';
 import axios from 'axios';
 
 interface Booking {
@@ -44,6 +44,8 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function Checkout({ booking, snap_token, client_key, is_production }: Props) {
+    const { auth } = usePage<{ auth: { user: { role: string } | null } }>().props;
+    const backLink = auth?.user?.role === 'pelanggan' ? '/' : '/booking';
     const [paymentStatus, setPaymentStatus] = useState<'pending' | 'success' | 'error' | 'none'>('none');
     const [isScriptLoaded, setIsScriptLoaded] = useState(false);
 
@@ -180,7 +182,7 @@ export default function Checkout({ booking, snap_token, client_key, is_productio
 
                         <div className="border-t pt-4">
                             <Button variant="ghost" className="w-full" asChild>
-                                <Link href="/booking">
+                                <Link href={backLink}>
                                     <ArrowLeft className="mr-2 h-4 w-4" />
                                     Kembali
                                 </Link>

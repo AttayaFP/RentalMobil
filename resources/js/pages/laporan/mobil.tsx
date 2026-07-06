@@ -1,13 +1,13 @@
+import logoImg from '@/assets/images/logo.jpg';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
+import { Printer, Search } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { FileText, Printer, Search } from 'lucide-react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Dashboard', href: '/dashboard' },
@@ -20,6 +20,7 @@ interface Mobil {
     thn_mobil: number;
     plat_mobil: string;
     warna_mobil: string;
+    stnk_mobil: string;
     harga: number;
     nama_kategori: string;
     status: string;
@@ -54,90 +55,103 @@ export default function MobilReport({ mobils, filters }: Props) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Laporan Mobil" />
 
-            <div className="flex flex-col gap-6 p-4">
-                <Card>
-                    <CardHeader>
-                        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                            <div>
-                                <CardTitle className="flex items-center gap-2">
-                                    <FileText className="h-5 w-5" />
-                                    Laporan Inventaris Mobil
-                                </CardTitle>
-                                <CardDescription>Cari dan cetak daftar inventaris mobil</CardDescription>
-                            </div>
-                            <Button onClick={() => window.print()}>
-                                <Printer className="h-4 w-4" />
-                                Cetak Laporan
-                            </Button>
+            <div className="flex flex-col gap-0 p-4">
+                <div className="border-2 border-black">
+                    <div className="flex items-center gap-4 border-b-2 border-black p-4">
+                        <img src={logoImg} alt="Logo" className="h-20 w-20 object-contain" />
+                        <div className="flex-1 text-center">
+                            <h1 className="text-xl font-bold uppercase">PT. NABIL RENTAL MOBIL PADANG</h1>
+                            <p className="text-muted-foreground text-sm">Komplek Perumdam/III/4, Tunggul Hitam, Kota Padang</p>
                         </div>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="mb-4 flex items-center gap-2">
+                        <div className="w-20" />
+                    </div>
+
+                    <div className="bg-muted/30 border-b-2 border-black px-4 py-3">
+                        <h2 className="text-center text-sm font-bold uppercase">Laporan Data Mobil - Daftar Inventaris & Kondisi Seluruh Mobil</h2>
+                    </div>
+
+                    <div className="p-4">
+                        <div className="no-print mb-4 flex items-center gap-2">
                             <div className="relative max-w-sm flex-1">
-                                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
                                 <Input
                                     placeholder="Cari kode atau nama mobil..."
                                     value={search}
                                     onChange={(e) => handleSearch(e.target.value)}
-                                    className="pl-9"
+                                    className="rounded-none pl-9"
                                 />
                             </div>
+                            <Button onClick={() => window.print()} className="rounded-none">
+                                <Printer className="mr-2 h-4 w-4" />
+                                Cetak Laporan
+                            </Button>
                         </div>
 
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className="w-12 text-center">No</TableHead>
-                                    <TableHead>Kode</TableHead>
-                                    <TableHead>Nama</TableHead>
-                                    <TableHead>Tahun</TableHead>
-                                    <TableHead>Plat</TableHead>
-                                    <TableHead>Warna</TableHead>
-                                    <TableHead className="text-right">Harga</TableHead>
-                                    <TableHead>Kategori</TableHead>
-                                    <TableHead className="text-center">Status</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {mobils.length > 0 ? (
-                                    mobils.map((m, i) => (
-                                        <TableRow key={m.kdmobil}>
-                                            <TableCell className="text-center font-medium">{i + 1}</TableCell>
-                                            <TableCell className="font-medium">{m.kdmobil}</TableCell>
-                                            <TableCell>{m.nama_mobil}</TableCell>
-                                            <TableCell>{m.thn_mobil}</TableCell>
-                                            <TableCell>
-                                                <Badge variant="outline">{m.plat_mobil}</Badge>
-                                            </TableCell>
-                                            <TableCell>{m.warna_mobil || '-'}</TableCell>
-                                            <TableCell className="text-right font-medium">{formatCurrency(m.harga)}</TableCell>
-                                            <TableCell>{m.nama_kategori}</TableCell>
-                                            <TableCell className="text-center">
-                                                <Badge variant={m.status === 'Tersedia' ? 'success' : 'destructive'}>
-                                                    {m.status || 'Tersedia'}
-                                                </Badge>
+                        <div className="overflow-x-auto">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow className="bg-muted/50 hover:bg-muted/50 border-b-2 border-black">
+                                        <TableHead className="w-12 border border-black text-center">No</TableHead>
+                                        <TableHead className="border border-black">Kode</TableHead>
+                                        <TableHead className="border border-black">Nama Mobil</TableHead>
+                                        <TableHead className="border border-black">Kategori</TableHead>
+                                        <TableHead className="border border-black">Tahun</TableHead>
+                                        <TableHead className="border border-black">Warna</TableHead>
+                                        <TableHead className="border border-black">No. STNK</TableHead>
+                                        <TableHead className="border border-black">Plat</TableHead>
+                                        <TableHead className="border border-black text-right">Harga</TableHead>
+                                        <TableHead className="border border-black text-center">Status</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {mobils.length > 0 ? (
+                                        mobils.map((m, i) => (
+                                            <TableRow key={m.kdmobil} className="border-b border-black">
+                                                <TableCell className="border border-black text-center font-medium">{i + 1}</TableCell>
+                                                <TableCell className="border border-black font-medium">{m.kdmobil}</TableCell>
+                                                <TableCell className="border border-black">{m.nama_mobil}</TableCell>
+                                                <TableCell className="border border-black">{m.nama_kategori}</TableCell>
+                                                <TableCell className="border border-black">{m.thn_mobil}</TableCell>
+                                                <TableCell className="border border-black">{m.warna_mobil || '-'}</TableCell>
+                                                <TableCell className="border border-black">{m.stnk_mobil || '-'}</TableCell>
+                                                <TableCell className="border border-black">{m.plat_mobil}</TableCell>
+                                                <TableCell className="border border-black text-right font-medium">
+                                                    {formatCurrency(m.harga)}
+                                                </TableCell>
+                                                <TableCell className="border border-black text-center">
+                                                    <Badge
+                                                        variant={
+                                                            m.status === 'Tersedia' ? 'success' : m.status === 'Disewa' ? 'warning' : 'destructive'
+                                                        }
+                                                        className="rounded-none"
+                                                    >
+                                                        {m.status || 'Tersedia'}
+                                                    </Badge>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))
+                                    ) : (
+                                        <TableRow>
+                                            <TableCell colSpan={10} className="text-muted-foreground h-24 border border-black text-center">
+                                                Data mobil tidak ditemukan.
                                             </TableCell>
                                         </TableRow>
-                                    ))
-                                ) : (
-                                    <TableRow>
-                                        <TableCell colSpan={9} className="h-24 text-center text-muted-foreground">
-                                            Data mobil tidak ditemukan.
-                                        </TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                            <TableFooter>
-                                <TableRow>
-                                    <TableCell colSpan={8} className="text-right font-medium uppercase">
-                                        Total Seluruh Mobil / Armada
+                                    )}
+                                </TableBody>
+                                <TableRow className="bg-muted/50 hover:bg-muted/50 border-t-2 border-black">
+                                    <TableCell colSpan={9} className="border border-black text-right font-bold uppercase">
+                                        Total Seluruh Mobil
                                     </TableCell>
-                                    <TableCell className="text-center font-bold">{mobils.length} Unit</TableCell>
+                                    <TableCell className="border border-black text-center font-bold">{mobils.length} Unit</TableCell>
                                 </TableRow>
-                            </TableFooter>
-                        </Table>
-                    </CardContent>
-                </Card>
+                            </Table>
+                        </div>
+
+                        <div className="bg-muted/30 mt-4 border-2 border-black p-3 text-center">
+                            <p className="text-sm font-bold uppercase">Jumlah Seluruh Data Mobil: {mobils.length} Unit</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </AppLayout>
     );

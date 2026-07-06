@@ -1,11 +1,9 @@
-import { Button } from '@/components/ui/button';
 import { DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { UserInfo } from '@/components/user-info';
 import { useMobileNavigation } from '@/hooks/use-mobile-navigation';
 import { type User } from '@/types';
-import { Link, router, usePage } from '@inertiajs/react';
-import { Bell, Car, Check, LogOut, Settings, Wrench, X } from 'lucide-react';
-import { toast } from 'sonner';
+import { Link, usePage } from '@inertiajs/react';
+import { Bell, LogOut, Settings } from 'lucide-react';
 
 interface NotificationItem {
     id: number;
@@ -37,7 +35,6 @@ export function UserMenuContent({ user, onOpenNotif }: UserMenuContentProps) {
 
     const notifications = auth?.notifications || [];
     const mobilSelesaiRawat = auth?.mobil_selesai_rawat || [];
-    const isAdmin = auth?.user?.role === 'admin';
     const totalAlerts = notifications.length + mobilSelesaiRawat.length;
 
     return (

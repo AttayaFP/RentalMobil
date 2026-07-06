@@ -1,14 +1,14 @@
+import logoImg from '@/assets/images/logo.jpg';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
+import { Printer, Search } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { CalendarRange, Printer, Search } from 'lucide-react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Dashboard', href: '/dashboard' },
@@ -48,28 +48,18 @@ export default function BookingReport({ bookings, filters }: Props) {
             setSearch(value);
             if (debounceTimer.current) clearTimeout(debounceTimer.current);
             debounceTimer.current = setTimeout(() => {
-                router.get(
-                    '/laporan/booking',
-                    { search: value, start_date: startDate, end_date: endDate },
-                    { preserveState: true, replace: true },
-                );
+                router.get('/laporan/booking', { search: value, start_date: startDate, end_date: endDate }, { preserveState: true, replace: true });
             }, 300);
         },
         [debounceTimer, startDate, endDate],
     );
 
     const handleFilter = () => {
-        router.get(
-            '/laporan/booking',
-            { search, start_date: startDate, end_date: endDate },
-            { preserveState: true, replace: true },
-        );
+        router.get('/laporan/booking', { search, start_date: startDate, end_date: endDate });
     };
 
     const formatCurrency = (amount: number) =>
         new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
-
-    const grandTotal = bookings.reduce((acc, curr) => acc + (curr.total_bayar || 0), 0);
 
     const getDuration = (start: string, end: string) => {
         const diff = new Date(end).getTime() - new Date(start).getTime();
@@ -77,105 +67,147 @@ export default function BookingReport({ bookings, filters }: Props) {
         return days > 0 ? `${days} hari` : '-';
     };
 
+    const totalPendapatan = bookings
+        .filter((b) => ['sukses', 'selesai', 'success', 'berhasil'].includes(b.status.toLowerCase()))
+        .reduce((acc, curr) => acc + (curr.total_bayar || 0), 0);
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Laporan Booking" />
 
-            <div className="flex flex-col gap-6 p-4">
-                <Card>
-                    <CardHeader>
-                        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                            <div>
-                                <CardTitle className="flex items-center gap-2">
-                                    <CalendarRange className="h-5 w-5" />
-                                    Laporan Pesanan (Booking)
-                                </CardTitle>
-                                <CardDescription>Monitor dan cetak riwayat pesanan pelanggan</CardDescription>
-                            </div>
-                            <Button onClick={() => window.print()}>
-                                <Printer className="h-4 w-4" />
-                                Cetak Laporan
-                            </Button>
+            <div className="flex flex-col gap-0 p-4">
+                <div className="border-2 border-black">
+                    <div className="flex items-center gap-4 border-b-2 border-black p-4">
+                        <img src={logoImg} alt="Logo" className="h-20 w-20 object-contain" />
+                        <div className="flex-1 text-center">
+                            <h1 className="text-xl font-bold uppercase">PT. NABIL RENTAL MOBIL PADANG</h1>
+                            <p className="text-muted-foreground text-sm">Komplek Perumdam/III/4, Tunggul Hitam, Kota Padang</p>
                         </div>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end">
+                        <div className="w-20" />
+                    </div>
+
+                    <div className="bg-muted/30 border-b-2 border-black px-4 py-3">
+                        <h2 className="text-center text-sm font-bold uppercase">Laporan Booking - Riwayat Booking & Reservasi Mobil</h2>
+                    </div>
+
+                    <div className="p-4">
+                        <div className="no-print mb-4 flex flex-col gap-3 sm:flex-row sm:items-end">
                             <div className="relative max-w-sm flex-1">
-                                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
                                 <Input
                                     placeholder="Cari kode booking, pelanggan, mobil..."
                                     value={search}
                                     onChange={(e) => handleSearch(e.target.value)}
-                                    className="pl-9"
+                                    className="rounded-none pl-9"
                                 />
                             </div>
                             <div className="flex items-end gap-2">
                                 <div className="flex flex-col gap-1">
                                     <Label className="text-xs">Dari Tanggal</Label>
-                                    <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-40" />
+                                    <Input
+                                        type="date"
+                                        value={startDate}
+                                        onChange={(e) => setStartDate(e.target.value)}
+                                        className="w-40 rounded-none"
+                                    />
                                 </div>
                                 <div className="flex flex-col gap-1">
                                     <Label className="text-xs">Sampai Tanggal</Label>
-                                    <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-40" />
+                                    <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-40 rounded-none" />
                                 </div>
-                                <Button onClick={handleFilter}>Filter</Button>
+                                <Button onClick={handleFilter} className="rounded-none">
+                                    Filter
+                                </Button>
+                            </div>
+                            <Button onClick={() => window.print()} className="rounded-none">
+                                <Printer className="mr-2 h-4 w-4" />
+                                Cetak Laporan
+                            </Button>
+                        </div>
+
+                        <div className="overflow-x-auto">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow className="bg-muted/50 hover:bg-muted/50 border-b-2 border-black">
+                                        <TableHead className="w-12 border border-black text-center">No</TableHead>
+                                        <TableHead className="border border-black">Kode</TableHead>
+                                        <TableHead className="border border-black">Nama Pelanggan</TableHead>
+                                        <TableHead className="border border-black">Nama Mobil</TableHead>
+                                        <TableHead className="border border-black">Plat</TableHead>
+                                        <TableHead className="border border-black text-center">Lama Sewa</TableHead>
+                                        <TableHead className="border border-black">Tanggal Mulai</TableHead>
+                                        <TableHead className="border border-black">Tanggal Selesai</TableHead>
+                                        <TableHead className="border border-black">Metode Pembayaran</TableHead>
+                                        <TableHead className="border border-black text-right">Total Harga</TableHead>
+                                        <TableHead className="border border-black text-center">Status</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {bookings.length > 0 ? (
+                                        bookings.map((b, i) => (
+                                            <TableRow key={b.kdbooking} className="border-b border-black">
+                                                <TableCell className="border border-black text-center font-medium">{i + 1}</TableCell>
+                                                <TableCell className="border border-black font-medium">{b.kdbooking}</TableCell>
+                                                <TableCell className="border border-black">{b.nama_pelanggan}</TableCell>
+                                                <TableCell className="border border-black">{b.nama_mobil}</TableCell>
+                                                <TableCell className="border border-black">{b.plat_mobil}</TableCell>
+                                                <TableCell className="border border-black text-center">
+                                                    {getDuration(b.tglmulai, b.tglselesai)}
+                                                </TableCell>
+                                                <TableCell className="border border-black">{b.tglmulai}</TableCell>
+                                                <TableCell className="border border-black">{b.tglselesai}</TableCell>
+                                                <TableCell className="border border-black">{b.payment_type || '-'}</TableCell>
+                                                <TableCell className="border border-black text-right font-medium">
+                                                    {formatCurrency(b.total_bayar)}
+                                                </TableCell>
+                                                <TableCell className="border border-black text-center">
+                                                    <Badge
+                                                        variant={
+                                                            ['sukses', 'selesai', 'success', 'berhasil'].includes(b.status.toLowerCase())
+                                                                ? 'success'
+                                                                : b.status.toLowerCase() === 'pending'
+                                                                  ? 'warning'
+                                                                  : 'destructive'
+                                                        }
+                                                        className="rounded-none"
+                                                    >
+                                                        {b.status}
+                                                    </Badge>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))
+                                    ) : (
+                                        <TableRow>
+                                            <TableCell colSpan={11} className="text-muted-foreground h-24 border border-black text-center">
+                                                Data booking tidak ditemukan.
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                                <TableRow className="border-t-2 border-black bg-muted/50 hover:bg-muted/50">
+                                    <TableCell colSpan={10} className="border border-black text-right font-bold uppercase">
+                                        Total Seluruh Pendapatan Booking
+                                    </TableCell>
+                                    <TableCell className="border border-black text-right font-bold">
+                                        {formatCurrency(totalPendapatan)}
+                                    </TableCell>
+                                </TableRow>
+                            </Table>
+                        </div>
+
+                        <div className="mt-4 grid grid-cols-2 gap-4">
+                            <div className="bg-muted/30 border-2 border-black p-3">
+                                <p className="text-muted-foreground text-xs font-bold uppercase">Jumlah Seluruh Data Booking</p>
+                                <p className="mt-1 text-lg font-bold">{bookings.length}</p>
+                            </div>
+                            <div className="bg-muted/30 border-2 border-black p-3 text-right">
+                                <p className="text-muted-foreground text-xs font-bold uppercase">Total Seluruh Pembayaran Booking</p>
+                                <p className="mt-1 text-lg font-bold">{formatCurrency(totalPendapatan)}</p>
                             </div>
                         </div>
 
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className="w-12 text-center">No</TableHead>
-                                    <TableHead>Kode</TableHead>
-                                    <TableHead>Pelanggan</TableHead>
-                                    <TableHead>Mobil</TableHead>
-                                    <TableHead className="text-center">Durasi</TableHead>
-                                    <TableHead>Tanggal</TableHead>
-                                    <TableHead className="text-center">Status</TableHead>
-                                    <TableHead>Payment</TableHead>
-                                    <TableHead className="text-right">Total</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {bookings.length > 0 ? (
-                                    bookings.map((b, i) => (
-                                        <TableRow key={b.kdbooking}>
-                                            <TableCell className="text-center font-medium">{i + 1}</TableCell>
-                                            <TableCell className="font-medium">{b.kdbooking}</TableCell>
-                                            <TableCell>{b.nama_pelanggan}</TableCell>
-                                            <TableCell>{b.nama_mobil}</TableCell>
-                                            <TableCell className="text-center">{getDuration(b.tglmulai, b.tglselesai)}</TableCell>
-                                            <TableCell>
-                                                <span className="text-xs">
-                                                    {b.tglmulai} s/d {b.tglselesai}
-                                                </span>
-                                            </TableCell>
-                                            <TableCell className="text-center">
-                                                <Badge variant={b.status === 'Paid' ? 'success' : 'warning'}>{b.status}</Badge>
-                                            </TableCell>
-                                            <TableCell>{b.payment_type || '-'}</TableCell>
-                                            <TableCell className="text-right font-medium">{formatCurrency(b.total_bayar)}</TableCell>
-                                        </TableRow>
-                                    ))
-                                ) : (
-                                    <TableRow>
-                                        <TableCell colSpan={9} className="h-24 text-center text-muted-foreground">
-                                            Data booking tidak ditemukan.
-                                        </TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                            <TableFooter>
-                                <TableRow>
-                                    <TableCell colSpan={8} className="text-right font-medium uppercase">
-                                        Total Seluruh Pendapatan Booking
-                                    </TableCell>
-                                    <TableCell className="text-right font-bold">{formatCurrency(grandTotal)}</TableCell>
-                                </TableRow>
-                            </TableFooter>
-                        </Table>
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
             </div>
         </AppLayout>
     );

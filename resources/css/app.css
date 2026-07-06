@@ -213,3 +213,59 @@ html.lenis, html.lenis body {
     background-size: 200% 100%;
     animation: shimmer 2s infinite;
 }
+
+@media print {
+    @page {
+        size: landscape;
+        margin: 10mm;
+    }
+
+    body {
+        background: white !important;
+        color: black !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .no-print,
+    [data-sidebar],
+    [data-sidebar-trigger],
+    header,
+    nav,
+    .breadcrumb,
+    aside {
+        display: none !important;
+    }
+
+    [data-slot="sidebar-inset"] {
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    main {
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    .flex.flex-col.gap-0.p-4 {
+        padding: 0 !important;
+    }
+
+    table {
+        font-size: 10px !important;
+        width: 100% !important;
+    }
+
+    th, td {
+        padding: 4px 6px !important;
+        word-wrap: break-word;
+    }
+
+    .border-2.border-black,
+    .border-b-2.border-black,
+    .border.border-black,
+    .border-r.border-black,
+    .border-t-2.border-black {
+        border-color: black !important;
+    }
+}

@@ -16,7 +16,7 @@ const breadcrumbs = [
 export default function Profile() {
     const { auth } = usePage<{ auth: { user: { nama_lengkap: string; email: string } } }>().props;
 
-    const { data, setData, patch, errors, processing, recentlySuccessful } = useForm({
+    const { data, setData, patch, errors, processing } = useForm({
         nama_lengkap: auth.user.nama_lengkap,
         email: auth.user.email,
     });
