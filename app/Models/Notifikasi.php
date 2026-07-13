@@ -51,7 +51,7 @@ class Notifikasi extends Model
                     $q->whereIn('status', ['Sukses', 'success', 'Success', 'Berhasil', 'Selesai', 'challenge'])
                         ->orWhere(function ($qp) {
                             $qp->whereIn('status', ['Pending', 'pending'])
-                                ->where('created_at', '>=', now()->subMinutes(1));
+                                ->where('created_at', '>=', now()->subMinutes(config('booking.pending_lock_minutes', 15)));
                         });
                 })
                 ->where(function ($q) use ($tglmulai, $tglselesai) {

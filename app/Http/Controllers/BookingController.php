@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\BookingMobil;
 use App\Models\Mobil;
+use App\Models\Notifikasi;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -14,12 +15,15 @@ use Illuminate\Support\Facades\DB;
 
 class BookingController extends Controller
 {
-    private const PENDING_LOCK_MINUTES = 1;
+    private function pendingLockMinutes(): int
+    {
+        return (int) config('booking.pending_lock_minutes', 1);
+    }
 
     public function index(Request $request)
     {
-        BookingMobil::autoExpirePendingBookings(self::PENDING_LOCK_MINUTES);
-        $query = BookingMobil::query();
+        BookingMobil::autoExpirePendingBookings($this->pendingLockMinutes());
+        $query = BookingMobil::query()->where('status', '!=', 'Notified');
 
         if (Auth::user() && Auth::user()->role === 'pelanggan') {
             $query->where('iduser', Auth::id())
@@ -51,7 +55,7 @@ class BookingController extends Controller
 
     public function getAvailableCars(Request $request)
     {
-        BookingMobil::autoExpirePendingBookings(self::PENDING_LOCK_MINUTES);
+        BookingMobil::autoExpirePendingBookings($this->pendingLockMinutes());
         $request->validate([
             'tglmulai' => 'required|date',
             'tglselesai' => 'required|date|after_or_equal:tglmulai',
@@ -64,7 +68,7 @@ class BookingController extends Controller
             $q->whereIn('status', ['Sukses', 'success', 'Success', 'Berhasil', 'Selesai', 'challenge'])
                 ->orWhere(function ($qp) {
                     $qp->whereIn('status', ['Pending', 'pending'])
-                        ->where('created_at', '>=', now()->subMinutes(self::PENDING_LOCK_MINUTES));
+                        ->where('created_at', '>=', now()->subMinutes($this->pendingLockMinutes()));
                 });
         })
             ->where(function ($q) use ($tglmulai, $tglselesai) {
@@ -125,7 +129,7 @@ class BookingController extends Controller
 
     public function store(Request $request)
     {
-        BookingMobil::autoExpirePendingBookings(self::PENDING_LOCK_MINUTES);
+        BookingMobil::autoExpirePendingBookings($this->pendingLockMinutes());
         $request->validate([
             'tglbooking' => 'required|date',
             'iduser' => 'required',
@@ -151,7 +155,7 @@ class BookingController extends Controller
                     $q->whereIn('status', ['Sukses', 'success', 'Success', 'Berhasil', 'Selesai', 'challenge'])
                         ->orWhere(function ($qp) {
                             $qp->whereIn('status', ['Pending', 'pending'])
-                                ->where('created_at', '>=', now()->subMinutes(self::PENDING_LOCK_MINUTES));
+                                ->where('created_at', '>=', now()->subMinutes($this->pendingLockMinutes()));
                         });
                 })
                 ->where(function ($q) use ($request) {
@@ -190,10 +194,16 @@ class BookingController extends Controller
                 'lama_sewa' => $request->lama_sewa,
                 'total_bayar' => $request->total_bayar,
                 'payment_method' => $request->payment_method,
+                'payment_type' => 'midtrans',
                 'transaction_id' => 'TRX-' . strtoupper(bin2hex(random_bytes(4))),
                 'transaction_time' => now(),
                 'status' => 'Pending',
+                'created_at' => now(),
             ]);
+
+            Notifikasi::where('iduser', $request->iduser)
+                ->where('kdmobil', $request->kdmobil)
+                ->delete();
 
             return redirect()->route('booking.checkout', $existingReminder->kdbooking);
         }
@@ -207,6 +217,10 @@ class BookingController extends Controller
         }
 
         $booking = BookingMobil::create($data);
+
+        Notifikasi::where('iduser', $request->iduser)
+            ->where('kdmobil', $request->kdmobil)
+            ->delete();
 
         return redirect()->route('booking.checkout', $booking->kdbooking);
     }
@@ -244,7 +258,7 @@ class BookingController extends Controller
             'expiry' => [
                 'start_time' => date("Y-m-d H:i:s O", time()),
                 'unit' => 'minute',
-                'duration' => self::PENDING_LOCK_MINUTES,
+                'duration' => $this->pendingLockMinutes(),
             ],
         ];
 
@@ -307,7 +321,7 @@ class BookingController extends Controller
 
     public function update(Request $request, string $id)
     {
-        BookingMobil::autoExpirePendingBookings(self::PENDING_LOCK_MINUTES);
+        BookingMobil::autoExpirePendingBookings($this->pendingLockMinutes());
         $booking = BookingMobil::findOrFail($id);
 
         $request->validate([
@@ -335,7 +349,7 @@ class BookingController extends Controller
                     $q->whereIn('status', ['Sukses', 'success', 'Success', 'Berhasil', 'Selesai', 'challenge'])
                         ->orWhere(function ($qp) {
                             $qp->whereIn('status', ['Pending', 'pending'])
-                                ->where('created_at', '>=', now()->subMinutes(self::PENDING_LOCK_MINUTES));
+                                ->where('created_at', '>=', now()->subMinutes($this->pendingLockMinutes()));
                         });
                 })
                 ->where(function ($q) use ($request) {

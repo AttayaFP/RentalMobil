@@ -83,13 +83,13 @@ Route::middleware(['auth'])->group(function () {
         Route::post('notifikasi/{id}/read', function ($id) {
             $notif = \App\Models\Notifikasi::where('iduser', auth()->id())->findOrFail($id);
             $notif->update(['is_read' => true]);
-            return back();
+            return response()->json(['success' => true]);
         })->name('notifikasi.read');
 
         Route::delete('notifikasi/{id}', function ($id) {
             $notif = \App\Models\Notifikasi::where('iduser', auth()->id())->findOrFail($id);
             $notif->delete();
-            return back();
+            return response()->json(['success' => true]);
         })->name('notifikasi.delete');
     });
 });

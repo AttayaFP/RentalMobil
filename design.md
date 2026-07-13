@@ -406,7 +406,7 @@ Brand names berjalan otomatis di bawah hero section menggunakan `useMarquee(25)`
 ## 11. Pending Booking Dialog
 
 ### Behavior
-Dialog notifikasi otomatis muncul di `welcome.tsx` saat pelanggan memiliki booking pending (status `Pending`, created < 1 menit yang lalu).
+Dialog notifikasi otomatis muncul di `welcome.tsx` saat pelanggan memiliki booking pending (status `Pending`, created < 15 menit yang lalu, configurable via `config('booking.pending_lock_minutes')`).
 
 ### States
 1. **Pending**: Tampil saat booking masih aktif
@@ -427,6 +427,7 @@ Dialog notifikasi otomatis muncul di `welcome.tsx` saat pelanggan memiliki booki
     'nama_mobil' => 'Toyota Avanza',
     'total_bayar' => 500000,
     'created_at' => '2026-07-05T14:00:00.000000Z',
+    'expires_in_minutes' => 15,
 ]
 ```
 
@@ -440,7 +441,7 @@ const [dismissed, setDismissed] = useState(false);
 
 useEffect(() => {
     if (!pendingBooking) return;
-    const expiresAt = new Date(pendingBooking.created_at).getTime() + 60 * 1000;
+    const expiresAt = new Date(pendingBooking.created_at).getTime() + (pendingBooking.expires_in_minutes || 15) * 60 * 1000;
     const updateTimer = () => {
         const remaining = Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000));
         setTimeRemaining(remaining);

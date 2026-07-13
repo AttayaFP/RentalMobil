@@ -62,6 +62,7 @@ export default function Welcome({ mobils = [] }: Props) {
                 nama_mobil: string;
                 total_bayar: number;
                 created_at: string;
+                expires_in_minutes: number;
             } | null;
         };
     }>().props;
@@ -87,7 +88,7 @@ export default function Welcome({ mobils = [] }: Props) {
     useEffect(() => {
         if (!pendingBooking) return;
 
-        const expiresAt = new Date(pendingBooking.created_at).getTime() + 60 * 1000;
+        const expiresAt = new Date(pendingBooking.created_at).getTime() + (pendingBooking.expires_in_minutes || 15) * 60 * 1000;
 
         const updateTimer = () => {
             const remaining = Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000));
@@ -475,7 +476,7 @@ export default function Welcome({ mobils = [] }: Props) {
                         <div className="flex items-center justify-center gap-2">
                             <Clock className="h-4 w-4 text-amber-500" />
                             <p className="text-sm font-semibold text-amber-500">
-                                Waktu tersisa: {timeRemaining} detik
+                                Waktu tersisa: {Math.floor(timeRemaining / 60)}:{String(timeRemaining % 60).padStart(2, '0')}
                             </p>
                         </div>
                     </div>

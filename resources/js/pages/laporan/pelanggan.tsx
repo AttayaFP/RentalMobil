@@ -134,12 +134,6 @@ export default function PelangganReport({ pelanggans, filters }: Props) {
                                 </TableRow>
                             </Table>
                         </div>
-
-                        <div className="mt-4 border-2 border-black bg-muted/30 p-3 text-center">
-                            <p className="text-sm font-bold uppercase">
-                                Jumlah Seluruh Data Pelanggan: {pelanggans.length}
-                            </p>
-                        </div>
                     </div>
                 </div>
             </div>

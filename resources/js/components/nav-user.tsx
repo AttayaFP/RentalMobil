@@ -42,18 +42,40 @@ export function NavUser() {
     const isAdmin = auth?.user?.role === 'admin';
     const totalAlerts = notifications.length + mobilSelesaiRawat.length;
 
+    const getXsrfToken = (): string => {
+        const match = document.cookie.match(/XSRF-TOKEN=([^;]+)/);
+        return match ? decodeURIComponent(match[1]) : '';
+    };
+
     const markAsRead = (id: number) => {
-        router.post(`/notifikasi/${id}/read`, {}, {
-            preserveScroll: true,
-            onSuccess: () => toast.success('Notifikasi ditandai sudah dibaca'),
-        });
+        fetch(`/notifikasi/${id}/read`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-XSRF-TOKEN': getXsrfToken(),
+            },
+        })
+            .then(() => router.reload({ only: ['auth'] }))
+            .catch(() => {});
     };
 
     const deleteNotif = (id: number) => {
-        router.delete(`/notifikasi/${id}`, {
-            preserveScroll: true,
-            onSuccess: () => toast.success('Notifikasi dihapus'),
-        });
+        fetch(`/notifikasi/${id}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-XSRF-TOKEN': getXsrfToken(),
+            },
+        })
+            .then(() => {
+                toast.success('Notifikasi dihapus');
+                router.reload({ only: ['auth'] });
+            })
+            .catch(() => {
+                toast.error('Gagal menghapus notifikasi');
+            });
     };
 
     const setTersedia = (kdmobil: string, plat: string) => {

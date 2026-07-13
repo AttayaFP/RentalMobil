@@ -32,11 +32,12 @@ class HandleInertiaRequests extends Middleware
             if ($user->role === 'pelanggan') {
                 Notifikasi::generatePassiveNotifications($user->id);
 
-                BookingMobil::autoExpirePendingBookings(1);
+                $pendingLockMinutes = config('booking.pending_lock_minutes', 15);
+                BookingMobil::autoExpirePendingBookings($pendingLockMinutes);
 
                 $pending = BookingMobil::where('iduser', $user->id)
                     ->whereIn('status', ['Pending', 'pending'])
-                    ->where('created_at', '>=', now()->subMinutes(1))
+                    ->where('created_at', '>=', now()->subMinutes($pendingLockMinutes))
                     ->with(['mobil'])
                     ->latest()
                     ->first();
@@ -47,6 +48,7 @@ class HandleInertiaRequests extends Middleware
                         'nama_mobil' => $pending->mobil->nama_mobil ?? '-',
                         'total_bayar' => (int) $pending->total_bayar,
                         'created_at' => $pending->created_at->toISOString(),
+                        'expires_in_minutes' => $pendingLockMinutes,
                     ];
                 }
             }

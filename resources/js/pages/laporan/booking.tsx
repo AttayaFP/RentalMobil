@@ -66,10 +66,13 @@ export default function BookingReport({ bookings, filters }: Props) {
         const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
         return days > 0 ? `${days} hari` : '-';
     };
+    const suksesCount = useMemo(() => {
+        return bookings.filter((b) => ['sukses', 'selesai', 'success', 'berhasil'].includes(b.status.toLowerCase())).length;
+    }, [bookings]);
 
-    const totalPendapatan = bookings
-        .filter((b) => ['sukses', 'selesai', 'success', 'berhasil'].includes(b.status.toLowerCase()))
-        .reduce((acc, curr) => acc + (curr.total_bayar || 0), 0);
+    const expiredCount = useMemo(() => {
+        return bookings.filter((b) => b.status.toLowerCase() === 'expired').length;
+    }, [bookings]);
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -184,28 +187,23 @@ export default function BookingReport({ bookings, filters }: Props) {
                                         </TableRow>
                                     )}
                                 </TableBody>
-                                <TableRow className="border-t-2 border-black bg-muted/50 hover:bg-muted/50">
-                                    <TableCell colSpan={10} className="border border-black text-right font-bold uppercase">
-                                        Total Seluruh Pendapatan Booking
-                                    </TableCell>
-                                    <TableCell className="border border-black text-right font-bold">
-                                        {formatCurrency(totalPendapatan)}
-                                    </TableCell>
-                                </TableRow>
                             </Table>
                         </div>
 
-                        <div className="mt-4 grid grid-cols-2 gap-4">
+                        <div className="mt-4 grid grid-cols-3 gap-4">
                             <div className="bg-muted/30 border-2 border-black p-3">
                                 <p className="text-muted-foreground text-xs font-bold uppercase">Jumlah Seluruh Data Booking</p>
                                 <p className="mt-1 text-lg font-bold">{bookings.length}</p>
                             </div>
-                            <div className="bg-muted/30 border-2 border-black p-3 text-right">
-                                <p className="text-muted-foreground text-xs font-bold uppercase">Total Seluruh Pembayaran Booking</p>
-                                <p className="mt-1 text-lg font-bold">{formatCurrency(totalPendapatan)}</p>
+                            <div className="bg-muted/30 border-2 border-black p-3">
+                                <p className="text-muted-foreground text-xs font-bold uppercase">Jumlah Booking Sukses</p>
+                                <p className="mt-1 text-lg font-bold text-emerald-600">{suksesCount}</p>
+                            </div>
+                            <div className="bg-muted/30 border-2 border-black p-3">
+                                <p className="text-muted-foreground text-xs font-bold uppercase">Jumlah Booking Expired</p>
+                                <p className="text-destructive mt-1 text-lg font-bold">{expiredCount}</p>
                             </div>
                         </div>
-
                     </div>
                 </div>
             </div>

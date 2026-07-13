@@ -70,7 +70,9 @@ class LaporanController extends Controller
 
     public function booking(Request $request): Response
     {
-        $query = BookingMobil::with(['user', 'mobil']);
+        BookingMobil::autoExpirePendingBookings((int) config('booking.pending_lock_minutes', 1));
+
+        $query = BookingMobil::with(['user', 'mobil'])->where('status', '!=', 'Notified');
 
         if ($request->filled('search')) {
             $search = $request->search;

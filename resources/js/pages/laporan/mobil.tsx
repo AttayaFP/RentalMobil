@@ -146,10 +146,6 @@ export default function MobilReport({ mobils, filters }: Props) {
                                 </TableRow>
                             </Table>
                         </div>
-
-                        <div className="bg-muted/30 mt-4 border-2 border-black p-3 text-center">
-                            <p className="text-sm font-bold uppercase">Jumlah Seluruh Data Mobil: {mobils.length} Unit</p>
-                        </div>
                     </div>
                 </div>
             </div>

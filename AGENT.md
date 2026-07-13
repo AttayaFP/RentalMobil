@@ -74,8 +74,8 @@ mobil (kdmobil, nama_mobil, thn_mobil, plat_mobil, warna_mobil, stnk_mobil, harg
 
 booking_mobil (kdbooking, tglbooking, iduser, kdmobil, harga, payment_type, payment_method, tglmulai, tglselesai, lama_sewa, total_bayar, transaction_id, transaction_time, status)
   FK: iduser → users, kdmobil → mobil
-  Status flow: Pending → Sukses/Expired/Batal/Gagal/Notified
-  Auto-expire Pending bookings after 1 minute
+   Status flow: Pending → Sukses/Expired/Batal/Gagal/Notified
+   Auto-expire Pending bookings after 15 minutes (configurable via config/booking.php)
 
 kembali_mobil (kdpengembalian, kdbooking, iduser, tglmulai, tglselesai, tglpengembalian, keterlambatan, denda)
   FK: kdbooking → booking_mobil, iduser → users
@@ -112,7 +112,7 @@ Middleware: `CheckRole` di `app/Http/Middleware/CheckRole.php`, registered as `r
 6. Payment success callback → `POST /booking/{id}/success` → status: Sukses, mobil: Disewa
 7. Invoice: `GET /booking/{id}/invoice`
 8. Pelanggan tekan "Kembali" di checkout → role-aware redirect: pelanggan → `/` (homepage), admin/pimpinan → `/booking`
-9. Pelanggan di homepage → dialog notifikasi pending booking muncul (countdown 1 menit dari `created_at`)
+9. Pelanggan di homepage → dialog notifikasi pending booking muncul (countdown 15 menit dari `created_at`, configurable via `config('booking.pending_lock_minutes')`)
    - "Lanjutkan Pembayaran" → redirect ke `/booking/{kdbooking}/checkout`
    - Timer habis → dialog berubah jadi "Booking Kadaluarsa" → "Buat Booking Baru" → `/booking/create`
    - "Nanti Saja" / "Tutup" → dismiss dialog
