@@ -50,7 +50,25 @@ class PelangganController extends Controller
             'alamat' => 'required|string',
             'nohp' => 'required|string|max:15',
             'role' => 'required|in:pelanggan,admin,pimpinan',
-            'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'foto' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ], [
+            'nama_lengkap.required' => 'Nama lengkap wajib diisi.',
+            'username.required' => 'Username wajib diisi.',
+            'username.unique' => 'Username sudah digunakan, pilih yang lain.',
+            'email.required' => 'Email wajib diisi.',
+            'email.email' => 'Format email tidak valid.',
+            'email.unique' => 'Email sudah terdaftar.',
+            'password.required' => 'Password wajib diisi.',
+            'password.confirmed' => 'Konfirmasi password tidak cocok.',
+            'jenis_kelamin.required' => 'Jenis kelamin wajib dipilih.',
+            'alamat.required' => 'Alamat wajib diisi.',
+            'nohp.required' => 'Nomor HP wajib diisi.',
+            'nohp.max' => 'Nomor HP maksimal 15 karakter.',
+            'role.required' => 'Role wajib dipilih.',
+            'foto.required' => 'Foto profil wajib diunggah.',
+            'foto.image' => 'File harus berupa gambar.',
+            'foto.mimes' => 'Format foto harus jpeg, png, jpg, atau gif.',
+            'foto.max' => 'Ukuran foto maksimal 2MB.',
         ]);
 
         $data = [
@@ -95,6 +113,21 @@ class PelangganController extends Controller
             'nohp' => 'required|string|max:15',
             'role' => 'required|in:pelanggan,admin,pimpinan',
             'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ], [
+            'nama_lengkap.required' => 'Nama lengkap wajib diisi.',
+            'username.required' => 'Username wajib diisi.',
+            'username.unique' => 'Username sudah digunakan, pilih yang lain.',
+            'email.required' => 'Email wajib diisi.',
+            'email.email' => 'Format email tidak valid.',
+            'email.unique' => 'Email sudah terdaftar.',
+            'jenis_kelamin.required' => 'Jenis kelamin wajib dipilih.',
+            'alamat.required' => 'Alamat wajib diisi.',
+            'nohp.required' => 'Nomor HP wajib diisi.',
+            'nohp.max' => 'Nomor HP maksimal 15 karakter.',
+            'role.required' => 'Role wajib dipilih.',
+            'foto.image' => 'File harus berupa gambar.',
+            'foto.mimes' => 'Format foto harus jpeg, png, jpg, atau gif.',
+            'foto.max' => 'Ukuran foto maksimal 2MB.',
         ]);
 
         $data = $request->only(['nama_lengkap', 'username', 'email', 'jenis_kelamin', 'alamat', 'nohp', 'role']);

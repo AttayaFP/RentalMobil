@@ -57,6 +57,10 @@ class KategoriController extends Controller
         $request->validate([
             'kdkategori' => 'required|string|max:10|unique:kategori,kdkategori',
             'nama_kategori' => 'required|string|max:255',
+        ], [
+            'kdkategori.required' => 'Kode kategori wajib diisi.',
+            'kdkategori.unique' => 'Kode kategori sudah digunakan, pilih kode lain.',
+            'nama_kategori.required' => 'Nama kategori wajib diisi.',
         ]);
 
         Kategori::create($request->all());
@@ -79,6 +83,8 @@ class KategoriController extends Controller
 
         $request->validate([
             'nama_kategori' => 'required|string|max:255',
+        ], [
+            'nama_kategori.required' => 'Nama kategori wajib diisi.',
         ]);
 
         $kategori->update($request->all());

@@ -56,17 +56,35 @@ export default function Edit({ mobil, kategoris }: Props) {
 
     const [preview, setPreview] = useState<string | null>(mobil.foto ? `/storage/${mobil.foto}` : null);
     const [showConfirm, setShowConfirm] = useState(false);
+    const [clientErrors, setClientErrors] = useState<Record<string, string>>({});
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
             setData('foto', file);
             setPreview(URL.createObjectURL(file));
+            setClientErrors((prev) => ({ ...prev, foto: '' }));
         }
+    };
+
+    const validate = (): boolean => {
+        const errs: Record<string, string> = {};
+
+        if (!data.nama_mobil.trim()) errs.nama_mobil = 'Nama mobil wajib diisi.';
+        if (!data.plat_mobil.trim()) errs.plat_mobil = 'Plat nomor wajib diisi.';
+        if (!data.warna_mobil.trim()) errs.warna_mobil = 'Warna mobil wajib diisi.';
+        if (!data.stnk_mobil.trim()) errs.stnk_mobil = 'Nomor STNK wajib diisi.';
+        if (!data.kdkategori) errs.kdkategori = 'Kategori wajib dipilih.';
+        if (!data.harga || data.harga <= 0) errs.harga = 'Harga sewa wajib diisi dan harus lebih dari 0.';
+        if (!data.thn_mobil) errs.thn_mobil = 'Tahun mobil wajib diisi.';
+
+        setClientErrors(errs);
+        return Object.keys(errs).length === 0;
     };
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
+        if (!validate()) return;
         setShowConfirm(true);
     };
 
@@ -82,6 +100,22 @@ export default function Edit({ mobil, kategoris }: Props) {
                 setShowConfirm(false);
             },
         });
+    };
+
+    const getError = (field: string) => errors[field as keyof typeof errors] || clientErrors[field] || '';
+
+    const inputClass = (field: string) =>
+        getError(field) ? 'border-red-500 focus-visible:ring-red-500' : '';
+
+    const ErrorMsg = ({ field }: { field: string }) => {
+        const msg = getError(field);
+        if (!msg) return null;
+        return (
+            <p className="flex items-center gap-1.5 text-sm text-red-500">
+                <span className="inline-block h-1.5 w-1.5 rounded-full bg-red-500" />
+                {msg}
+            </p>
+        );
     };
 
     return (
@@ -107,12 +141,12 @@ export default function Edit({ mobil, kategoris }: Props) {
                             <div className="grid gap-6 md:grid-cols-3">
                                 <div className="space-y-2">
                                     <Label htmlFor="foto">Foto Mobil</Label>
-                                    <div className="relative flex h-48 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed bg-muted/50 transition-colors hover:border-primary/50">
+                                    <div className={`relative flex h-48 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed bg-muted/50 transition-colors hover:border-primary/50 ${getError('foto') ? 'border-red-500' : ''}`}>
                                         {preview ? (
                                             <img src={preview} alt="Preview" className="h-full w-full rounded-lg object-cover" />
                                         ) : (
                                             <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                                                <Upload className="h-8 w-8" />
+                                                <Upload className={`h-8 w-8 ${getError('foto') ? 'text-red-500' : ''}`} />
                                                 <span className="text-sm">Klik untuk ganti foto</span>
                                             </div>
                                         )}
@@ -124,7 +158,7 @@ export default function Edit({ mobil, kategoris }: Props) {
                                         />
                                     </div>
                                     <p className="text-center text-xs text-muted-foreground">Kosongkan jika tidak ingin ganti foto</p>
-                                    {errors.foto && <p className="text-sm text-destructive">{errors.foto}</p>}
+                                    <ErrorMsg field="foto" />
                                 </div>
 
                                 <div className="space-y-4 md:col-span-2">
@@ -134,45 +168,59 @@ export default function Edit({ mobil, kategoris }: Props) {
                                             <Input id="kdmobil" value={mobil.kdmobil} readOnly className="bg-muted font-semibold" />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="nama_mobil">Nama Mobil</Label>
+                                            <Label htmlFor="nama_mobil">
+                                                Nama Mobil <span className="text-red-500">*</span>
+                                            </Label>
                                             <Input
                                                 id="nama_mobil"
                                                 value={data.nama_mobil}
-                                                onChange={(e) => setData('nama_mobil', e.target.value)}
+                                                onChange={(e) => { setData('nama_mobil', e.target.value); setClientErrors((p) => ({ ...p, nama_mobil: '' })); }}
+                                                className={inputClass('nama_mobil')}
                                             />
-                                            {errors.nama_mobil && <p className="text-sm text-destructive">{errors.nama_mobil}</p>}
+                                            <ErrorMsg field="nama_mobil" />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="plat_mobil">Plat Nomor</Label>
+                                            <Label htmlFor="plat_mobil">
+                                                Plat Nomor <span className="text-red-500">*</span>
+                                            </Label>
                                             <Input
                                                 id="plat_mobil"
                                                 value={data.plat_mobil}
-                                                onChange={(e) => setData('plat_mobil', e.target.value)}
+                                                onChange={(e) => { setData('plat_mobil', e.target.value); setClientErrors((p) => ({ ...p, plat_mobil: '' })); }}
+                                                className={inputClass('plat_mobil')}
                                             />
-                                            {errors.plat_mobil && <p className="text-sm text-destructive">{errors.plat_mobil}</p>}
+                                            <ErrorMsg field="plat_mobil" />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="warna_mobil">Warna Mobil</Label>
+                                            <Label htmlFor="warna_mobil">
+                                                Warna Mobil <span className="text-red-500">*</span>
+                                            </Label>
                                             <Input
                                                 id="warna_mobil"
                                                 value={data.warna_mobil}
-                                                onChange={(e) => setData('warna_mobil', e.target.value)}
+                                                onChange={(e) => { setData('warna_mobil', e.target.value); setClientErrors((p) => ({ ...p, warna_mobil: '' })); }}
+                                                className={inputClass('warna_mobil')}
                                             />
-                                            {errors.warna_mobil && <p className="text-sm text-destructive">{errors.warna_mobil}</p>}
+                                            <ErrorMsg field="warna_mobil" />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="stnk_mobil">Nomor STNK</Label>
+                                            <Label htmlFor="stnk_mobil">
+                                                Nomor STNK <span className="text-red-500">*</span>
+                                            </Label>
                                             <Input
                                                 id="stnk_mobil"
                                                 value={data.stnk_mobil}
-                                                onChange={(e) => setData('stnk_mobil', e.target.value)}
+                                                onChange={(e) => { setData('stnk_mobil', e.target.value); setClientErrors((p) => ({ ...p, stnk_mobil: '' })); }}
+                                                className={inputClass('stnk_mobil')}
                                             />
-                                            {errors.stnk_mobil && <p className="text-sm text-destructive">{errors.stnk_mobil}</p>}
+                                            <ErrorMsg field="stnk_mobil" />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="kdkategori">Kategori</Label>
-                                            <Select value={data.kdkategori} onValueChange={(value) => setData('kdkategori', value)}>
-                                                <SelectTrigger>
+                                            <Label htmlFor="kdkategori">
+                                                Kategori <span className="text-red-500">*</span>
+                                            </Label>
+                                            <Select value={data.kdkategori} onValueChange={(value) => { setData('kdkategori', value); setClientErrors((p) => ({ ...p, kdkategori: '' })); }}>
+                                                <SelectTrigger className={inputClass('kdkategori')}>
                                                     <SelectValue placeholder="Pilih Kategori" />
                                                 </SelectTrigger>
                                                 <SelectContent>
@@ -183,27 +231,33 @@ export default function Edit({ mobil, kategoris }: Props) {
                                                     ))}
                                                 </SelectContent>
                                             </Select>
-                                            {errors.kdkategori && <p className="text-sm text-destructive">{errors.kdkategori}</p>}
+                                            <ErrorMsg field="kdkategori" />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="harga">Harga Sewa / Hari (Rp)</Label>
+                                            <Label htmlFor="harga">
+                                                Harga Sewa / Hari (Rp) <span className="text-red-500">*</span>
+                                            </Label>
                                             <Input
                                                 id="harga"
                                                 type="number"
                                                 value={data.harga}
-                                                onChange={(e) => setData('harga', e.target.value ? parseInt(e.target.value) : 0)}
+                                                onChange={(e) => { setData('harga', e.target.value ? parseInt(e.target.value) : 0); setClientErrors((p) => ({ ...p, harga: '' })); }}
+                                                className={inputClass('harga')}
                                             />
-                                            {errors.harga && <p className="text-sm text-destructive">{errors.harga}</p>}
+                                            <ErrorMsg field="harga" />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="thn_mobil">Tahun</Label>
+                                            <Label htmlFor="thn_mobil">
+                                                Tahun <span className="text-red-500">*</span>
+                                            </Label>
                                             <Input
                                                 id="thn_mobil"
                                                 type="number"
                                                 value={data.thn_mobil}
-                                                onChange={(e) => setData('thn_mobil', e.target.value ? parseInt(e.target.value) : new Date().getFullYear())}
+                                                onChange={(e) => { setData('thn_mobil', e.target.value ? parseInt(e.target.value) : new Date().getFullYear()); setClientErrors((p) => ({ ...p, thn_mobil: '' })); }}
+                                                className={inputClass('thn_mobil')}
                                             />
-                                            {errors.thn_mobil && <p className="text-sm text-destructive">{errors.thn_mobil}</p>}
+                                            <ErrorMsg field="thn_mobil" />
                                         </div>
                                         <div className="space-y-2">
                                             <Label htmlFor="status">Status</Label>

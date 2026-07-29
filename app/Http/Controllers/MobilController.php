@@ -70,6 +70,18 @@ class MobilController extends Controller
             'kdkategori' => 'required|string|max:10',
             'status' => 'required|string|in:Tersedia,Disewa,Perawatan',
             'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ], [
+            'nama_mobil.required' => 'Nama mobil wajib diisi.',
+            'thn_mobil.required' => 'Tahun mobil wajib diisi.',
+            'plat_mobil.required' => 'Plat nomor wajib diisi.',
+            'warna_mobil.required' => 'Warna mobil wajib diisi.',
+            'stnk_mobil.required' => 'Nomor STNK wajib diisi.',
+            'harga.required' => 'Harga sewa wajib diisi.',
+            'harga.numeric' => 'Harga sewa harus berupa angka.',
+            'kdkategori.required' => 'Kategori wajib dipilih.',
+            'foto.image' => 'File harus berupa gambar.',
+            'foto.mimes' => 'Format foto harus jpeg, png, jpg, atau gif.',
+            'foto.max' => 'Ukuran foto maksimal 2MB.',
         ]);
 
         $data = $request->all();
@@ -106,9 +118,21 @@ class MobilController extends Controller
             'kdkategori' => 'required|string|max:10',
             'status' => 'required|string|in:Tersedia,Disewa,Perawatan',
             'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ], [
+            'nama_mobil.required' => 'Nama mobil wajib diisi.',
+            'thn_mobil.required' => 'Tahun mobil wajib diisi.',
+            'plat_mobil.required' => 'Plat nomor wajib diisi.',
+            'warna_mobil.required' => 'Warna mobil wajib diisi.',
+            'stnk_mobil.required' => 'Nomor STNK wajib diisi.',
+            'harga.required' => 'Harga sewa wajib diisi.',
+            'harga.numeric' => 'Harga sewa harus berupa angka.',
+            'kdkategori.required' => 'Kategori wajib dipilih.',
+            'foto.image' => 'File harus berupa gambar.',
+            'foto.mimes' => 'Format foto harus jpeg, png, jpg, atau gif.',
+            'foto.max' => 'Ukuran foto maksimal 2MB.',
         ]);
 
-        $data = $request->all();
+        $data = $request->except(['foto', '_method']);
         if ($request->hasFile('foto')) {
             if ($mobil->foto) {
                 Storage::disk('public')->delete($mobil->foto);

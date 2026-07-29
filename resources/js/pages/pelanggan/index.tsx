@@ -63,7 +63,9 @@ export default function Index({ pelanggans, filters }: Props) {
             (p) =>
                 p.nama_lengkap.toLowerCase().includes(q) ||
                 p.username.toLowerCase().includes(q) ||
-                p.email.toLowerCase().includes(q),
+                p.email.toLowerCase().includes(q) ||
+                p.nohp.toLowerCase().includes(q) ||
+                p.alamat.toLowerCase().includes(q),
         );
     }, [pelanggans, search]);
 
@@ -122,11 +124,12 @@ export default function Index({ pelanggans, filters }: Props) {
                                 <TableRow>
                                     <TableHead className="w-12">No</TableHead>
                                     <TableHead>Foto</TableHead>
-                                    <TableHead>Nama</TableHead>
+                                    <TableHead>Nama Lengkap</TableHead>
                                     <TableHead>Username</TableHead>
                                     <TableHead>Email</TableHead>
-                                    <TableHead>Gender</TableHead>
+                                    <TableHead>Jenis Kelamin</TableHead>
                                     <TableHead>No HP</TableHead>
+                                    <TableHead>Alamat</TableHead>
                                     <TableHead>Role</TableHead>
                                     <TableHead className="text-right">Aksi</TableHead>
                                 </TableRow>
@@ -149,10 +152,13 @@ export default function Index({ pelanggans, filters }: Props) {
                                             <TableCell>{p.email}</TableCell>
                                             <TableCell>
                                                 <Badge variant={p.jenis_kelamin === 'L' ? 'default' : 'secondary'}>
-                                                    {p.jenis_kelamin === 'L' ? 'L' : 'P'}
+                                                    {p.jenis_kelamin === 'L' ? 'Laki-laki' : 'Perempuan'}
                                                 </Badge>
                                             </TableCell>
                                             <TableCell>{p.nohp || '-'}</TableCell>
+                                            <TableCell className="max-w-[180px] truncate text-sm text-muted-foreground" title={p.alamat}>
+                                                {p.alamat || '-'}
+                                            </TableCell>
                                             <TableCell>
                                                 <Badge
                                                     variant={p.role === 'admin' ? 'destructive' : p.role === 'pimpinan' ? 'warning' : 'success'}
@@ -183,7 +189,7 @@ export default function Index({ pelanggans, filters }: Props) {
                                     ))
                                 ) : (
                                     <TableRow>
-                                        <TableCell colSpan={9} className="h-24 text-center text-muted-foreground">
+                                        <TableCell colSpan={10} className="h-24 text-center text-muted-foreground">
                                             Tidak ada data pelanggan
                                         </TableCell>
                                     </TableRow>

@@ -27,9 +27,21 @@ export default function Create({ next_kdkategori }: Props) {
     });
 
     const [showConfirm, setShowConfirm] = useState(false);
+    const [clientErrors, setClientErrors] = useState<Record<string, string>>({});
+
+    const validate = (): boolean => {
+        const errs: Record<string, string> = {};
+
+        if (!data.kdkategori.trim()) errs.kdkategori = 'Kode kategori wajib diisi.';
+        if (!data.nama_kategori.trim()) errs.nama_kategori = 'Nama kategori wajib diisi.';
+
+        setClientErrors(errs);
+        return Object.keys(errs).length === 0;
+    };
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
+        if (!validate()) return;
         setShowConfirm(true);
     };
 
@@ -39,6 +51,22 @@ export default function Create({ next_kdkategori }: Props) {
             onError: () => toast.error('Gagal menambahkan kategori'),
             onFinish: () => setShowConfirm(false),
         });
+    };
+
+    const getError = (field: string) => errors[field as keyof typeof errors] || clientErrors[field] || '';
+
+    const inputClass = (field: string) =>
+        getError(field) ? 'border-red-500 focus-visible:ring-red-500' : '';
+
+    const ErrorMsg = ({ field }: { field: string }) => {
+        const msg = getError(field);
+        if (!msg) return null;
+        return (
+            <p className="flex items-center gap-1.5 text-sm text-red-500">
+                <span className="inline-block h-1.5 w-1.5 rounded-full bg-red-500" />
+                {msg}
+            </p>
+        );
     };
 
     return (
@@ -66,21 +94,30 @@ export default function Create({ next_kdkategori }: Props) {
                     <CardContent>
                         <form onSubmit={submit} className="space-y-4">
                             <div className="space-y-2">
-                                <Label htmlFor="kdkategori">Kode Kategori</Label>
-                                <Input id="kdkategori" value={data.kdkategori} onChange={(e) => setData('kdkategori', e.target.value)} required />
-                                {errors.kdkategori && <p className="text-sm text-destructive">{errors.kdkategori}</p>}
+                                <Label htmlFor="kdkategori">
+                                    Kode Kategori <span className="text-red-500">*</span>
+                                </Label>
+                                <Input
+                                    id="kdkategori"
+                                    value={data.kdkategori}
+                                    onChange={(e) => { setData('kdkategori', e.target.value); setClientErrors((p) => ({ ...p, kdkategori: '' })); }}
+                                    className={inputClass('kdkategori')}
+                                />
+                                <ErrorMsg field="kdkategori" />
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="nama_kategori">Nama Kategori</Label>
+                                <Label htmlFor="nama_kategori">
+                                    Nama Kategori <span className="text-red-500">*</span>
+                                </Label>
                                 <Input
                                     id="nama_kategori"
                                     placeholder="Contoh: Sport Utility Vehicle"
                                     value={data.nama_kategori}
-                                    onChange={(e) => setData('nama_kategori', e.target.value)}
-                                    required
+                                    onChange={(e) => { setData('nama_kategori', e.target.value); setClientErrors((p) => ({ ...p, nama_kategori: '' })); }}
+                                    className={inputClass('nama_kategori')}
                                 />
-                                {errors.nama_kategori && <p className="text-sm text-destructive">{errors.nama_kategori}</p>}
+                                <ErrorMsg field="nama_kategori" />
                             </div>
 
                             <div className="flex justify-end gap-3 pt-4">

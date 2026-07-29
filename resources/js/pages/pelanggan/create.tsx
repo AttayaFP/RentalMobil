@@ -35,17 +35,38 @@ export default function Create() {
 
     const [preview, setPreview] = useState<string | null>(null);
     const [showConfirm, setShowConfirm] = useState(false);
+    const [clientErrors, setClientErrors] = useState<Record<string, string>>({});
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
             setData('foto', file);
             setPreview(URL.createObjectURL(file));
+            setClientErrors((prev) => ({ ...prev, foto: '' }));
         }
+    };
+
+    const validate = (): boolean => {
+        const errs: Record<string, string> = {};
+
+        if (!data.nama_lengkap.trim()) errs.nama_lengkap = 'Nama lengkap wajib diisi.';
+        if (!data.username.trim()) errs.username = 'Username wajib diisi.';
+        if (!data.email.trim()) errs.email = 'Email wajib diisi.';
+        if (!data.password.trim()) errs.password = 'Password wajib diisi.';
+        if (!data.password_confirmation.trim()) errs.password_confirmation = 'Konfirmasi password wajib diisi.';
+        if (!data.jenis_kelamin) errs.jenis_kelamin = 'Jenis kelamin wajib dipilih.';
+        if (!data.nohp.trim()) errs.nohp = 'Nomor HP wajib diisi.';
+        if (!data.alamat.trim()) errs.alamat = 'Alamat wajib diisi.';
+        if (!data.role) errs.role = 'Role wajib dipilih.';
+        if (!data.foto) errs.foto = 'Foto profil wajib diunggah.';
+
+        setClientErrors(errs);
+        return Object.keys(errs).length === 0;
     };
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
+        if (!validate()) return;
         setShowConfirm(true);
     };
 
@@ -55,6 +76,22 @@ export default function Create() {
             onError: () => toast.error('Gagal menambahkan pelanggan'),
             onFinish: () => setShowConfirm(false),
         });
+    };
+
+    const getError = (field: string) => errors[field as keyof typeof errors] || clientErrors[field] || '';
+
+    const inputClass = (field: string) =>
+        `${getError(field) ? 'border-red-500 focus-visible:ring-red-500' : ''}`;
+
+    const ErrorMsg = ({ field }: { field: string }) => {
+        const msg = getError(field);
+        if (!msg) return null;
+        return (
+            <p className="flex items-center gap-1.5 text-sm text-red-500">
+                <span className="inline-block h-1.5 w-1.5 rounded-full bg-red-500" />
+                {msg}
+            </p>
+        );
     };
 
     return (
@@ -79,11 +116,14 @@ export default function Create() {
                         <Card>
                             <CardHeader>
                                 <CardTitle className="text-base">Foto Profil</CardTitle>
-                                <CardDescription>Klik foto untuk mengganti</CardDescription>
+                                <CardDescription>
+                                    Klik foto untuk mengunggah{' '}
+                                    <span className="text-red-500">*</span>
+                                </CardDescription>
                             </CardHeader>
                             <CardContent className="flex flex-col items-center gap-4">
                                 <label className="relative cursor-pointer">
-                                    <Avatar className="h-32 w-32 border-2 border-dashed border-muted-foreground/25">
+                                    <Avatar className={`h-32 w-32 border-2 border-dashed ${getError('foto') ? 'border-red-500' : 'border-muted-foreground/25'}`}>
                                         <AvatarImage src={preview || undefined} alt="Preview" />
                                         <AvatarFallback className="text-3xl">
                                             <Camera className="h-10 w-10 text-muted-foreground" />
@@ -94,7 +134,7 @@ export default function Create() {
                                         <Camera className="h-4 w-4" />
                                     </div>
                                 </label>
-                                {errors.foto && <p className="text-sm text-destructive">{errors.foto}</p>}
+                                <ErrorMsg field="foto" />
                             </CardContent>
                         </Card>
 
@@ -104,15 +144,24 @@ export default function Create() {
                             </CardHeader>
                             <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                 <div className="space-y-2">
-                                    <Label htmlFor="nama_lengkap">Nama Lengkap</Label>
-                                    <Input id="nama_lengkap" value={data.nama_lengkap} onChange={(e) => setData('nama_lengkap', e.target.value)} required />
-                                    {errors.nama_lengkap && <p className="text-sm text-destructive">{errors.nama_lengkap}</p>}
+                                    <Label htmlFor="nama_lengkap">
+                                        Nama Lengkap <span className="text-red-500">*</span>
+                                    </Label>
+                                    <Input
+                                        id="nama_lengkap"
+                                        value={data.nama_lengkap}
+                                        onChange={(e) => { setData('nama_lengkap', e.target.value); setClientErrors((p) => ({ ...p, nama_lengkap: '' })); }}
+                                        className={inputClass('nama_lengkap')}
+                                    />
+                                    <ErrorMsg field="nama_lengkap" />
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label htmlFor="role">Role</Label>
-                                    <Select value={data.role} onValueChange={(v) => setData('role', v)}>
-                                        <SelectTrigger>
+                                    <Label htmlFor="role">
+                                        Role <span className="text-red-500">*</span>
+                                    </Label>
+                                    <Select value={data.role} onValueChange={(v) => { setData('role', v); setClientErrors((p) => ({ ...p, role: '' })); }}>
+                                        <SelectTrigger className={inputClass('role')}>
                                             <SelectValue placeholder="Pilih role" />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -121,31 +170,55 @@ export default function Create() {
                                             <SelectItem value="pimpinan">Pimpinan</SelectItem>
                                         </SelectContent>
                                     </Select>
-                                    {errors.role && <p className="text-sm text-destructive">{errors.role}</p>}
+                                    <ErrorMsg field="role" />
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label htmlFor="username">Username</Label>
-                                    <Input id="username" value={data.username} onChange={(e) => setData('username', e.target.value)} required />
-                                    {errors.username && <p className="text-sm text-destructive">{errors.username}</p>}
+                                    <Label htmlFor="username">
+                                        Username <span className="text-red-500">*</span>
+                                    </Label>
+                                    <Input
+                                        id="username"
+                                        value={data.username}
+                                        onChange={(e) => { setData('username', e.target.value); setClientErrors((p) => ({ ...p, username: '' })); }}
+                                        className={inputClass('username')}
+                                    />
+                                    <ErrorMsg field="username" />
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label htmlFor="email">Email</Label>
-                                    <Input id="email" type="email" value={data.email} onChange={(e) => setData('email', e.target.value)} required />
-                                    {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
+                                    <Label htmlFor="email">
+                                        Email <span className="text-red-500">*</span>
+                                    </Label>
+                                    <Input
+                                        id="email"
+                                        type="email"
+                                        value={data.email}
+                                        onChange={(e) => { setData('email', e.target.value); setClientErrors((p) => ({ ...p, email: '' })); }}
+                                        className={inputClass('email')}
+                                    />
+                                    <ErrorMsg field="email" />
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label htmlFor="nohp">Nomor HP / WhatsApp</Label>
-                                    <Input id="nohp" value={data.nohp} onChange={(e) => setData('nohp', e.target.value)} required />
-                                    {errors.nohp && <p className="text-sm text-destructive">{errors.nohp}</p>}
+                                    <Label htmlFor="nohp">
+                                        Nomor HP / WhatsApp <span className="text-red-500">*</span>
+                                    </Label>
+                                    <Input
+                                        id="nohp"
+                                        value={data.nohp}
+                                        onChange={(e) => { setData('nohp', e.target.value); setClientErrors((p) => ({ ...p, nohp: '' })); }}
+                                        className={inputClass('nohp')}
+                                    />
+                                    <ErrorMsg field="nohp" />
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label htmlFor="jenis_kelamin">Jenis Kelamin</Label>
-                                    <Select value={data.jenis_kelamin} onValueChange={(v) => setData('jenis_kelamin', v)}>
-                                        <SelectTrigger>
+                                    <Label htmlFor="jenis_kelamin">
+                                        Jenis Kelamin <span className="text-red-500">*</span>
+                                    </Label>
+                                    <Select value={data.jenis_kelamin} onValueChange={(v) => { setData('jenis_kelamin', v); setClientErrors((p) => ({ ...p, jenis_kelamin: '' })); }}>
+                                        <SelectTrigger className={inputClass('jenis_kelamin')}>
                                             <SelectValue placeholder="Pilih jenis kelamin" />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -153,24 +226,49 @@ export default function Create() {
                                             <SelectItem value="P">Perempuan</SelectItem>
                                         </SelectContent>
                                     </Select>
-                                    {errors.jenis_kelamin && <p className="text-sm text-destructive">{errors.jenis_kelamin}</p>}
+                                    <ErrorMsg field="jenis_kelamin" />
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label htmlFor="password">Password</Label>
-                                    <Input id="password" type="password" value={data.password} onChange={(e) => setData('password', e.target.value)} required />
-                                    {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
+                                    <Label htmlFor="password">
+                                        Password <span className="text-red-500">*</span>
+                                    </Label>
+                                    <Input
+                                        id="password"
+                                        type="password"
+                                        value={data.password}
+                                        onChange={(e) => { setData('password', e.target.value); setClientErrors((p) => ({ ...p, password: '' })); }}
+                                        className={inputClass('password')}
+                                    />
+                                    <ErrorMsg field="password" />
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label htmlFor="password_confirmation">Konfirmasi Password</Label>
-                                    <Input id="password_confirmation" type="password" value={data.password_confirmation} onChange={(e) => setData('password_confirmation', e.target.value)} required />
+                                    <Label htmlFor="password_confirmation">
+                                        Konfirmasi Password <span className="text-red-500">*</span>
+                                    </Label>
+                                    <Input
+                                        id="password_confirmation"
+                                        type="password"
+                                        value={data.password_confirmation}
+                                        onChange={(e) => { setData('password_confirmation', e.target.value); setClientErrors((p) => ({ ...p, password_confirmation: '' })); }}
+                                        className={inputClass('password_confirmation')}
+                                    />
+                                    <ErrorMsg field="password_confirmation" />
                                 </div>
 
                                 <div className="space-y-2 sm:col-span-2">
-                                    <Label htmlFor="alamat">Alamat Lengkap</Label>
-                                    <Textarea id="alamat" rows={3} value={data.alamat} onChange={(e) => setData('alamat', e.target.value)} required />
-                                    {errors.alamat && <p className="text-sm text-destructive">{errors.alamat}</p>}
+                                    <Label htmlFor="alamat">
+                                        Alamat Lengkap <span className="text-red-500">*</span>
+                                    </Label>
+                                    <Textarea
+                                        id="alamat"
+                                        rows={3}
+                                        value={data.alamat}
+                                        onChange={(e) => { setData('alamat', e.target.value); setClientErrors((p) => ({ ...p, alamat: '' })); }}
+                                        className={inputClass('alamat')}
+                                    />
+                                    <ErrorMsg field="alamat" />
                                 </div>
                             </CardContent>
                         </Card>

@@ -48,13 +48,17 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                                 type="text"
                                 value={data.login}
                                 onChange={(e) => setData('login', e.target.value)}
-                                required
                                 autoFocus
                                 autoComplete="username"
                                 placeholder="username atau email@anda.com"
-                                className="rounded-none border-white/10 bg-black text-white placeholder:text-[#7D7D7D]"
+                                className={`rounded-none bg-black text-white placeholder:text-[#7D7D7D] ${errors.login ? 'border-red-500 focus-visible:ring-red-500' : 'border-white/10'}`}
                             />
-                            {errors.login && <p className="text-sm text-red-500">{errors.login}</p>}
+                            {errors.login && (
+                                <p className="flex items-center gap-1.5 text-sm text-red-400">
+                                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-red-400" />
+                                    {errors.login}
+                                </p>
+                            )}
                         </div>
 
                         <div className="space-y-2">
@@ -71,12 +75,16 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                                 type="password"
                                 value={data.password}
                                 onChange={(e) => setData('password', e.target.value)}
-                                required
                                 autoComplete="current-password"
                                 placeholder="••••••••"
-                                className="rounded-none border-white/10 bg-black text-white placeholder:text-[#7D7D7D]"
+                                className={`rounded-none bg-black text-white placeholder:text-[#7D7D7D] ${errors.password ? 'border-red-500 focus-visible:ring-red-500' : 'border-white/10'}`}
                             />
-                            {errors.password && <p className="text-sm text-red-500">{errors.password}</p>}
+                            {errors.password && (
+                                <p className="flex items-center gap-1.5 text-sm text-red-400">
+                                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-red-400" />
+                                    {errors.password}
+                                </p>
+                            )}
                         </div>
 
                         <div className="flex items-center space-x-2">

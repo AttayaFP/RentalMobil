@@ -25,6 +25,14 @@ class LoginRequest extends FormRequest
         ];
     }
 
+    public function messages(): array
+    {
+        return [
+            'login.required' => 'Username/email wajib diisi.',
+            'password.required' => 'Password wajib diisi.',
+        ];
+    }
+
     public function authenticate(): void
     {
         $this->ensureIsNotRateLimited();
@@ -37,7 +45,7 @@ class LoginRequest extends FormRequest
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
-                'login' => __('auth.failed'),
+                'login' => 'Username/email atau password yang Anda masukkan salah.',
             ]);
         }
 

@@ -31,9 +31,20 @@ export default function Edit({ kategori }: Props) {
     });
 
     const [showConfirm, setShowConfirm] = useState(false);
+    const [clientErrors, setClientErrors] = useState<Record<string, string>>({});
+
+    const validate = (): boolean => {
+        const errs: Record<string, string> = {};
+
+        if (!data.nama_kategori.trim()) errs.nama_kategori = 'Nama kategori wajib diisi.';
+
+        setClientErrors(errs);
+        return Object.keys(errs).length === 0;
+    };
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
+        if (!validate()) return;
         setShowConfirm(true);
     };
 
@@ -43,6 +54,22 @@ export default function Edit({ kategori }: Props) {
             onError: () => toast.error('Gagal memperbarui kategori'),
             onFinish: () => setShowConfirm(false),
         });
+    };
+
+    const getError = (field: string) => errors[field as keyof typeof errors] || clientErrors[field] || '';
+
+    const inputClass = (field: string) =>
+        getError(field) ? 'border-red-500 focus-visible:ring-red-500' : '';
+
+    const ErrorMsg = ({ field }: { field: string }) => {
+        const msg = getError(field);
+        if (!msg) return null;
+        return (
+            <p className="flex items-center gap-1.5 text-sm text-red-500">
+                <span className="inline-block h-1.5 w-1.5 rounded-full bg-red-500" />
+                {msg}
+            </p>
+        );
     };
 
     return (
@@ -75,9 +102,16 @@ export default function Edit({ kategori }: Props) {
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="nama_kategori">Nama Kategori</Label>
-                                <Input id="nama_kategori" value={data.nama_kategori} onChange={(e) => setData('nama_kategori', e.target.value)} required />
-                                {errors.nama_kategori && <p className="text-sm text-destructive">{errors.nama_kategori}</p>}
+                                <Label htmlFor="nama_kategori">
+                                    Nama Kategori <span className="text-red-500">*</span>
+                                </Label>
+                                <Input
+                                    id="nama_kategori"
+                                    value={data.nama_kategori}
+                                    onChange={(e) => { setData('nama_kategori', e.target.value); setClientErrors((p) => ({ ...p, nama_kategori: '' })); }}
+                                    className={inputClass('nama_kategori')}
+                                />
+                                <ErrorMsg field="nama_kategori" />
                             </div>
 
                             <div className="flex justify-end gap-3 pt-4">
