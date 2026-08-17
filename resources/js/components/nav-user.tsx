@@ -92,8 +92,16 @@ export function NavUser() {
                 <SidebarMenuItem>
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <SidebarMenuButton size="lg" className="text-sidebar-accent-foreground data-[state=open]:bg-sidebar-accent group">
-                                <UserInfo user={auth.user} />
+                            <SidebarMenuButton size="lg" className="relative text-sidebar-accent-foreground data-[state=open]:bg-sidebar-accent group">
+                                <div className="relative flex items-center gap-2 flex-1 min-w-0">
+                                    <UserInfo user={auth.user} />
+                                    {totalAlerts > 0 && (
+                                        <span className="absolute -top-1 -left-1 flex h-3 w-3">
+                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                            <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                                        </span>
+                                    )}
+                                </div>
                                 <ChevronsUpDown className="ml-auto size-4" />
                             </SidebarMenuButton>
                         </DropdownMenuTrigger>

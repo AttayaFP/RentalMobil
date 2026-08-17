@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Mobil;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -45,8 +46,12 @@ use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\MobilController;
 use App\Http\Controllers\PelangganController;
 use App\Http\Controllers\PengembalianController;
+use App\Http\Controllers\SopController;
 
 Route::middleware(['auth'])->group(function () {
+    Route::post('/sop/agree', [SopController::class, 'agree'])->name('sop.agree');
+    Route::post('/sop/decline', [SopController::class, 'decline'])->name('sop.decline');
+
     Route::get('dashboard', DashboardController::class)->name('dashboard');
 
     Route::middleware(['role:admin'])->group(function () {
@@ -75,19 +80,20 @@ Route::middleware(['auth'])->group(function () {
         Route::post('booking/{booking}/success', [BookingController::class, 'success'])->name('booking.success');
         Route::get('booking/available-cars', [BookingController::class, 'getAvailableCars'])->name('booking.available-cars');
         Route::post('booking/request-reminder', [BookingController::class, 'requestReminder'])->name('booking.request-reminder');
+        Route::post('booking/{booking}/cancel', [BookingController::class, 'cancel'])->name('booking.cancel');
         Route::resource('booking', BookingController::class)->except(['destroy']);
         
         Route::get('pengembalian/{pengembalian}/checkout', [PengembalianController::class, 'checkout'])->name('pengembalian.checkout');
         Route::post('pengembalian/{pengembalian}/success', [PengembalianController::class, 'success'])->name('pengembalian.success');
         
         Route::post('notifikasi/{id}/read', function ($id) {
-            $notif = \App\Models\Notifikasi::where('iduser', auth()->id())->findOrFail($id);
+            $notif = \App\Models\Notifikasi::where('iduser', Auth::id())->findOrFail($id);
             $notif->update(['is_read' => true]);
             return response()->json(['success' => true]);
         })->name('notifikasi.read');
 
         Route::delete('notifikasi/{id}', function ($id) {
-            $notif = \App\Models\Notifikasi::where('iduser', auth()->id())->findOrFail($id);
+            $notif = \App\Models\Notifikasi::where('iduser', Auth::id())->findOrFail($id);
             $notif->delete();
             return response()->json(['success' => true]);
         })->name('notifikasi.delete');

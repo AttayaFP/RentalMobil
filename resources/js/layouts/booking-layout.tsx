@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { toast } from 'sonner';
 import { Toaster } from '@/components/ui/sonner';
 import AppLayout from '@/layouts/app-layout';
+import SopDialog from '@/components/sop-dialog';
 
 interface BookingLayoutProps {
     children: React.ReactNode;
@@ -26,6 +27,7 @@ function MinimalBookingLayout({ children, title }: { children: React.ReactNode; 
                 {children}
             </main>
             <Toaster />
+            <SopDialog />
         </div>
     );
 }

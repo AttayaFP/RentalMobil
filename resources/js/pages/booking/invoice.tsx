@@ -43,9 +43,40 @@ function getStatusBadge(status: string) {
     return 'outline';
 }
 
+import { useState } from 'react';
+import { useForm } from '@inertiajs/react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { XCircle, AlertTriangle, ShieldAlert } from 'lucide-react';
+import { toast } from 'sonner';
+
 export default function Invoice({ booking, user, mobil }: Props) {
     const { auth } = usePage<{ auth: { user: { role: string } | null } }>().props;
     const backLink = auth?.user?.role === 'pelanggan' ? '/' : '/booking';
+    const [showCancelModal, setShowCancelModal] = useState(false);
+
+    const isPaid = ['sukses', 'success', 'berhasil'].includes((booking.status || '').toLowerCase());
+    const isCancelable = ['sukses', 'success', 'berhasil', 'pending', 'proses'].includes((booking.status || '').toLowerCase());
+
+    const { data, setData, post, processing, errors } = useForm({
+        nama_bank: '',
+        no_rekening: '',
+        nama_rekening: '',
+    });
+
+    const handleCancelSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        post(`/booking/${booking.kdbooking}/cancel`, {
+            onSuccess: () => {
+                toast.success(isPaid ? 'Booking berhasil dibatalkan. Pengajuan refund 50% dikirim ke Admin.' : 'Booking berhasil dibatalkan.');
+                setShowCancelModal(false);
+            },
+            onError: () => {
+                toast.error('Gagal membatalkan booking. Periksa kembali form.');
+            },
+        });
+    };
 
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Dashboard', href: '/dashboard' },
@@ -73,17 +104,29 @@ export default function Invoice({ booking, user, mobil }: Props) {
     return (
         <BookingLayout breadcrumbs={breadcrumbs} title={`Faktur #${booking.kdbooking}`}>
             <div className="flex flex-col gap-4 p-4">
-                <div className="no-print flex items-center justify-between">
+                <div className="no-print flex items-center justify-between gap-2 flex-wrap">
                     <Button variant="ghost" asChild>
                         <Link href={backLink}>
                             <ArrowLeft className="mr-2 h-4 w-4" />
                             Kembali
                         </Link>
                     </Button>
-                    <Button onClick={() => window.print()}>
-                        <Printer className="mr-2 h-4 w-4" />
-                        Cetak Faktur
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        {isCancelable && (
+                            <Button
+                                variant="destructive"
+                                className="rounded-none"
+                                onClick={() => setShowCancelModal(true)}
+                            >
+                                <XCircle className="mr-2 h-4 w-4" />
+                                Batalkan Booking
+                            </Button>
+                        )}
+                        <Button onClick={() => window.print()} className="rounded-none">
+                            <Printer className="mr-2 h-4 w-4" />
+                            Cetak Faktur
+                        </Button>
+                    </div>
                 </div>
 
                 <div className="mx-auto w-full max-w-4xl rounded-xl border bg-card shadow-lg print:max-w-full print:rounded-none print:shadow-none print:border-0">
@@ -218,6 +261,105 @@ export default function Invoice({ booking, user, mobil }: Props) {
                     </div>
                 </div>
             </div>
+
+            <Dialog open={showCancelModal} onOpenChange={setShowCancelModal}>
+                <DialogContent className="max-w-md rounded-none border-2 border-primary/40 bg-black text-white p-6 shadow-2xl">
+                    <form onSubmit={handleCancelSubmit}>
+                        <DialogHeader>
+                            <DialogTitle className="text-xl font-bold uppercase tracking-wider text-primary flex items-center gap-2">
+                                <AlertTriangle className="h-5 w-5 text-destructive" />
+                                Konfirmasi Pembatalan
+                            </DialogTitle>
+                            <DialogDescription className="text-xs text-muted-foreground mt-1">
+                                Pembatalan penyewaan mobil #{booking.kdbooking} sesuai aturan SOP Poin 6 & 7.
+                            </DialogDescription>
+                        </DialogHeader>
+
+                        <div className="my-4 space-y-4 text-xs">
+                            {isPaid ? (
+                                <>
+                                    <div className="rounded-none border border-amber-500/30 bg-amber-500/10 p-3 space-y-1.5 text-amber-200">
+                                        <div className="font-bold flex items-center gap-1">
+                                            <ShieldAlert className="h-4 w-4 text-amber-400" />
+                                            Kebijakan Pengembalian Dana (Refund 50%)
+                                        </div>
+                                        <p>Sesuai SOP, pembatalan booking berbayar akan dikenakan pemotongan 50%. Anda akan menerima refund sebesar:</p>
+                                        <div className="text-sm font-extrabold text-primary pt-1">
+                                            {formatCurrency(booking.total_bayar * 0.5)}
+                                        </div>
+                                        <p className="text-[10px] text-muted-foreground">(50% dari total bayar {formatCurrency(booking.total_bayar)})</p>
+                                    </div>
+
+                                    <div className="space-y-3">
+                                        <div className="space-y-1">
+                                            <Label htmlFor="nama_bank" className="text-xs text-white">Nama Bank / E-Wallet</Label>
+                                            <Input
+                                                id="nama_bank"
+                                                placeholder="Contoh: BCA / Mandiri / BRI / GoPay"
+                                                value={data.nama_bank}
+                                                onChange={(e) => setData('nama_bank', e.target.value)}
+                                                className="rounded-none bg-zinc-900 border-zinc-700 text-white"
+                                                required
+                                            />
+                                            {errors.nama_bank && <p className="text-red-400 text-[11px]">{errors.nama_bank}</p>}
+                                        </div>
+
+                                        <div className="space-y-1">
+                                            <Label htmlFor="no_rekening" className="text-xs text-white">Nomor Rekening / No. HP E-Wallet</Label>
+                                            <Input
+                                                id="no_rekening"
+                                                placeholder="Masukkan nomor rekening tujuan refund"
+                                                value={data.no_rekening}
+                                                onChange={(e) => setData('no_rekening', e.target.value)}
+                                                className="rounded-none bg-zinc-900 border-zinc-700 text-white"
+                                                required
+                                            />
+                                            {errors.no_rekening && <p className="text-red-400 text-[11px]">{errors.no_rekening}</p>}
+                                        </div>
+
+                                        <div className="space-y-1">
+                                            <Label htmlFor="nama_rekening" className="text-xs text-white">Nama Pemilik Rekening</Label>
+                                            <Input
+                                                id="nama_rekening"
+                                                placeholder="Nama lengkap sesuai pemilik rekening"
+                                                value={data.nama_rekening}
+                                                onChange={(e) => setData('nama_rekening', e.target.value)}
+                                                className="rounded-none bg-zinc-900 border-zinc-700 text-white"
+                                                required
+                                            />
+                                            {errors.nama_rekening && <p className="text-red-400 text-[11px]">{errors.nama_rekening}</p>}
+                                        </div>
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="rounded-none border border-zinc-800 bg-zinc-900 p-3 text-zinc-300">
+                                    Apakah Anda yakin ingin membatalkan pesanan booking ini? Pesanan yang dibatalkan tidak dapat dikembalikan.
+                                </div>
+                            )}
+                        </div>
+
+                        <DialogFooter className="gap-2 sm:gap-0">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="rounded-none border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                                onClick={() => setShowCancelModal(false)}
+                                disabled={processing}
+                            >
+                                Batal
+                            </Button>
+                            <Button
+                                type="submit"
+                                variant="destructive"
+                                className="rounded-none font-bold"
+                                disabled={processing}
+                            >
+                                Konfirmasi Pembatalan
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
 
             <style>{`
                 @media print {

@@ -40,13 +40,19 @@ class DashboardController extends Controller
         $monthlyRevenue = [];
         for ($i = 5; $i >= 0; $i--) {
             $date = Carbon::now()->subMonths($i);
-            $total = BookingMobil::whereIn('status', ['Sukses', 'Success', 'Berhasil', 'Selesai'])
+            $paidTotal = BookingMobil::whereIn('status', ['Sukses', 'Success', 'Berhasil', 'Selesai'])
                 ->whereYear('tglbooking', $date->year)
                 ->whereMonth('tglbooking', $date->month)
                 ->sum('total_bayar');
+
+            $batalTotal = BookingMobil::where('status', 'Batal')
+                ->whereYear('tglbooking', $date->year)
+                ->whereMonth('tglbooking', $date->month)
+                ->sum('total_bayar') * 0.5;
+
             $monthlyRevenue[] = [
                 'month' => $date->format('M Y'),
-                'revenue' => (float) $total,
+                'revenue' => (float) ($paidTotal + $batalTotal),
             ];
         }
 
@@ -72,12 +78,15 @@ class DashboardController extends Controller
             ];
         }
 
+        $totalSukses = (float) BookingMobil::whereIn('status', ['Sukses', 'Success', 'Berhasil', 'Selesai'])->sum('total_bayar');
+        $totalBatal = (float) BookingMobil::where('status', 'Batal')->sum('total_bayar') * 0.5;
+
         return Inertia::render('dashboard', [
             'stats' => [
                 'total_mobil' => Mobil::count(),
                 'total_pelanggan' => User::where('role', 'pelanggan')->count(),
                 'booking_aktif' => BookingMobil::whereIn('status', ['Sukses', 'Success', 'Berhasil'])->count(),
-                'total_pendapatan' => (float) BookingMobil::whereIn('status', ['Sukses', 'Success', 'Berhasil', 'Selesai'])->sum('total_bayar'),
+                'total_pendapatan' => $totalSukses + $totalBatal,
                 'mobil_tersedia' => Mobil::where('status', 'Tersedia')->count(),
                 'mobil_disewa' => Mobil::where('status', 'Disewa')->count(),
                 'mobil_perawatan' => Mobil::where('status', 'Perawatan')->count(),

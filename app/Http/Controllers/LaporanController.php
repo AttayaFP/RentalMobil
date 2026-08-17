@@ -158,7 +158,7 @@ class LaporanController extends Controller
     public function rental(Request $request): Response
     {
         $query = BookingMobil::with(['user', 'mobil', 'pengembalian'])
-            ->whereIn('status', ['Sukses', 'Success', 'Berhasil', 'Selesai']);
+            ->whereIn('status', ['Sukses', 'Success', 'Berhasil', 'Selesai', 'Batal']);
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -183,7 +183,8 @@ class LaporanController extends Controller
 
         $rentals = $query->latest()->get()->map(function ($booking) {
             $pengembalian = $booking->pengembalian;
-            $totalSewa = (float) ($booking->total_bayar ?? 0);
+            $isBatal = $booking->status === 'Batal';
+            $totalSewa = $isBatal ? ((float) ($booking->total_bayar ?? 0) * 0.5) : (float) ($booking->total_bayar ?? 0);
             $denda = (float) ($pengembalian->denda ?? 0);
 
             $statusText = $booking->status;

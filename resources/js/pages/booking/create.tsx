@@ -29,6 +29,7 @@ interface MobilItem {
     harga: number;
     foto: string | null;
     status: string;
+    max_tglselesai?: string | null;
 }
 
 interface Props {
@@ -115,6 +116,14 @@ export default function Create({ users, mobils, selected_kdmobil, next_kdbooking
     const selectedMobil: MobilItem | null =
         mobils.find((m) => m.kdmobil?.toString().trim() === data.kdmobil?.toString().trim()) ?? null;
 
+    const selectedAvailableMobil = availableMobils.find(
+        (m) => m.kdmobil?.toString().trim() === data.kdmobil?.toString().trim(),
+    );
+    const maxTglselesai: string | null = selectedAvailableMobil?.max_tglselesai ?? null;
+    const nextBookingStart: string | null = maxTglselesai
+        ? new Date(new Date(maxTglselesai).getTime() + 86400000).toISOString().split('T')[0]
+        : null;
+
     useEffect(() => {
         const m = mobils.find((x) => x.kdmobil?.toString().trim() === data.kdmobil?.toString().trim()) ?? null;
         setData('harga', m ? m.harga.toString() : '');
@@ -134,6 +143,12 @@ export default function Create({ users, mobils, selected_kdmobil, next_kdbooking
         }
     }, [data.tglmulai, data.tglselesai, data.harga, setData]);
 
+    useEffect(() => {
+        if (maxTglselesai && data.tglselesai && data.tglselesai > maxTglselesai) {
+            setData('tglselesai', maxTglselesai);
+        }
+    }, [maxTglselesai]);
+
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
         post('/booking', {
@@ -148,6 +163,7 @@ export default function Create({ users, mobils, selected_kdmobil, next_kdbooking
     const today = new Date().toISOString().split('T')[0];
 
     const isPelanggan = user.role === 'pelanggan';
+    const cancelLink = isPelanggan ? '/' : '/booking';
 
     return (
         <BookingLayout breadcrumbs={breadcrumbs} title="Buat Booking">
@@ -160,7 +176,7 @@ export default function Create({ users, mobils, selected_kdmobil, next_kdbooking
                                     <CardHeader>
                                         <div className="flex items-center gap-3">
                                             <Button variant="ghost" size="icon" asChild>
-                                                <Link href="/booking">
+                                                <Link href={cancelLink}>
                                                     <ArrowLeft className="h-4 w-4" />
                                                 </Link>
                                             </Button>
@@ -295,10 +311,17 @@ export default function Create({ users, mobils, selected_kdmobil, next_kdbooking
                                                     type="date"
                                                     value={data.tglselesai}
                                                     min={data.tglmulai || today}
+                                                    max={maxTglselesai || undefined}
                                                     onChange={(e) => setData('tglselesai', e.target.value)}
                                                     required
                                                 />
                                                 {errors.tglselesai && <p className="text-sm text-destructive">{errors.tglselesai}</p>}
+                                                {maxTglselesai && !isSelectedMobilUnavailable && (
+                                                    <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                                                        <AlertTriangle className="h-3 w-3" />
+                                                        Tersedia maks. s/d <strong>{new Date(maxTglselesai).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</strong> (ada booking mulai {new Date(nextBookingStart!).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })})
+                                                    </p>
+                                                )}
                                             </div>
                                         </div>
                                         <div className="space-y-2">
@@ -374,7 +397,7 @@ export default function Create({ users, mobils, selected_kdmobil, next_kdbooking
                                             )}
                                         </Button>
                                         <Button type="button" variant="ghost" className="w-full" asChild>
-                                            <Link href="/booking">Batal & Kembali</Link>
+                                            <Link href={cancelLink}>Batal & Kembali</Link>
                                         </Button>
                                     </CardContent>
                                 </Card>
@@ -387,7 +410,7 @@ export default function Create({ users, mobils, selected_kdmobil, next_kdbooking
                                     <CardHeader>
                                         <div className="flex items-center gap-3">
                                             <Button variant="ghost" size="icon" asChild>
-                                                <Link href="/booking">
+                                                <Link href={cancelLink}>
                                                     <ArrowLeft className="h-4 w-4" />
                                                 </Link>
                                             </Button>
@@ -551,10 +574,17 @@ export default function Create({ users, mobils, selected_kdmobil, next_kdbooking
                                                     type="date"
                                                     value={data.tglselesai}
                                                     min={data.tglmulai || today}
+                                                    max={maxTglselesai || undefined}
                                                     onChange={(e) => setData('tglselesai', e.target.value)}
                                                     required
                                                 />
                                                 {errors.tglselesai && <p className="text-sm text-destructive">{errors.tglselesai}</p>}
+                                                {maxTglselesai && !isSelectedMobilUnavailable && (
+                                                    <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                                                        <AlertTriangle className="h-3 w-3" />
+                                                        Tersedia maks. s/d <strong>{new Date(maxTglselesai).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</strong> (ada booking mulai {new Date(nextBookingStart!).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })})
+                                                    </p>
+                                                )}
                                             </div>
                                         </div>
 
@@ -637,7 +667,7 @@ export default function Create({ users, mobils, selected_kdmobil, next_kdbooking
                                             )}
                                         </Button>
                                         <Button type="button" variant="ghost" className="w-full" asChild>
-                                            <Link href="/booking">Batal & Kembali</Link>
+                                            <Link href={cancelLink}>Batal & Kembali</Link>
                                         </Button>
                                     </CardContent>
                                 </Card>

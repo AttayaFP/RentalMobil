@@ -115,6 +115,20 @@ class BookingMobil extends Model
         }
     }
 
+    public static function autoActivateBookings()
+    {
+        $bookings = self::whereIn('status', ['Sukses', 'Success', 'Berhasil'])
+            ->whereDate('tglmulai', '<=', now()->toDateString())
+            ->with('mobil')
+            ->get();
+
+        foreach ($bookings as $booking) {
+            if ($booking->mobil && $booking->mobil->status === 'Tersedia') {
+                $booking->mobil->update(['status' => 'Disewa']);
+            }
+        }
+    }
+
     public static function autoExpirePendingBookings($minutes = 1)
     {
         $expiredBookings = self::whereIn('status', ['Pending', 'pending'])

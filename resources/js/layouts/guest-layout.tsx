@@ -2,8 +2,10 @@ import { ReactNode, useState } from 'react';
 import { Link, router, usePage } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription, SheetHeader } from '@/components/ui/sheet';
-import { Car, Menu, LogOut, User, Bell, X } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Car, Menu, LogOut, User, Bell, X, FileText, Settings, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
+import SopDialog from '@/components/sop-dialog';
 
 interface NotificationItem {
     id: number;
@@ -83,19 +85,55 @@ export default function GuestLayout({ children }: GuestLayoutProps) {
                                         )}
                                     </Button>
                                 )}
-                                <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                                    <User className="h-4 w-4" />
-                                    {user.nama_lengkap || user.name}
-                                </span>
-                                {user.role !== 'pelanggan' && (
-                                    <Button variant="outline" size="sm" asChild>
-                                        <Link href="/dashboard">Dashboard</Link>
-                                    </Button>
-                                )}
-                                <Button variant="ghost" size="sm" onClick={handleLogout}>
-                                    <LogOut className="mr-1 h-4 w-4" />
-                                    Logout
-                                </Button>
+
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="outline" size="sm" className="flex items-center gap-2 rounded-none border-primary/30 hover:border-primary">
+                                            <User className="h-4 w-4 text-primary" />
+                                            <span className="font-semibold">{user.nama_lengkap || user.name}</span>
+                                            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="w-56 rounded-none border-2 border-primary/30 bg-black text-white p-1">
+                                        <DropdownMenuLabel className="text-xs text-muted-foreground font-normal border-b border-white/10 pb-2 mb-1">
+                                            Halo, <span className="font-bold text-white">{user.nama_lengkap || user.name}</span>
+                                        </DropdownMenuLabel>
+                                        
+                                        {user.role === 'pelanggan' ? (
+                                            <>
+                                                <DropdownMenuItem asChild className="cursor-pointer hover:bg-primary/20 focus:bg-primary/20 focus:text-white rounded-none">
+                                                    <Link href="/booking" className="flex items-center gap-2 w-full py-1.5">
+                                                        <FileText className="h-4 w-4 text-primary" />
+                                                        <span>Riwayat Sewa & Invoice</span>
+                                                    </Link>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem asChild className="cursor-pointer hover:bg-primary/20 focus:bg-primary/20 focus:text-white rounded-none">
+                                                    <Link href="/settings/profile" className="flex items-center gap-2 w-full py-1.5">
+                                                        <Settings className="h-4 w-4 text-primary" />
+                                                        <span>Edit Profil</span>
+                                                    </Link>
+                                                </DropdownMenuItem>
+                                            </>
+                                        ) : (
+                                            <DropdownMenuItem asChild className="cursor-pointer hover:bg-primary/20 focus:bg-primary/20 focus:text-white rounded-none">
+                                                <Link href="/dashboard" className="flex items-center gap-2 w-full py-1.5">
+                                                    <Car className="h-4 w-4 text-primary" />
+                                                    <span>Dashboard</span>
+                                                </Link>
+                                            </DropdownMenuItem>
+                                        )}
+
+                                        <DropdownMenuSeparator className="bg-white/10 my-1" />
+
+                                        <DropdownMenuItem
+                                            onClick={handleLogout}
+                                            className="cursor-pointer text-destructive focus:bg-destructive/20 focus:text-destructive rounded-none py-1.5 flex items-center gap-2"
+                                        >
+                                            <LogOut className="h-4 w-4" />
+                                            <span>Logout</span>
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
                             </>
                         ) : (
                             <>
@@ -132,29 +170,49 @@ export default function GuestLayout({ children }: GuestLayoutProps) {
                                 <hr className="my-2" />
                                 {user ? (
                                     <>
-                                        <span className="px-3 py-1 text-sm text-muted-foreground">
-                                            {user.nama_lengkap || user.name}
-                                        </span>
+                                        <div className="px-3 py-1 text-sm border-b pb-2 mb-1">
+                                            <span className="text-xs text-muted-foreground block">Halo,</span>
+                                            <span className="font-bold text-primary">{user.nama_lengkap || user.name}</span>
+                                        </div>
                                         {user.role === 'pelanggan' && (
-                                            <button
-                                                onClick={() => { setOpen(false); setOpenNotif(true); }}
-                                                className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-                                            >
-                                                <Bell className="h-4 w-4" />
-                                                Notifikasi
-                                                {notifications.length > 0 && (
-                                                    <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
-                                                        {notifications.length}
-                                                    </span>
-                                                )}
-                                            </button>
+                                            <>
+                                                <button
+                                                    onClick={() => { setOpen(false); setOpenNotif(true); }}
+                                                    className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                                                >
+                                                    <Bell className="h-4 w-4 text-primary" />
+                                                    Notifikasi
+                                                    {notifications.length > 0 && (
+                                                        <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
+                                                            {notifications.length}
+                                                        </span>
+                                                    )}
+                                                </button>
+                                                <Link
+                                                    href="/booking"
+                                                    onClick={() => setOpen(false)}
+                                                    className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                                                >
+                                                    <FileText className="h-4 w-4 text-primary" />
+                                                    Riwayat Sewa & Invoice
+                                                </Link>
+                                                <Link
+                                                    href="/settings/profile"
+                                                    onClick={() => setOpen(false)}
+                                                    className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                                                >
+                                                    <Settings className="h-4 w-4 text-primary" />
+                                                    Edit Profil
+                                                </Link>
+                                            </>
                                         )}
                                         {user.role !== 'pelanggan' && (
                                             <Link
                                                 href="/dashboard"
                                                 onClick={() => setOpen(false)}
-                                                className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                                                className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
                                             >
+                                                <Car className="h-4 w-4 text-primary" />
                                                 Dashboard
                                             </Link>
                                         )}
@@ -163,8 +221,9 @@ export default function GuestLayout({ children }: GuestLayoutProps) {
                                                 setOpen(false);
                                                 handleLogout();
                                             }}
-                                            className="rounded-md px-3 py-2 text-left text-sm font-medium text-destructive transition-colors hover:bg-accent"
+                                            className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-medium text-destructive transition-colors hover:bg-accent"
                                         >
+                                            <LogOut className="h-4 w-4" />
                                             Logout
                                         </button>
                                     </>
@@ -268,6 +327,8 @@ export default function GuestLayout({ children }: GuestLayoutProps) {
                     </div>
                 </SheetContent>
             </Sheet>
+
+            <SopDialog />
         </div>
     );
 }

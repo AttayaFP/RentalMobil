@@ -27,7 +27,7 @@ class BookingController extends Controller
 
         if (Auth::user() && Auth::user()->role === 'pelanggan') {
             $query->where('iduser', Auth::id())
-                ->whereIn('status', ['Selesai', 'Success', 'Berhasil']);
+                ->whereIn('status', ['Selesai', 'Success', 'Berhasil', 'Sukses', 'Pending', 'pending', 'Batal']);
         }
 
         if ($request->filled('search')) {
@@ -82,14 +82,38 @@ class BookingController extends Controller
             ->whereNotIn('kdmobil', $bookedMobilIds)
             ->get();
 
-        return response()->json($mobils->map(fn($m) => [
-            'kdmobil' => $m->kdmobil,
-            'nama_mobil' => $m->nama_mobil,
-            'plat_mobil' => $m->plat_mobil,
-            'harga' => $m->harga,
-            'foto' => $m->foto,
-            'status' => $m->status,
-        ]));
+        return response()->json($mobils->map(function ($m) use ($tglmulai) {
+            return [
+                'kdmobil'       => $m->kdmobil,
+                'nama_mobil'    => $m->nama_mobil,
+                'plat_mobil'    => $m->plat_mobil,
+                'harga'         => $m->harga,
+                'foto'          => $m->foto,
+                'status'        => $m->status,
+                'max_tglselesai' => $this->getMaxTglselesai($m->kdmobil, $tglmulai),
+            ];
+        }));
+    }
+
+    private function getMaxTglselesai(string $kdmobil, string $fromDate): ?string
+    {
+        $nextBooking = BookingMobil::where('kdmobil', $kdmobil)
+            ->where(function ($q) {
+                $q->whereIn('status', ['Sukses', 'success', 'Success', 'Berhasil'])
+                  ->orWhere(function ($qp) {
+                      $qp->whereIn('status', ['Pending', 'pending'])
+                         ->where('created_at', '>=', now()->subMinutes($this->pendingLockMinutes()));
+                  });
+            })
+            ->where('tglmulai', '>', $fromDate)
+            ->orderBy('tglmulai', 'asc')
+            ->first();
+
+        if ($nextBooking) {
+            return \Carbon\Carbon::parse($nextBooking->tglmulai)->subDay()->format('Y-m-d');
+        }
+
+        return null;
     }
 
     private function generateKdBooking(): string
@@ -287,9 +311,13 @@ class BookingController extends Controller
             'transaction_id' => $request->transaction_id,
             'transaction_time' => $request->transaction_time ?? now(),
         ]);
+
         $mobil = Mobil::find($booking->kdmobil);
         if ($mobil) {
-            $mobil->update(['status' => 'Disewa']);
+            $tglmulai = \Carbon\Carbon::parse($booking->tglmulai)->startOfDay();
+            if ($tglmulai->lte(\Carbon\Carbon::now()->startOfDay())) {
+                $mobil->update(['status' => 'Disewa']);
+            }
         }
 
         return response()->json(['message' => 'Payment recorded successfully']);
@@ -421,5 +449,56 @@ class BookingController extends Controller
         }
 
         return redirect()->back()->with('success', 'Pengingat berhasil diaktifkan. Kami akan memberi tahu Anda jika mobil ini sudah tersedia kembali!');
+    }
+
+    public function cancel(Request $request, string $kdbooking)
+    {
+        $booking = BookingMobil::findOrFail($kdbooking);
+        $user = Auth::user();
+
+        if ($user->role === 'pelanggan' && $booking->iduser !== $user->id) {
+            abort(403, 'Akses ditolak.');
+        }
+
+        if (!in_array($booking->status, ['Sukses', 'Success', 'Berhasil', 'Pending', 'pending', 'challenge'])) {
+            return back()->withErrors(['message' => 'Booking tidak dapat dibatalkan pada status saat ini.']);
+        }
+
+        $isPaid = in_array($booking->status, ['Sukses', 'Success', 'Berhasil']);
+
+        if ($isPaid) {
+            $request->validate([
+                'nama_bank' => 'required|string|max:100',
+                'no_rekening' => 'required|string|max:100',
+                'nama_rekening' => 'required|string|max:150',
+            ]);
+        }
+
+        $booking->update([
+            'status' => 'Batal',
+        ]);
+
+        $mobil = Mobil::find($booking->kdmobil);
+        if ($mobil && $mobil->status === 'Disewa') {
+            $mobil->update(['status' => 'Tersedia']);
+        }
+
+        BookingMobil::notifyOtherInterestedCustomers($booking->kdmobil, $booking->tglmulai, $booking->tglselesai, $booking->kdbooking);
+
+        if ($isPaid) {
+            $admins = User::whereIn('role', ['admin', 'pimpinan'])->get();
+            $refundAmount = number_format($booking->total_bayar * 0.5, 0, ',', '.');
+
+            foreach ($admins as $admin) {
+                Notifikasi::create([
+                    'iduser' => $admin->id,
+                    'kdmobil' => $booking->kdmobil,
+                    'pesan' => "Pembatalan Booking #{$booking->kdbooking} oleh " . ($booking->user->nama_lengkap ?? 'Pelanggan') . ". Mohon refund 50% (Rp {$refundAmount}) ke {$request->nama_bank} - {$request->no_rekening} a.n {$request->nama_rekening}.",
+                    'is_read' => false,
+                ]);
+            }
+        }
+
+        return redirect()->back()->with('success', $isPaid ? 'Booking berhasil dibatalkan. Pengajuan refund 50% telah dikirimkan ke Admin.' : 'Booking berhasil dibatalkan.');
     }
 }

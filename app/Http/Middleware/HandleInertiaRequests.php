@@ -103,6 +103,7 @@ class HandleInertiaRequests extends Middleware
                 'notifications' => $notifications,
                 'mobil_selesai_rawat' => $mobilSelesaiRawat,
                 'pending_booking' => $pendingBooking,
+                'sop_agreed' => $request->user() ? ($request->user()->role === 'pelanggan' ? $request->session()->get('sop_agreed', false) : true) : true,
             ],
             'flash' => [
                 'success' => $request->session()->get('success'),

@@ -2,6 +2,131 @@
 
 ---
 
+## 🚀 DEPLOYMENT & COMMANDS (BACA PERTAMA KALI)
+
+> **Script otomatis tersedia:** jalankan `deploy.sh` (Linux/Mac) atau `deploy.bat` (Windows) dari root project.
+
+### ⚡ Deploy ke Server (Urutan Wajib)
+
+```bash
+# 1. Copy & konfigurasi environment
+cp .env.example .env
+# Edit .env: APP_ENV=production, APP_DEBUG=false, APP_URL=https://domain.com
+# Edit .env: DB_HOST, DB_DATABASE, DB_USERNAME, DB_PASSWORD
+# Edit .env: MIDTRANS_SERVER_KEY, MIDTRANS_CLIENT_KEY, MIDTRANS_IS_PRODUCTION=true
+
+# 2. Install PHP dependencies (tanpa package dev)
+composer install --no-dev --optimize-autoloader
+
+# 3. Generate app key (hanya jika APP_KEY kosong)
+php artisan key:generate --force
+
+# 4. Install Node.js dependencies
+npm install
+
+# 5. Build frontend assets (production)
+npm run build
+
+# 6. Jalankan semua migrasi database
+php artisan migrate --force
+
+# 7. Buat symlink storage → public
+php artisan storage:link
+
+# 8. Cache semua konfigurasi (wajib di production)
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+php artisan event:cache
+
+# 9. Set permission folder (Linux only)
+chmod -R 775 storage bootstrap/cache
+chown -R www-data:www-data storage bootstrap/cache
+```
+
+### 🔄 Update Aplikasi (setelah ada perubahan kode)
+
+```bash
+# Pull kode terbaru
+git pull origin main
+
+# Update dependencies jika ada perubahan
+composer install --no-dev --optimize-autoloader
+npm install
+
+# Rebuild frontend
+npm run build
+
+# Jalankan migrasi baru (jika ada)
+php artisan migrate --force
+
+# Refresh cache
+php artisan optimize:clear
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+```
+
+### 🖥️ Development (Lokal)
+
+```bash
+composer dev          # Server + queue + Vite sekaligus (RECOMMENDED)
+php artisan serve     # Backend only
+npm run dev           # Vite dev server only
+```
+
+### ⚙️ Scheduler & Queue (Server Production)
+
+```bash
+# Tambahkan ke crontab Linux server (cron job untuk Laravel scheduler):
+* * * * * cd /path/to/project && php artisan schedule:run >> /dev/null 2>&1
+
+# Jalankan queue worker (gunakan Supervisor di production):
+php artisan queue:work --tries=3
+
+# Jalankan scheduler manual (untuk test):
+php artisan schedule:run
+
+# Aktifkan booking sesuai tglmulai (dijalankan otomatis tiap 00:00 via scheduler):
+php artisan booking:activate
+```
+
+### 🗄️ Database Commands
+
+```bash
+php artisan migrate                  # Jalankan migrasi baru
+php artisan migrate:rollback         # Rollback 1 batch terakhir
+php artisan migrate:fresh --seed     # Reset & seed ulang (HATI-HATI: hapus semua data!)
+php artisan db:seed                  # Jalankan seeder saja
+php artisan tinker                   # Interactive PHP shell
+```
+
+### 🧹 Cache & Optimization Commands
+
+```bash
+php artisan optimize:clear           # Clear semua cache (config, route, view, event)
+php artisan config:cache             # Cache konfigurasi
+php artisan route:cache              # Cache routes
+php artisan view:cache               # Cache blade views
+php artisan event:cache              # Cache event listeners
+php artisan cache:clear              # Clear application cache
+php artisan queue:clear              # Clear semua pending jobs dari queue
+```
+
+### 🔍 Debug & Maintenance Commands
+
+```bash
+php artisan about                    # Info versi dan konfigurasi aplikasi
+php artisan route:list               # Daftar semua routes
+php artisan schedule:list            # Daftar semua scheduled jobs
+php artisan queue:monitor            # Monitor queue
+php artisan down                     # Masuk maintenance mode
+php artisan up                       # Keluar maintenance mode
+php artisan storage:link             # Buat symlink storage (jika foto tidak muncul)
+```
+
+---
+
 ## ATURAN KERJA (WAJIB BACA SEBELUM KERJA)
 
 ### 1. Wajib Baca AGENT.md Tanpa Halu
