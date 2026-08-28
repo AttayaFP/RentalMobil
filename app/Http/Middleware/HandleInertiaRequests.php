@@ -25,6 +25,7 @@ class HandleInertiaRequests extends Middleware
         $notifications = [];
         $mobilSelesaiRawat = [];
         $pendingBooking = null;
+        $unratedPengembalian = null;
 
         if ($request->user()) {
             $user = $request->user();
@@ -49,6 +50,27 @@ class HandleInertiaRequests extends Middleware
                         'total_bayar' => (int) $pending->total_bayar,
                         'created_at' => $pending->created_at->toISOString(),
                         'expires_in_minutes' => $pendingLockMinutes,
+                    ];
+                }
+
+                $ratingsPath = storage_path('app/ratings.json');
+                $ratings = file_exists($ratingsPath) ? json_decode(file_get_contents($ratingsPath), true) ?: [] : [];
+
+                $unratedReturn = \App\Models\KembaliMobil::where('iduser', $user->id)
+                    ->with(['booking.mobil'])
+                    ->latest()
+                    ->get()
+                    ->first(function ($item) use ($ratings) {
+                        return !isset($ratings[$item->kdpengembalian]);
+                    });
+
+                if ($unratedReturn) {
+                    $unratedPengembalian = [
+                        'kdpengembalian' => $unratedReturn->kdpengembalian,
+                        'kdbooking' => $unratedReturn->kdbooking,
+                        'nama_mobil' => $unratedReturn->booking->mobil->nama_mobil ?? 'Mobil',
+                        'foto_mobil' => $unratedReturn->booking->mobil->foto ?? null,
+                        'tglpengembalian' => $unratedReturn->tglpengembalian,
                     ];
                 }
             }
@@ -103,6 +125,7 @@ class HandleInertiaRequests extends Middleware
                 'notifications' => $notifications,
                 'mobil_selesai_rawat' => $mobilSelesaiRawat,
                 'pending_booking' => $pendingBooking,
+                'unrated_pengembalian' => $unratedPengembalian,
                 'sop_agreed' => $request->user() ? ($request->user()->role === 'pelanggan' ? $request->session()->get('sop_agreed', false) : true) : true,
             ],
             'flash' => [

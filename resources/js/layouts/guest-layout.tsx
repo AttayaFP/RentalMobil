@@ -6,6 +6,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Car, Menu, LogOut, User, Bell, X, FileText, Settings, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 import SopDialog from '@/components/sop-dialog';
+import RatingDialog from '@/components/rating-dialog';
 
 interface NotificationItem {
     id: number;
@@ -48,6 +49,13 @@ export default function GuestLayout({ children }: GuestLayoutProps) {
         router.post(`/notifikasi/${id}/read`, {}, {
             preserveScroll: true,
             onSuccess: () => toast.success('Notifikasi ditandai sudah dibaca'),
+        });
+    };
+
+    const deleteNotif = (id: number) => {
+        router.delete(`/notifikasi/${id}`, {
+            preserveScroll: true,
+            onSuccess: () => toast.success('Notifikasi dihapus'),
         });
     };
 
@@ -261,7 +269,7 @@ export default function GuestLayout({ children }: GuestLayoutProps) {
                             Rental Mobil Nabil Padang
                         </div>
                         <p className="text-sm text-muted-foreground">
-                            Komplek Perumdam III/4, Tunggul Hitam, Kota Padang &middot; Telp: 0812-xxxx-xxxx
+                            Komplek Perumdam III/4, Tunggul Hitam, Kota Padang &middot; Telp: 0822-8714-0724
                         </p>
                         <p className="text-sm text-muted-foreground">
                             &copy; {new Date().getFullYear()} All rights reserved.
@@ -309,7 +317,7 @@ export default function GuestLayout({ children }: GuestLayoutProps) {
                                                 size="sm"
                                                 variant="ghost"
                                                 className="h-7 text-xs text-muted-foreground"
-                                                onClick={() => markAsRead(notif.id)}
+                                                onClick={() => deleteNotif(notif.id)}
                                             >
                                                 <X className="mr-1 h-3 w-3" />
                                                 Tutup
@@ -329,6 +337,7 @@ export default function GuestLayout({ children }: GuestLayoutProps) {
             </Sheet>
 
             <SopDialog />
+            <RatingDialog />
         </div>
     );
 }

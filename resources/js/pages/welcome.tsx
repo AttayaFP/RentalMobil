@@ -17,7 +17,7 @@ import {
     useCountUp,
     useScaleReveal,
 } from '@/hooks/use-animation';
-import heroBg from '@/assets/images/logo.jpg';
+import heroBg from '@/assets/images/gambarhomepage.jpg';
 import GoldParticles from '@/components/gold-particles';
 import Carousel from '@/components/carousel';
 import { motion } from 'framer-motion';
@@ -34,8 +34,28 @@ interface Mobil {
     foto: string | null;
 }
 
+interface Stats {
+    mobil_tersedia: number;
+    total_disewa: number;
+    total_pelanggan: number;
+    total_mobil: number;
+}
+
+interface ReviewItem {
+    kdpengembalian: string;
+    rating: number;
+    ulasan: string;
+    nama_pelanggan: string;
+    nama_mobil: string;
+    created_at?: string;
+}
+
 interface Props {
     mobils: Mobil[];
+    stats: Stats;
+    rating_kepuasan: number;
+    total_reviews?: number;
+    reviews?: ReviewItem[];
 }
 
 const fadeUp = {
@@ -53,7 +73,7 @@ const scaleIn = {
     visible: { opacity: 1, scale: 1, transition: { duration: 0.5, ease: 'easeOut' as const } },
 };
 
-export default function Welcome({ mobils = [] }: Props) {
+export default function Welcome({ mobils = [], stats, rating_kepuasan = 0, total_reviews = 0, reviews = [] }: Props) {
     const { auth } = usePage<{
         auth: {
             user: { id: number; role: string; nama_lengkap?: string; name?: string } | null;
@@ -80,10 +100,10 @@ export default function Welcome({ mobils = [] }: Props) {
     const marqueeRef = useMarquee(25);
     const statsRef = useStaggerReveal();
     const ctaSectionRef = useScaleReveal();
-    const stat1Ref = useCountUp(500, { suffix: '+' });
-    const stat2Ref = useCountUp(50, { suffix: '+' });
-    const stat3Ref = useCountUp(5);
-    const stat4Ref = useCountUp(24, { suffix: '/7' });
+    const stat1Ref = useCountUp(stats?.mobil_tersedia ?? 0);
+    const stat2Ref = useCountUp(stats?.total_disewa ?? 0, { suffix: '+' });
+    const stat3Ref = useCountUp(stats?.total_pelanggan ?? 0, { suffix: '+' });
+    const stat4Ref = useCountUp(stats?.total_mobil ?? 0);
 
     useEffect(() => {
         if (!pendingBooking) return;
@@ -167,7 +187,7 @@ export default function Welcome({ mobils = [] }: Props) {
                             <Button
                                 size="lg"
                                 variant="outline"
-                                className="border-white/30 px-10 py-6 text-base text-white/80 hover:bg-white/10 hover:text-white"
+                                className="border-[#FFC000]/60 px-10 py-6 text-base text-[#FFC000] hover:bg-[#FFC000]/10 hover:border-[#FFC000]"
                                 onClick={() => router.visit('/cars')}
                             >
                                 Lihat Katalog
@@ -176,19 +196,16 @@ export default function Welcome({ mobils = [] }: Props) {
 
                         <motion.div
                             variants={fadeUp}
-                            className="mt-12 flex items-center justify-center gap-8 text-sm text-white/50"
+                            className="mt-12 flex items-center justify-center"
                         >
-                            <div className="flex items-center gap-2">
-                                <Shield className="h-4 w-4 text-gold" />
-                                <span>Asuransi All-Risk</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <Clock className="h-4 w-4 text-gold" />
-                                <span>Layanan 24/7</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <Star className="h-4 w-4 text-gold" />
-                                <span>Rating 4.9</span>
+                            <div className="flex items-center gap-2 border border-gold/30 bg-gold/10 px-5 py-2 text-sm text-white/70">
+                                <Star className="h-4 w-4 fill-gold text-gold" />
+                                <span>
+                                    Rating Kepuasan Pelanggan:{' '}
+                                    <span className="font-bold text-gold">
+                                        {rating_kepuasan > 0 ? `${rating_kepuasan} / 5 (${total_reviews} ulasan)` : 'Belum ada data'}
+                                    </span>
+                                </span>
                             </div>
                         </motion.div>
                     </motion.div>
@@ -271,23 +288,23 @@ export default function Welcome({ mobils = [] }: Props) {
                 </div>
             </section>
 
-            <section ref={statsRef} className="relative bg-white/[0.02] py-16">
+            <section ref={statsRef} className="relative bg-white py-16">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
                         {[
-                            { ref: stat1Ref, label: 'Pelanggan Puas' },
-                            { ref: stat2Ref, label: 'Unit Mobil' },
-                            { ref: stat3Ref, label: 'Tahun Pengalaman' },
-                            { ref: stat4Ref, label: 'Layanan Support' },
+                            { ref: stat1Ref, label: 'Mobil Tersedia' },
+                            { ref: stat2Ref, label: 'Total Booking' },
+                            { ref: stat3Ref, label: 'Pelanggan Terdaftar' },
+                            { ref: stat4Ref, label: 'Total Armada' },
                         ].map((stat, i) => (
                             <div key={i} className="stagger-item text-center">
                                 <div
                                     ref={stat.ref}
-                                    className="text-4xl font-bold text-gold lg:text-5xl"
+                                    className="text-4xl font-bold text-black lg:text-5xl"
                                 >
                                     0
                                 </div>
-                                <p className="mt-2 text-sm uppercase tracking-wider text-white/50">{stat.label}</p>
+                                <p className="mt-2 text-sm uppercase tracking-wider text-black/60">{stat.label}</p>
                             </div>
                         ))}
                     </div>
@@ -423,6 +440,45 @@ export default function Welcome({ mobils = [] }: Props) {
                     )}
                 </div>
             </section>
+
+            {reviews && reviews.length > 0 && (
+                <section className="bg-neutral-950 px-4 py-20 sm:px-6 lg:px-8 border-t border-white/10">
+                    <div className="mx-auto max-w-7xl">
+                        <div className="text-center">
+                            <h2 className="text-3xl font-extrabold uppercase tracking-tight text-white sm:text-4xl">
+                                Ulasan <span className="text-gold">Pelanggan</span>
+                            </h2>
+                            <p className="mt-3 text-sm text-neutral-400">
+                                Pengalaman nyata dari pelanggan kami setelah menggunakan layanan sewa mobil Nabil.
+                            </p>
+                        </div>
+                        <div className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                            {reviews.map((rev, idx) => (
+                                <div key={idx} className="flex flex-col justify-between rounded-none border border-white/10 bg-neutral-900 p-6 transition-all hover:border-gold/50">
+                                    <div>
+                                        <div className="flex items-center gap-1">
+                                            {[1, 2, 3, 4, 5].map((s) => (
+                                                <Star
+                                                    key={s}
+                                                    className={`h-4 w-4 ${s <= rev.rating ? 'fill-gold text-gold' : 'text-neutral-700'}`}
+                                                />
+                                            ))}
+                                            <span className="ml-2 text-xs font-semibold text-gold">{rev.rating}/5</span>
+                                        </div>
+                                        <p className="mt-4 text-sm leading-relaxed text-neutral-300 italic">
+                                            "{rev.ulasan || 'Layanan sangat memuaskan!'}"
+                                        </p>
+                                    </div>
+                                    <div className="mt-6 border-t border-white/5 pt-4">
+                                        <p className="text-sm font-bold text-white">{rev.nama_pelanggan}</p>
+                                        <p className="text-xs text-neutral-500">Sewa {rev.nama_mobil}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+            )}
 
             <section ref={ctaSectionRef} className="relative overflow-hidden bg-gold py-20">
                 <div className="absolute inset-0 opacity-10">

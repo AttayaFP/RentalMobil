@@ -13,6 +13,16 @@ use Midtrans\Snap;
 
 class PengembalianController extends Controller
 {
+    private function getRatingsData(): array
+    {
+        $path = storage_path('app/ratings.json');
+        if (!file_exists($path)) {
+            return [];
+        }
+        $content = file_get_contents($path);
+        return json_decode($content, true) ?: [];
+    }
+
     public function index(Request $request)
     {
         $query = KembaliMobil::query();
@@ -34,6 +44,7 @@ class PengembalianController extends Controller
 
         return Inertia::render('pengembalian/index', [
             'pengembalians' => $query->with(['user', 'booking.mobil'])->latest()->get(),
+            'ratings' => $this->getRatingsData(),
             'filters' => $request->only(['search', 'date']),
         ]);
     }
@@ -50,7 +61,7 @@ class PengembalianController extends Controller
             $number = 1;
         }
 
-        return 'KMB-'.str_pad($number, 3, '0', STR_PAD_LEFT);
+        return 'KMB-' . str_pad($number, 3, '0', STR_PAD_LEFT);
     }
 
     public function create()
@@ -83,6 +94,13 @@ class PengembalianController extends Controller
                 $mobil->update(['status' => 'Perawatan']);
             }
             $booking->update(['status' => 'Selesai']);
+
+            \App\Models\Notifikasi::create([
+                'iduser' => $request->iduser,
+                'kdmobil' => $booking->kdmobil,
+                'pesan' => 'Mobil ' . ($mobil->nama_mobil ?? '') . ' telah berhasil dikembalikan.',
+                'is_read' => false,
+            ]);
         }
 
         if ($request->input('payment_type') === 'transfer' && $pengembalian->denda > 0) {
@@ -162,7 +180,7 @@ class PengembalianController extends Controller
 
         $params = [
             'transaction_details' => [
-                'order_id' => $pengembalian->kdpengembalian.'-'.time(),
+                'order_id' => $pengembalian->kdpengembalian . '-' . time(),
                 'gross_amount' => (int) $pengembalian->denda,
             ],
             'customer_details' => [
@@ -175,7 +193,7 @@ class PengembalianController extends Controller
                     'id' => $pengembalian->kdpengembalian,
                     'price' => (int) $pengembalian->denda,
                     'quantity' => 1,
-                    'name' => 'Denda Pengembalian '.$mobil->nama_mobil,
+                    'name' => 'Denda Pengembalian ' . $mobil->nama_mobil,
                 ],
             ],
         ];
@@ -190,7 +208,7 @@ class PengembalianController extends Controller
                 'is_production' => (bool) config('midtrans.is_production'),
             ]);
         } catch (\Exception $e) {
-            return redirect()->route('pengembalian.index')->with('error', 'Gagal menghubungkan ke Midtrans: '.$e->getMessage());
+            return redirect()->route('pengembalian.index')->with('error', 'Gagal menghubungkan ke Midtrans: ' . $e->getMessage());
         }
     }
 
@@ -198,5 +216,33 @@ class PengembalianController extends Controller
     {
         $pengembalian = KembaliMobil::findOrFail($kdpengembalian);
         return response()->json(['message' => 'Denda payment recorded successfully']);
+    }
+
+    public function submitRating(Request $request, string $kdpengembalian)
+    {
+        $request->validate([
+            'rating' => 'required|integer|min:1|max:5',
+            'ulasan' => 'nullable|string|max:1000',
+        ]);
+
+        $pengembalian = KembaliMobil::where('kdpengembalian', $kdpengembalian)
+            ->where('iduser', auth()->id())
+            ->firstOrFail();
+
+        $path = storage_path('app/ratings.json');
+        $ratings = $this->getRatingsData();
+
+        $ratings[$kdpengembalian] = [
+            'kdpengembalian' => $kdpengembalian,
+            'kdbooking' => $pengembalian->kdbooking,
+            'iduser' => auth()->id(),
+            'rating' => (int) $request->rating,
+            'ulasan' => $request->ulasan ? trim($request->ulasan) : null,
+            'created_at' => now()->toIso8601String(),
+        ];
+
+        file_put_contents($path, json_encode($ratings, JSON_PRETTY_PRINT));
+
+        return redirect()->back()->with('success', 'Terima kasih atas rating dan ulasan Anda!');
     }
 }

@@ -183,7 +183,7 @@ export function NavUser() {
                                                     size="sm"
                                                     variant="ghost"
                                                     className="h-7 text-xs text-muted-foreground"
-                                                    onClick={() => markAsRead(notif.id)}
+                                                    onClick={() => deleteNotif(notif.id)}
                                                 >
                                                     <X className="mr-1 h-3 w-3" />
                                                     Tutup

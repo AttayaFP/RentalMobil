@@ -1,15 +1,51 @@
 <?php
 
+use App\Models\BookingMobil;
+use App\Models\KembaliMobil;
 use App\Models\Mobil;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', function () {
+    $ratingsPath = storage_path('app/ratings.json');
+    $ratings = file_exists($ratingsPath) ? json_decode(file_get_contents($ratingsPath), true) ?: [] : [];
+
+    $ratingValues = array_column($ratings, 'rating');
+    $ratingKepuasan = count($ratingValues) > 0
+        ? round(array_sum($ratingValues) / count($ratingValues), 1)
+        : 0;
+
+    $reviews = [];
+    foreach ($ratings as $kdpengembalian => $data) {
+        $kembali = KembaliMobil::with(['user', 'booking.mobil'])->find($kdpengembalian);
+        if ($kembali) {
+            $reviews[] = [
+                'kdpengembalian' => $kdpengembalian,
+                'rating' => $data['rating'] ?? 5,
+                'ulasan' => $data['ulasan'] ?? '',
+                'nama_pelanggan' => $kembali->user->nama_lengkap ?? 'Pelanggan',
+                'nama_mobil' => $kembali->booking->mobil->nama_mobil ?? 'Mobil',
+                'created_at' => $data['created_at'] ?? null,
+            ];
+        }
+    }
+
     return Inertia::render('welcome', [
         'mobils' => Mobil::latest()->take(6)->get(),
+        'stats'  => [
+            'mobil_tersedia'   => Mobil::where('status', 'Tersedia')->count(),
+            'total_disewa'     => BookingMobil::whereIn('status', ['Sukses', 'Success', 'Berhasil', 'Selesai'])->count(),
+            'total_pelanggan'  => User::where('role', 'pelanggan')->count(),
+            'total_mobil'      => Mobil::count(),
+        ],
+        'rating_kepuasan' => $ratingKepuasan,
+        'total_reviews'   => count($ratingValues),
+        'reviews'         => array_slice(array_reverse($reviews), 0, 6),
     ]);
 })->name('home');
+
 
 Route::get('/about', function () {
     return Inertia::render('about');
@@ -85,17 +121,24 @@ Route::middleware(['auth'])->group(function () {
         
         Route::get('pengembalian/{pengembalian}/checkout', [PengembalianController::class, 'checkout'])->name('pengembalian.checkout');
         Route::post('pengembalian/{pengembalian}/success', [PengembalianController::class, 'success'])->name('pengembalian.success');
+        Route::post('pengembalian/{pengembalian}/rating', [PengembalianController::class, 'submitRating'])->name('pengembalian.rating');
         
         Route::post('notifikasi/{id}/read', function ($id) {
             $notif = \App\Models\Notifikasi::where('iduser', Auth::id())->findOrFail($id);
             $notif->update(['is_read' => true]);
-            return response()->json(['success' => true]);
+            if (request()->wantsJson()) {
+                return response()->json(['success' => true]);
+            }
+            return back();
         })->name('notifikasi.read');
 
         Route::delete('notifikasi/{id}', function ($id) {
             $notif = \App\Models\Notifikasi::where('iduser', Auth::id())->findOrFail($id);
             $notif->delete();
-            return response()->json(['success' => true]);
+            if (request()->wantsJson()) {
+                return response()->json(['success' => true]);
+            }
+            return back();
         })->name('notifikasi.delete');
     });
 });
