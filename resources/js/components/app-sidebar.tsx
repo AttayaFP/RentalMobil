@@ -95,13 +95,15 @@ export function AppSidebar() {
         return true;
     });
 
+    const logoHref = ['admin', 'pimpinan'].includes(userRole) ? '/' : '/dashboard';
+
     return (
         <Sidebar collapsible="icon" variant="inset">
             <SidebarHeader>
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
-                            <Link href="/dashboard" prefetch>
+                            <Link href={logoHref} prefetch>
                                 <AppLogo />
                             </Link>
                         </SidebarMenuButton>
