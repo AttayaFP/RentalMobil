@@ -134,19 +134,12 @@ export default function Invoice({ booking, user, mobil }: Props) {
                         <div className="absolute -right-7 -top-7 h-28 w-28 rounded-full bg-orange-500/20" />
                         <div className="absolute bottom-[-18px] right-20 h-16 w-16 rounded-full bg-white/5" />
                         <div className="relative z-10 flex items-center justify-between">
-                            <div className="flex items-center gap-5">
-                                <img
-                                    src="/storage/logo/logo.jpg"
-                                    alt="Logo"
-                                    className="h-[90px] w-auto rounded-[10px] bg-white p-1 object-contain shadow-lg"
-                                />
-                                <div>
-                                    <div className="text-lg font-extrabold leading-tight tracking-wide">
-                                        PT. NABIL RENTAL MOBIL PADANG
-                                    </div>
-                                    <div className="mt-1 text-xs font-medium text-white/80">
-                                        Kompek Perumdam/III/4, Tunggul Hitam, Kota Padang
-                                    </div>
+                            <div>
+                                <div className="text-lg font-extrabold leading-tight tracking-wide">
+                                    PT. NABIL RENTAL MOBIL PADANG
+                                </div>
+                                <div className="mt-1 text-xs font-medium text-white/80">
+                                    Kompek Perumdam/III/4, Tunggul Hitam, Kota Padang
                                 </div>
                             </div>
                             <div className="text-right">
