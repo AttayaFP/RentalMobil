@@ -459,7 +459,7 @@ Pelanggan Booking (BookingLayout — tanpa sidebar):
   booking/create, booking/checkout, booking/invoice
 
 Guest (GuestLayout — Lamborghini dark theme):
-  welcome, about, services, pricing, cars, blog, contact
+  welcome, about, services, pricing, cars, contact
 
 Auth (standalone — tanpa navbar/sidebar, dark background):
   auth/login, auth/register
@@ -568,7 +568,6 @@ Digunakan di: welcome.tsx (hero section)
 - `services.tsx` — header reveal + cards stagger
 - `pricing.tsx` — header reveal + table stagger
 - `cars.tsx` — header reveal + cards stagger
-- `blog.tsx` — header reveal + cards stagger
 - `contact.tsx` — info cards stagger + form reveal
 - `dashboard.tsx` — stat cards stagger + count up + chart reveal + Framer Motion
 

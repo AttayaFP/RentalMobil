@@ -67,10 +67,6 @@ Route::get('/cars', function () {
     ]);
 })->name('cars');
 
-Route::get('/blog', function () {
-    return Inertia::render('blog');
-})->name('blog');
-
 Route::get('/contact', function () {
     return Inertia::render('contact');
 })->name('contact');
